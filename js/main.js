@@ -34,7 +34,7 @@
   });
 })();
 
-/* --- Contact form placeholder submit --- */
+/* --- Contact form — Formspree AJAX submit --- */
 (function () {
   const form = document.querySelector('.contact-form');
   if (!form) return;
@@ -43,15 +43,31 @@
     e.preventDefault();
     const btn = form.querySelector('button[type="submit"]');
     const original = btn.textContent;
-    btn.textContent = 'Sent — we\'ll be in touch!';
+    btn.textContent = 'Sending…';
     btn.disabled = true;
-    btn.style.opacity = '0.7';
-    setTimeout(function () {
-      btn.textContent = original;
+
+    fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(function (res) {
+      if (res.ok) {
+        btn.textContent = 'Sent — we\'ll be in touch!';
+        form.reset();
+        setTimeout(function () {
+          btn.textContent = original;
+          btn.disabled = false;
+        }, 5000);
+      } else {
+        btn.textContent = 'Error — please call us on 0434 524 270';
+        btn.disabled = false;
+      }
+    })
+    .catch(function () {
+      btn.textContent = 'Error — please call us on 0434 524 270';
       btn.disabled = false;
-      btn.style.opacity = '';
-      form.reset();
-    }, 4000);
+    });
   });
 })();
 
@@ -64,29 +80,43 @@
   });
 })();
 
-/* --- Free download form --- */
+/* --- Free download form — Formspree AJAX + trigger download --- */
 (function () {
   const form = document.getElementById('free-download-form');
   if (!form) return;
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    const name = form.querySelector('#dl-name').value.trim();
-    const email = form.querySelector('#dl-email').value.trim();
-    if (!name || !email) return;
+    const btn = form.querySelector('button[type="submit"]');
+    btn.textContent = 'Sending…';
+    btn.disabled = true;
 
-    // Trigger download of the checklist PDF
-    // TODO: Replace href with real hosted PDF URL once uploaded to Gumroad or server
-    const a = document.createElement('a');
-    a.href = 'assets/downloads/site-protection-punchlist.pdf';
-    a.download = 'BIK-Solutions-Site-Protection-Punchlist.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(function (res) {
+      if (res.ok) {
+        // Trigger download — swap URL to real hosted PDF once available
+        var a = document.createElement('a');
+        a.href = 'assets/downloads/site-protection-punchlist.pdf';
+        a.download = 'BIK-Solutions-Site-Protection-Punchlist.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
 
-    // Show success state
-    form.hidden = true;
-    const success = document.getElementById('download-success');
-    if (success) success.hidden = false;
+        form.hidden = true;
+        var success = document.getElementById('download-success');
+        if (success) success.hidden = false;
+      } else {
+        btn.textContent = 'Error — please try again';
+        btn.disabled = false;
+      }
+    })
+    .catch(function () {
+      btn.textContent = 'Error — please try again';
+      btn.disabled = false;
+    });
   });
 })();
