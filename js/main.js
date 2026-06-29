@@ -63,3 +63,30 @@
     });
   });
 })();
+
+/* --- Free download form --- */
+(function () {
+  const form = document.getElementById('free-download-form');
+  if (!form) return;
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const name = form.querySelector('#dl-name').value.trim();
+    const email = form.querySelector('#dl-email').value.trim();
+    if (!name || !email) return;
+
+    // Trigger download of the checklist PDF
+    // TODO: Replace href with real hosted PDF URL once uploaded to Gumroad or server
+    const a = document.createElement('a');
+    a.href = 'assets/downloads/site-protection-punchlist.pdf';
+    a.download = 'BIK-Solutions-Site-Protection-Punchlist.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Show success state
+    form.hidden = true;
+    const success = document.getElementById('download-success');
+    if (success) success.hidden = false;
+  });
+})();

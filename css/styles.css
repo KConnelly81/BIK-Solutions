@@ -1380,3 +1380,399 @@ ul {
     justify-content: center;
   }
 }
+
+/* ============================================
+   Resources Page
+   ============================================ */
+
+/* Feature card — free download */
+.resource-feature-card {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 64px;
+  align-items: start;
+  margin-top: 16px;
+}
+
+/* Document preview graphic */
+.resource-feature-graphic {
+  background: var(--charcoal);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 340px;
+}
+
+.doc-preview {
+  width: 100%;
+  background: white;
+  border-radius: 2px;
+  padding: 20px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+.doc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--coral);
+  padding-bottom: 10px;
+}
+
+.doc-logo-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.doc-b {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--charcoal);
+  background: var(--coral);
+  color: white;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+
+.doc-brand {
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--charcoal);
+}
+
+.doc-tag {
+  font-size: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  background: var(--cream);
+  color: var(--stone);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.doc-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.doc-line {
+  height: 8px;
+  background: var(--charcoal);
+  border-radius: 1px;
+  opacity: 0.15;
+}
+
+.doc-line--title { width: 80%; opacity: 0.25; height: 10px; }
+.doc-line--sub   { width: 55%; }
+
+.doc-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.doc-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.doc-box {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--stone);
+  border-radius: 1px;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+
+.doc-check-line {
+  height: 6px;
+  background: var(--charcoal);
+  border-radius: 1px;
+  opacity: 0.12;
+  width: 100%;
+}
+
+.doc-check-line--short { width: 60%; }
+.doc-check-line--med   { width: 75%; }
+
+.doc-footer-bar {
+  height: 4px;
+  background: var(--coral);
+  border-radius: 1px;
+  margin-top: 4px;
+  opacity: 0.6;
+}
+
+/* Resource badges */
+.resource-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--charcoal);
+  color: var(--cream);
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+
+.resource-badge--free {
+  background: var(--coral);
+}
+
+.resource-badge--bundle {
+  background: var(--dark-stone);
+}
+
+/* Includes list */
+.resource-includes {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0 28px;
+}
+
+.resource-includes li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.95rem;
+  color: var(--charcoal);
+}
+
+.resource-includes svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--coral);
+  stroke-width: 2.5;
+  fill: none;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.resource-includes--sm li { font-size: 0.88rem; }
+.resource-includes--sm { gap: 8px; margin: 16px 0 24px; }
+
+/* Download form */
+.resource-download-block {
+  background: var(--cream);
+  border: 1px solid rgba(28,28,26,0.1);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-top: 8px;
+}
+
+.download-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.download-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.download-form label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--dark-stone);
+  letter-spacing: 0.02em;
+}
+
+.download-form input {
+  padding: 10px 14px;
+  border: 1.5px solid rgba(28,28,26,0.2);
+  border-radius: var(--radius);
+  font-family: var(--font-stack);
+  font-size: 0.9rem;
+  color: var(--charcoal);
+  background: white;
+  transition: border-color var(--transition);
+}
+
+.download-form input:focus {
+  outline: none;
+  border-color: var(--coral);
+}
+
+.form-note {
+  font-size: 0.75rem;
+  color: var(--stone);
+  margin-bottom: 16px;
+}
+
+.download-success {
+  color: var(--coral);
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 12px 0 4px;
+}
+
+/* Paid products grid */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-top: 16px;
+}
+
+.product-card {
+  background: var(--charcoal);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+
+/* Product graphic areas */
+.product-card-graphic {
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-graphic-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.product-graphic-inner--defect { background: var(--dark-stone); width: 100%; height: 100%; justify-content: center; }
+.product-graphic-inner--scope  { background: #2a2825; width: 100%; height: 100%; justify-content: center; }
+.product-graphic-inner--bundle { background: var(--coral); width: 100%; height: 100%; justify-content: center; }
+
+.graphic-label {
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: var(--cream);
+  opacity: 0.9;
+}
+
+.graphic-label--sub {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  opacity: 0.5;
+}
+
+.product-card-body {
+  padding: 24px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.product-card-body h3 {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--cream);
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+
+.product-card-body p {
+  font-size: 0.88rem;
+  color: var(--stone);
+  line-height: 1.6;
+}
+
+.product-card-body .resource-includes li {
+  color: var(--cream);
+  opacity: 0.85;
+}
+
+.product-card-body .resource-includes svg {
+  stroke: var(--coral);
+}
+
+.product-card-body .btn {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+/* Trust strip */
+.trust-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  border-top: 1px solid rgba(28,28,26,0.1);
+  padding-top: 40px;
+  margin-top: 8px;
+}
+
+.trust-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 0.88rem;
+  color: var(--dark-stone);
+}
+
+.trust-item svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--coral);
+  stroke-width: 1.8;
+  fill: none;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.trust-item a {
+  color: var(--coral);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Resources responsive */
+@media (max-width: 900px) {
+  .resource-feature-card {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .resource-feature-graphic {
+    min-height: 260px;
+  }
+
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .trust-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .download-form .form-row {
+    grid-template-columns: 1fr;
+  }
+}
