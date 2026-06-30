@@ -29,7 +29,7 @@ Phone:        _______________________________________________
 BIK Solutions Pty Ltd
 ABN: _______________
 Contact: 0434 524 270
-Email: Steve.BIKSolutions@outlook.com
+Email: steviethums@hotmail.com
 
 ---
 
