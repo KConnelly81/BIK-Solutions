@@ -4,7 +4,7 @@
 
 /* --- Custom Properties --- */
 :root {
-  --charcoal:   #1C1C1A;
+  --charcoal:   #252320;
   --coral:      #D85A30;
   --cream:      #F5F0E8;
   --stone:      #888780;
@@ -358,7 +358,7 @@ ul {
 
 /* --- HERO --- */
 .hero {
-  background: var(--charcoal);
+  background: linear-gradient(160deg, #2e2b27 0%, var(--charcoal) 60%);
   padding-block: 120px 96px;
   position: relative;
   overflow: hidden;
