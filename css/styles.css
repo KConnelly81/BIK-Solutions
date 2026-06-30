@@ -63,11 +63,11 @@ ul {
 }
 
 .section {
-  padding-block: 96px;
+  padding-block: 64px;
 }
 
 .section--sm {
-  padding-block: 64px;
+  padding-block: 44px;
 }
 
 .text-coral   { color: var(--coral); }
@@ -117,7 +117,7 @@ ul {
   font-size: 1.1rem;
   color: var(--stone);
   max-width: 600px;
-  margin-bottom: 48px;
+  margin-bottom: 32px;
 }
 
 /* --- Buttons --- */
@@ -359,7 +359,7 @@ ul {
 /* --- HERO --- */
 .hero {
   background: linear-gradient(160deg, #2e2b27 0%, var(--charcoal) 60%);
-  padding-block: 120px 96px;
+  padding-block: 72px 60px;
   position: relative;
   overflow: hidden;
 }
@@ -445,7 +445,7 @@ ul {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  margin-bottom: 64px;
+  margin-bottom: 40px;
 }
 
 .hero-personality {
@@ -464,13 +464,13 @@ ul {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2px;
-  margin-top: 48px;
+  margin-top: 32px;
 }
 
 .audience-card {
   background: var(--cream);
   border-top: 3px solid var(--coral);
-  padding: 36px 28px;
+  padding: 28px 24px;
   position: relative;
   transition: background var(--transition), transform 0.25s ease, box-shadow 0.25s ease;
 }
@@ -521,12 +521,12 @@ ul {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 2px;
-  margin-top: 48px;
+  margin-top: 32px;
 }
 
 .service-tile {
   background: var(--dark-stone);
-  padding: 36px 28px;
+  padding: 28px 24px;
   transition: background var(--transition), transform 0.25s ease, box-shadow 0.25s ease;
 }
 
@@ -566,11 +566,11 @@ ul {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2px;
-  margin-top: 48px;
+  margin-top: 32px;
 }
 
 .stat-block {
-  padding: 40px 32px;
+  padding: 28px 28px;
   border-left: 3px solid var(--coral);
   background: #ece7de;
 }
@@ -600,7 +600,7 @@ ul {
 /* --- CTA STRIP --- */
 .cta-strip {
   background: var(--coral);
-  padding-block: 80px;
+  padding-block: 56px;
   text-align: center;
 }
 
