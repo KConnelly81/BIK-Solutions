@@ -80,6 +80,53 @@
   });
 })();
 
+/* --- Scroll-in animations --- */
+(function () {
+  var els = document.querySelectorAll('.animate-on-scroll');
+  if (!els.length || !('IntersectionObserver' in window)) {
+    els.forEach(function (el) { el.classList.add('is-visible'); });
+    return;
+  }
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        obs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  els.forEach(function (el) { obs.observe(el); });
+})();
+
+/* --- Stat counter animation --- */
+(function () {
+  var stats = document.querySelectorAll('[data-count-to]');
+  if (!stats.length || !('IntersectionObserver' in window)) return;
+
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) return;
+      var el = entry.target;
+      var target = parseInt(el.getAttribute('data-count-to'), 10);
+      var suffix = el.getAttribute('data-suffix') || '';
+      var duration = 900;
+      var start = performance.now();
+      obs.unobserve(el);
+
+      function tick(now) {
+        var elapsed = now - start;
+        var progress = Math.min(elapsed / duration, 1);
+        var ease = 1 - Math.pow(1 - progress, 3);
+        el.textContent = Math.round(ease * target) + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }, { threshold: 0.5 });
+
+  stats.forEach(function (el) { obs.observe(el); });
+})();
+
 /* --- Free download form — Formspree AJAX + trigger download --- */
 (function () {
   const form = document.getElementById('free-download-form');
