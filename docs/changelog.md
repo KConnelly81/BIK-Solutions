@@ -20,11 +20,20 @@
 ## [Unreleased] — In Progress
 
 ### Added
-- /docs folder with 14 documentation files covering product, business, design, and technical standards
-- Product strategy document (62 tools, 4-phase roadmap) — HTML Artifact
-- Business Toolkit nav dropdown (in progress)
-- 6 new toolkit pages (in progress): toolkit.html, ai-documents.html, templates.html, construction-resources.html, productivity.html, coming-soon.html
-- SaaS component CSS (in progress)
+- **AI Document Engine** — Reusable modular architecture powering all document generators
+  - `js/toolkit/engine.js` — FormEngine class (dynamic form rendering, validation, autosave)
+  - `js/toolkit/renderer.js` — DocumentRenderer class (async render, AI integration point)
+  - `js/toolkit/exporter.js` — ExportManager class (print-to-PDF, clipboard copy)
+  - `css/toolkit-app.css` — App shell, split-panel layout, document styles, print CSS
+- **Variation Notice Generator** (first AI Document Engine implementation)
+  - `js/tools/variation-notice/config.js` — 14-field schema + generateDocument() template
+  - `js/tools/variation-notice/index.js` — Tool wiring (FormEngine + Renderer + Exporter)
+  - `variation-generator.html` — Full split-panel app page
+  - Features: autosave drafts, progress bar, live preview after first generation, print/PDF, clipboard copy, mobile tabs, draft restore banner, variation number counter
+- /docs folder with 22 documentation files covering product, business, design, and technical standards
+- Business Toolkit nav dropdown across all pages
+- 6 new toolkit pages: toolkit.html, ai-documents.html, templates.html, construction-resources.html, productivity.html, coming-soon.html
+- SaaS component CSS (styles.css additions)
 
 ---
 

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Generate a professional variation notice for your construction project. Fill in the form and download a signed-ready PDF in minutes." />
+  <title>Variation Notice Generator — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/toolkit-app.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ====== APP HEADER ====== -->
+  <header class="app-header">
+    <a href="index.html" class="app-header-logo" aria-label="BIK Solutions home">
+      <div class="logo-mark" aria-hidden="true"><span>B</span></div>
+      <div class="app-title-group">
+        <span class="tool-name">Variation Notice</span>
+        <a href="ai-documents.html" class="tool-back">← Back to AI Documents</a>
+      </div>
+    </a>
+
+    <div class="app-header-spacer"></div>
+
+    <div class="autosave-indicator" aria-live="polite">
+      <div class="autosave-dot" id="autosave-dot" aria-hidden="true"></div>
+      <span id="autosave-text">Autosave on</span>
+    </div>
+
+    <div class="app-header-actions">
+      <button class="app-btn app-btn--ghost" id="btn-clear" title="Clear form">
+        <span>Clear</span>
+      </button>
+      <button class="app-btn app-btn--ghost" id="btn-copy" disabled title="Copy document text">
+        <span>Copy</span>
+      </button>
+      <button class="app-btn app-btn--ghost" id="btn-print" disabled title="Print or save as PDF">
+        <span>Save PDF</span>
+      </button>
+      <button class="app-btn app-btn--coral" id="btn-generate">
+        Generate document
+      </button>
+    </div>
+  </header>
+
+  <!-- ====== TOOLBAR ====== -->
+  <div class="app-toolbar" role="status" aria-label="Form completion status">
+    <div class="progress-wrap">
+      <span class="progress-label" id="progress-label" aria-live="polite">0% complete</span>
+      <div class="progress-bar-track" aria-hidden="true">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <div class="tab-bar" role="group" aria-label="Switch between form and preview">
+      <button class="tab-btn active" id="tab-form" aria-pressed="true">Form</button>
+      <button class="tab-btn" id="tab-preview" aria-pressed="false">Preview</button>
+    </div>
+  </div>
+
+  <!-- ====== DRAFT BANNER ====== -->
+  <div class="draft-banner" id="draft-banner" hidden aria-live="polite">
+    <span>You have an unsaved draft. Do you want to restore it?</span>
+    <div class="draft-banner-actions">
+      <button class="draft-banner-btn draft-banner-btn--restore" id="btn-restore-draft">Restore draft</button>
+      <button class="draft-banner-btn draft-banner-btn--discard" id="btn-discard-draft">Discard</button>
+    </div>
+  </div>
+
+  <!-- ====== WORKSPACE ====== -->
+  <div class="workspace">
+
+    <!-- Form panel -->
+    <div class="form-panel" id="form-panel" role="form" aria-label="Variation notice form">
+      <div class="form-panel-inner">
+        <div id="form-container">
+          <!-- FormEngine renders here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview panel -->
+    <div class="preview-panel" id="preview-panel-wrap" aria-label="Document preview" aria-live="polite">
+      <div class="preview-panel-header">
+        <span class="preview-label">Document preview</span>
+      </div>
+
+      <!-- Empty state -->
+      <div class="preview-empty" id="preview-empty" role="status">
+        <div class="preview-empty-icon" aria-hidden="true">📄</div>
+        <p>Fill in the form and click <strong>Generate document</strong> to preview your Variation Notice here.</p>
+      </div>
+
+      <!-- Loading -->
+      <div class="preview-loading" id="preview-loading" role="status" aria-label="Generating document">
+        <div class="loading-spinner" aria-hidden="true"></div>
+      </div>
+
+      <!-- DocumentRenderer inserts .doc-page here -->
+      <div id="preview-panel"></div>
+    </div>
+
+  </div><!-- /.workspace -->
+
+</div><!-- /.app-shell -->
+
+<script type="module">
+  import { init } from './js/tools/variation-notice/index.js';
+  init();
+</script>
+
+</body>
+</html>

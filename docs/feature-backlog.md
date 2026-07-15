@@ -101,22 +101,48 @@ Each item includes: Problem → User Story → Requirements → Priority → Sta
 
 ### BT-008: SaaS Component CSS
 **Problem:** styles.css does not include components needed for toolkit pages.
-**Requirements:**
-- Dropdown nav styles
-- Tool card styles (with Free/Pro/Coming Soon badges)
-- Category filter pill styles
-- Document card styles
-- Template card styles
-- Before/after table styles
-- Roadmap card styles
-- Waitlist form styles
-- `.bg-white`, `.bg-light` utility classes
 **Priority:** P0
-**Status:** Planned
+**Status:** Done
 
 ---
 
-## P1 — Next Sprint
+## P1 — Current Sprint (Phase 2 - AI Document Engine)
+
+### BT-012: AI Document Engine — Core Architecture
+**Problem:** Building document generators tool-by-tool produces duplicated code and prevents reuse.
+**User story:** As a developer, I want a reusable engine so every new tool takes hours, not days.
+**Components built:**
+- `js/toolkit/engine.js` — FormEngine (form rendering, validation, autosave, draft management)
+- `js/toolkit/renderer.js` — DocumentRenderer (async generation, AI integration point)
+- `js/toolkit/exporter.js` — ExportManager (print/PDF, clipboard)
+- `css/toolkit-app.css` — App shell, split panel, document page styles, print CSS
+**Priority:** P1
+**Status:** Done
+
+### BT-013: Variation Notice Generator (Engine Implementation #1)
+**Problem:** Builders lack a fast way to create professional, signed variation notices.
+**User story:** As a builder, I want to generate a signed-ready variation notice in under 5 minutes.
+**Implemented:**
+- 14-field form across 5 sections (Project, Details, Resources, Cost, Notes)
+- Auto-incrementing variation number (localStorage counter)
+- Cost + GST calculation in document output
+- Extension of time section (conditional)
+- Client sign-off block with signature lines
+- Autosave drafts to localStorage (1.2s debounce)
+- Draft restore banner on page load
+- Progress bar (required field completion %)
+- Live preview re-render after first generation
+- Print-to-PDF (native browser, @media print)
+- Copy document text to clipboard
+- Mobile tab switching (Form / Preview)
+- Toast notifications
+**Files:** `variation-generator.html`, `js/tools/variation-notice/config.js`, `js/tools/variation-notice/index.js`
+**Priority:** P1
+**Status:** Done
+
+---
+
+## P2 — Next Sprint
 
 ### BT-009: Email Waitlist Integration
 **Problem:** Waitlist form needs to capture and store emails.
@@ -172,6 +198,17 @@ Each item includes: Problem → User Story → Requirements → Priority → Sta
 
 ## Done
 
+- [x] BT-001: Business Toolkit nav dropdown across all 7 pages
+- [x] BT-002: toolkit.html
+- [x] BT-003: ai-documents.html
+- [x] BT-004: templates.html
+- [x] BT-005: construction-resources.html
+- [x] BT-006: productivity.html
+- [x] BT-007: coming-soon.html (with Formspree waitlist)
+- [x] BT-008: SaaS component CSS
+- [x] BT-012: AI Document Engine (FormEngine, DocumentRenderer, ExportManager)
+- [x] BT-013: Variation Notice Generator (first engine implementation)
+- [x] /docs folder — 22 documentation files
 - [x] Homepage hero redesign
 - [x] Stories and audience card sections merged into hero block
 - [x] Em-dashes removed site-wide
