@@ -305,6 +305,9 @@ export class ToolController {
       }
     }
 
+    // Set initial tab state (important on mobile to hide preview panel on load)
+    switchTab('form');
+
     this._track('tool_opened');
   }
 

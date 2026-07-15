@@ -1251,6 +1251,25 @@
     grid-template-columns: 1fr 1fr;
   }
 
+  /* Preserve badge and severity colours when printing */
+  .doc-severity-badge,
+  .doc-accent-bar,
+  .doc-section-heading,
+  .doc-footer {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Prevent awkward line-item row breaks */
+  .doc-line-item-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Ensure the beta banner doesn't print */
+  .beta-banner,
+  #bik-trust-footer { display: none !important; }
+
   @page {
     margin: 18mm 16mm;
     size: A4 portrait;
