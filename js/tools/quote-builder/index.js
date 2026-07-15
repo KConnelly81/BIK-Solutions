@@ -22,7 +22,7 @@ export function init() {
         clientName:  state.clientName  || '',
         projectName: state.projectName || '',
         reference:   `Q-${state.quoteNumber || '???'}`,
-        extraLines:  [`Quote total: ${extra?.total != null ? '$' + (extra.total / 100).toFixed(2) : '—'}`]
+        extraLines:  [`Quote total: ${extra?.total != null ? '$' + Number(extra.total).toFixed(2) : '—'}`]
       };
     },
 
