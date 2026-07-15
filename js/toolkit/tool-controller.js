@@ -170,6 +170,7 @@ export class ToolController {
     });
 
     // ── Generate ──────────────────────────────────────────────
+    const generateLabel = btnGenerate?.textContent || 'Generate document';
     const doGenerate = async () => {
       if (!this._engine.validate()) {
         this._toast('Please fill in the required fields (marked *).');
@@ -200,7 +201,7 @@ export class ToolController {
         this._toast('Document generation failed — please try again.');
         console.error('[BIK] Generation error:', err);
       } finally {
-        if (btnGenerate) { btnGenerate.disabled = false; btnGenerate.textContent = 'Generate document'; }
+        if (btnGenerate) { btnGenerate.disabled = false; btnGenerate.textContent = generateLabel; }
       }
     };
 
@@ -391,10 +392,10 @@ export class ToolController {
         <div class="history-panel-inner">
           <div class="history-panel-header">
             <h2 class="history-panel-title">Recent Documents</h2>
-            <button type="button" class="history-close-btn" aria-label="Close history panel">✕</button>
+            <button type="button" class="history-panel-close" aria-label="Close history panel">✕</button>
           </div>
-          <div class="history-panel-search">
-            <input type="search" id="history-search" class="form-input" placeholder="Search documents…" />
+          <div class="history-search-wrap">
+            <input type="search" id="history-search" class="history-search" placeholder="Search documents…" />
           </div>
           <div class="history-list" id="history-list" aria-live="polite"></div>
         </div>`;
@@ -405,10 +406,10 @@ export class ToolController {
       overlay.className = 'history-overlay';
       document.body.appendChild(overlay);
 
-      panel.querySelector('.history-close-btn').addEventListener('click', closePanel);
+      panel.querySelector('.history-panel-close').addEventListener('click', closePanel);
       overlay.addEventListener('click', closePanel);
       document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && !panel.hidden) closePanel();
+        if (e.key === 'Escape' && panel.classList.contains('is-open')) closePanel();
       });
 
       panel.querySelector('#history-search').addEventListener('input', e => {
@@ -488,13 +489,13 @@ export class ToolController {
     };
 
     function closePanel() {
-      panel.hidden = true;
-      document.getElementById('history-overlay').hidden = true;
+      panel.classList.remove('is-open');
+      document.getElementById('history-overlay').classList.remove('is-open');
       document.body.style.overflow = '';
     }
 
-    panel.hidden = false;
-    document.getElementById('history-overlay').hidden = false;
+    panel.classList.add('is-open');
+    document.getElementById('history-overlay').classList.add('is-open');
     document.body.style.overflow = 'hidden';
     document.getElementById('history-search').value = '';
     renderHistory();
