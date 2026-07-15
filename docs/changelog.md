@@ -31,6 +31,13 @@
   - `✦ AI Writer` button in app header for key management access at any time
   - Architecture designed for reuse: same `AIWriter` + `injectAIAssist()` pattern applies to Quotes, Defect Reports, Site Diaries, Emails, etc.
 - **Mobile migration plan** (`docs/mobile-migration-plan.md`) — assessment of current architecture against mobile app requirements; component-by-component reusability analysis; fastest path to Android/iOS with maximum code reuse
+- **Integration Layer** (SPEC-002) — provider-based abstraction for third-party accounting and field service platforms; no live API connections yet
+  - Core infrastructure: typed error hierarchy, structured logger with ring buffer, HTTP client with retry/timeout, OAuth2 PKCE auth manager, provider registry
+  - Interface DTOs: Contact, Invoice (cents arithmetic, GST helpers), Quote, Project, Attachment, BIKDocument — all with `validateXxx()` and AU-specific helpers
+  - Provider stubs: Xero (5 capabilities including attachments), MYOB, QuickBooks, Buildxact, ServiceM8, SimPRO, AroFlo — each with `IMPLEMENTATION_POINT` comments showing exact API endpoints and body shapes
+  - Service layer: `createCustomer()`, `createInvoice()`, `createQuote()`, `createProject()`, `attachDocument()` — business components import these, never providers directly
+  - Config: `initIntegrations()` / `configureProvider()` / `setActiveProvider()` with localStorage persistence (Phase 2: Supabase swap)
+  - Architecture documented in `docs/integration-architecture.md` (SPEC-002)
 
 - **BIK Document Intelligence Engine** (SPEC-001) — production-quality reusable framework
   - `js/toolkit/calculator.js` — Pure GST/currency/date functions (8 tests, all passing)

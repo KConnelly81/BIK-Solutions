@@ -93,6 +93,43 @@ css/
 - Print-to-PDF via native browser dialog (see ADR-007)
 - XSS protection: all user input is HTML-entity-escaped before document rendering
 
+### AI Professional Writer
+
+Added in Phase 1 (2026-07-15). Reusable writing assistant for textarea fields.
+
+```
+js/toolkit/
+  ai-writer.js    AIWriter class — Claude API, two modes, localStorage key storage
+```
+
+- Two modes: `'professional'` (plain language) and `'contract-protection'` (liability-aware)
+- API key stored in `bik-ai-key` (localStorage); never sent to BIK servers
+- `AI_WRITING_ENGINE_INTEGRATION_POINT` — swap `_callAPI()` for backend proxy in Phase 2
+- Model: `claude-haiku-4-5-20251001`; max 1024 tokens per rewrite
+
+### Integration Layer
+
+Added in Phase 1 (2026-07-15). Provider-based abstraction for third-party platform integrations. No live API connections yet — architecture and stubs only.
+
+See **[integration-architecture.md](integration-architecture.md)** (SPEC-002) for full details.
+
+```
+js/integrations/
+  index.js              Public entry point
+  core/                 errors, logger, http-client, auth-manager, provider-registry
+  interfaces/           Contact, Invoice, Quote, Project, Attachment, Document DTOs
+  providers/            Xero, MYOB, QuickBooks, Buildxact, ServiceM8, SimPRO, AroFlo stubs
+  services/             contact-, invoice-, quote-, project-, attachment-service
+  config/               integration-config (localStorage Phase 1 → Supabase Phase 2)
+```
+
+**Key design decisions:**
+- Business components never import providers directly — always import from `integrations/index.js`
+- All amounts stored as integer cents (no float arithmetic)
+- Typed error hierarchy with `BIKIntegrationError` base
+- `XERO_IMPLEMENTATION_POINT` / `MYOB_IMPLEMENTATION_POINT` etc. mark every stub method
+- Token store uses `StorageAdapter` interface for Phase 2 Supabase swap
+
 ### Brand Design Tokens
 ```css
 --charcoal:   #252320   /* Primary dark (nav, hero, dark sections) */
