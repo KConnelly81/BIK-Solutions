@@ -84,14 +84,15 @@ class DocumentHistoryStore {
 
   /**
    * Save a new document to history.
-   * @param {{ toolId, title, reference, formData, extraData? }} doc
+   * @param {{ toolId, title, reference, formData, extraData?, projectId? }} doc
    * @returns {string} the new document id
    */
-  save({ toolId, title, reference, formData, extraData = null }) {
+  save({ toolId, title, reference, formData, extraData = null, projectId = null }) {
     const id  = this._uuid();
     const now = new Date().toISOString();
     const record = { id, toolId, title, reference, createdAt: now, updatedAt: now, formData };
-    if (extraData) record.extraData = extraData;
+    if (extraData)  record.extraData  = extraData;
+    if (projectId)  record.projectId  = projectId;
 
     const records = this._load();
     records.unshift(record); // newest first
@@ -102,17 +103,18 @@ class DocumentHistoryStore {
   /**
    * Update an existing document (e.g. when the user re-generates).
    * @param {string} id
-   * @param {{ title?, reference?, formData?, extraData? }} updates
+   * @param {{ title?, reference?, formData?, extraData?, projectId? }} updates
    */
   update(id, updates) {
     const records = this._load();
     const idx = records.findIndex(r => r.id === id);
     if (idx === -1) return false;
     const rec = records[idx];
-    if (updates.title)     rec.title     = updates.title;
-    if (updates.reference) rec.reference = updates.reference;
-    if (updates.formData)  rec.formData  = updates.formData;
+    if (updates.title)                  rec.title     = updates.title;
+    if (updates.reference)              rec.reference = updates.reference;
+    if (updates.formData)               rec.formData  = updates.formData;
     if (updates.extraData !== undefined) rec.extraData = updates.extraData;
+    if (updates.projectId !== undefined) rec.projectId = updates.projectId || null;
     rec.updatedAt = new Date().toISOString();
     // Move to top
     records.splice(idx, 1);
@@ -132,6 +134,16 @@ class DocumentHistoryStore {
     const records = this._load();
     const filtered = toolId ? records.filter(r => r.toolId === toolId) : records;
     return filtered.slice(0, limit);
+  }
+
+  /**
+   * List all documents linked to a project, newest first.
+   * @param {string} projectId
+   * @param {number} [limit=50]
+   * @returns {DocRecord[]}
+   */
+  listByProject(projectId, limit = 50) {
+    return this._load().filter(r => r.projectId === projectId).slice(0, limit);
   }
 
   /**

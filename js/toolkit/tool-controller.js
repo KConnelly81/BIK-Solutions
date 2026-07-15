@@ -22,6 +22,8 @@ import { createTracker }     from './analytics.js';
 import { documentHistory }   from './document-history.js';
 import { openEmail, generateEmailBody, generateEmailSubject } from './email.js';
 import { ApprovalManager } from './approval-ui.js';
+import { ProjectUI }      from './project-ui.js';
+import { projectStore }   from './project-store.js';
 
 export class ToolController {
 
@@ -55,6 +57,7 @@ export class ToolController {
     this._track       = createTracker(config.toolId);
     this._currentDocId = null; // history record for current session
     this._approval    = null;  // ApprovalManager (only when config.approvalEnabled)
+    this._projectUI   = null;  // ProjectUI — always mounted
   }
 
   /** Mount the tool. Expects standard DOM ids to be present. */
@@ -103,6 +106,14 @@ export class ToolController {
     // ── Mount form ────────────────────────────────────────────
     this._engine.mount(formContainer);
 
+    // ── Project context ───────────────────────────────────────
+    this._projectUI = new ProjectUI({
+      engine:  this._engine,
+      toastFn: msg => this._toast(msg)
+    });
+    this._projectUI.mountBar(formContainer);
+    this._projectUI.readURLParam();
+
     // ── After-mount hook (e.g. inject custom sections) ────────
     const actions = {
       engine:    this._engine,
@@ -140,6 +151,10 @@ export class ToolController {
         }
         if (cfg.onRestoreExtra && rec.extraData) cfg.onRestoreExtra(rec.extraData);
         this._currentDocId = rec.id;
+        if (rec.projectId && this._projectUI) {
+          this._projectUI._projectId = rec.projectId;
+          this._projectUI._renderBar();
+        }
         history.replaceState(null, '', location.pathname);
         this._approval?.refresh();
       }
@@ -201,14 +216,16 @@ export class ToolController {
         switchTab('preview');
         this._track('document_generated');
 
-        // Save to history
-        const title = cfg.getDocTitle?.(state, extra) || `${cfg.toolName} — ${state.projectName || state.clientName || 'Untitled'}`;
-        const ref   = cfg.getDocRef?.(state) || '';
+        // Save to history (with project association if set)
+        const title     = cfg.getDocTitle?.(state, extra) || `${cfg.toolName} — ${state.projectName || state.clientName || 'Untitled'}`;
+        const ref       = cfg.getDocRef?.(state) || '';
+        const projectId = this._projectUI?.projectId || null;
         if (this._currentDocId) {
-          documentHistory.update(this._currentDocId, { title, reference: ref, formData: state, extraData: extra });
+          documentHistory.update(this._currentDocId, { title, reference: ref, formData: state, extraData: extra, projectId });
         } else {
-          this._currentDocId = documentHistory.save({ toolId: cfg.toolId, title, reference: ref, formData: state, extraData: extra });
+          this._currentDocId = documentHistory.save({ toolId: cfg.toolId, title, reference: ref, formData: state, extraData: extra, projectId });
         }
+        if (projectId) projectStore.touch(projectId);
         this._approval?.refresh();
 
       } catch (err) {
@@ -479,6 +496,10 @@ export class ToolController {
             this._cfg.onRestoreExtra(rec.extraData);
           }
           this._currentDocId = rec.id;
+          if (this._projectUI) {
+            this._projectUI._projectId = rec.projectId || null;
+            this._projectUI._renderBar();
+          }
           this._approval?.refresh();
           closePanel();
           this._toast(`"${rec.title}" loaded.`);
