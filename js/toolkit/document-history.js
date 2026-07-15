@@ -206,6 +206,52 @@ class DocumentHistoryStore {
     this.update(id, { title: newTitle.trim() });
   }
 
+  /**
+   * Update the approval sub-object on a document record.
+   * Merges approvalData into existing record.approval.
+   * V1+V2 compatible — V2 portal fields default to null.
+   * @param {string} id
+   * @param {Object} approvalData  — partial approval fields to merge
+   * @returns {boolean}
+   */
+  updateApproval(id, approvalData) {
+    const records = this._load();
+    const idx = records.findIndex(r => r.id === id);
+    if (idx === -1) return false;
+    const rec = records[idx];
+    rec.approval = {
+      // V1 defaults on first write
+      status:              'draft',
+      statusUpdatedAt:     null,
+      sentAt:              null,
+      sentTo:              null,
+      sentBy:              null,
+      approvedAt:          null,
+      rejectedAt:          null,
+      notes:               null,
+      // V2 portal fields (null in V1)
+      portalToken:         null,
+      portalUrl:           null,
+      portalRequestedAt:   null,
+      portalRespondedAt:   null,
+      clientIp:            null,
+      clientUserAgent:     null,
+      clientSignature:     null,
+      pdfHash:             null,
+      pdfLockedAt:         null,
+      auditLog:            [],
+      xeroInvoiceId:       null,
+      // Merge existing + incoming
+      ...(rec.approval || {}),
+      ...approvalData
+    };
+    rec.updatedAt = new Date().toISOString();
+    records.splice(idx, 1);
+    records.unshift(rec);
+    this._save(records);
+    return true;
+  }
+
   /** Clear all history for a specific tool (or all if no toolId). */
   clear(toolId) {
     if (!toolId) {

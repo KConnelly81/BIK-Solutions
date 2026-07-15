@@ -353,12 +353,13 @@ export const SCHEMA = [
 // ── Tool configuration for ToolController ────────────────────
 
 export const DOC_CONFIG = {
-  toolId:      'variation-notice',
-  toolName:    'Variation Notice',
-  autosaveKey: 'bik-variation-draft',
-  docPrefix:   'VN',
-  aiFields:    ['descriptionOfWork', 'reasonForVariation', 'exclusionsAssumptions'],
-  printTitle:  'Variation Notice',
+  toolId:          'variation-notice',
+  toolName:        'Variation Notice',
+  autosaveKey:     'bik-variation-draft',
+  docPrefix:       'VN',
+  aiFields:        ['descriptionOfWork', 'reasonForVariation', 'exclusionsAssumptions'],
+  printTitle:      'Variation Notice',
+  approvalEnabled: true,
 
   getDocTitle(state) {
     return `Variation Notice VN-${state.variationNumber || '??'} — ${state.projectName || state.clientName || 'Untitled'}`;

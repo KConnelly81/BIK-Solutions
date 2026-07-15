@@ -21,6 +21,7 @@ import { injectAIAssist, showAIKeyModal } from './ai-writer-ui.js';
 import { createTracker }     from './analytics.js';
 import { documentHistory }   from './document-history.js';
 import { openEmail, generateEmailBody, generateEmailSubject } from './email.js';
+import { ApprovalManager } from './approval-ui.js';
 
 export class ToolController {
 
@@ -53,6 +54,7 @@ export class ToolController {
     this._writer      = new AIWriter();
     this._track       = createTracker(config.toolId);
     this._currentDocId = null; // history record for current session
+    this._approval    = null;  // ApprovalManager (only when config.approvalEnabled)
   }
 
   /** Mount the tool. Expects standard DOM ids to be present. */
@@ -111,6 +113,16 @@ export class ToolController {
     };
     cfg.onAfterMount?.(actions);
 
+    // ── Approval workflow (opt-in per tool) ───────────────────
+    if (cfg.approvalEnabled) {
+      this._approval = new ApprovalManager({
+        getDocId: () => this._currentDocId,
+        getState: () => this._engine.getState(),
+        toastFn:  msg => this._toast(msg)
+      });
+      this._approval.mountBar();
+    }
+
     // ── AI assist ─────────────────────────────────────────────
     for (const fieldId of (cfg.aiFields || [])) {
       injectAIAssist(fieldId, this._writer, this._engine, this._track, msg => this._toast(msg));
@@ -129,6 +141,7 @@ export class ToolController {
         if (cfg.onRestoreExtra && rec.extraData) cfg.onRestoreExtra(rec.extraData);
         this._currentDocId = rec.id;
         history.replaceState(null, '', location.pathname);
+        this._approval?.refresh();
       }
     }
 
@@ -196,6 +209,7 @@ export class ToolController {
         } else {
           this._currentDocId = documentHistory.save({ toolId: cfg.toolId, title, reference: ref, formData: state, extraData: extra });
         }
+        this._approval?.refresh();
 
       } catch (err) {
         this._toast('Document generation failed — please try again.');
@@ -465,6 +479,7 @@ export class ToolController {
             this._cfg.onRestoreExtra(rec.extraData);
           }
           this._currentDocId = rec.id;
+          this._approval?.refresh();
           closePanel();
           this._toast(`"${rec.title}" loaded.`);
         });

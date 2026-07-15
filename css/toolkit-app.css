@@ -1266,9 +1266,11 @@
     break-inside: avoid;
   }
 
-  /* Ensure the beta banner doesn't print */
+  /* Ensure the beta banner and approval bar don't print */
   .beta-banner,
-  #bik-trust-footer { display: none !important; }
+  #bik-trust-footer,
+  #approval-bar,
+  .approval-bar { display: none !important; }
 
   @page {
     margin: 18mm 16mm;
