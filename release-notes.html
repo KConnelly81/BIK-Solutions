@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BIK Business Toolkit release notes — what's new, what's changed, and known issues." />
+  <title>Release Notes — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .legal-hero { background: var(--charcoal, #252320); color: #fff; padding: 56px 0 40px; }
+    .legal-hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 8px; }
+    .legal-hero-meta { color: #9c9893; font-size: 0.82rem; }
+    .rn-body { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+    .release { margin-bottom: 56px; }
+    .release-header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+    .release-version { font-size: 1.4rem; font-weight: 800; color: #252320; }
+    .release-badge { background: #D85A30; color: #fff; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 4px; }
+    .release-date { font-size: 0.82rem; color: #888; }
+    .release-intro { font-size: 0.88rem; line-height: 1.7; color: #444; margin-bottom: 20px; }
+    .change-group { margin-bottom: 20px; }
+    .change-group-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #D85A30; margin-bottom: 10px; }
+    .change-list { padding-left: 0; list-style: none; }
+    .change-item { display: flex; gap: 10px; font-size: 0.86rem; line-height: 1.6; color: #444; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #f0ede8; }
+    .change-item:last-child { border-bottom: none; }
+    .change-dot { color: #D85A30; flex-shrink: 0; margin-top: 2px; }
+    .known-issues { background: #fff8f5; border: 1px solid #f5d5c8; border-radius: 8px; padding: 18px 20px; margin-top: 24px; }
+    .known-issues-title { font-size: 0.82rem; font-weight: 700; color: #D85A30; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+    .known-issues li { font-size: 0.84rem; line-height: 1.6; color: #555; margin-bottom: 6px; }
+    .rn-divider { border: none; border-top: 2px solid #e8e4de; margin: 48px 0; }
+  </style>
+</head>
+<body>
+
+  <nav class="site-nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="index.html" class="logo" aria-label="BIK Solutions - home">
+        <div class="logo-mark" aria-hidden="true"><span>B</span></div>
+        <div class="logo-text">
+          <span class="logo-name">IK SOLUTIONS</span>
+          <span class="logo-tagline">Beyond Industry Knowledge</span>
+        </div>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="services.html">Services</a></li>
+        <li><a href="builders.html">Builders / Deconstruction</a></li>
+        <li><a href="about.html">About</a></li>
+        <li>
+          <a href="toolkit.html" aria-haspopup="true">Business Toolkit <span class="nav-dropdown-arrow">&#9660;</span></a>
+          <ul class="nav-dropdown" role="list">
+            <li><a href="toolkit.html">Toolkit Overview</a></li>
+            <li><a href="ai-documents.html">AI Documents</a></li>
+            <li><a href="dashboard.html">Open Toolkit</a></li>
+          </ul>
+        </li>
+        <li><a href="resources.html">Resources</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <a href="dashboard.html" class="btn btn--coral nav-cta">Open Toolkit</a>
+      <button class="nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+  <nav id="nav-drawer" class="nav-drawer" aria-label="Mobile navigation">
+    <a href="services.html">Services</a>
+    <a href="builders.html">Builders / Deconstruction</a>
+    <a href="about.html">About</a>
+    <a href="dashboard.html">Open Toolkit</a>
+    <a href="resources.html">Resources</a>
+    <a href="contact.html">Contact</a>
+    <a href="dashboard.html" class="btn btn--coral">Open Toolkit</a>
+  </nav>
+
+  <section class="legal-hero">
+    <div class="container">
+      <h1>Release Notes</h1>
+      <p class="legal-hero-meta">BIK Business Toolkit</p>
+    </div>
+  </section>
+
+  <div class="rn-body">
+
+    <div class="release">
+      <div class="release-header">
+        <span class="release-version">Version 0.9</span>
+        <span class="release-badge">Beta</span>
+        <span class="release-date">15 July 2026 — First public beta</span>
+      </div>
+
+      <p class="release-intro">
+        The first beta release of BIK Business Toolkit. Five professional document tools, AI writing assistance, and a complete document management workflow — built specifically for Australian builders and tradies. This release is ready for real-world use on Variation Notices. The remaining four tools are available and functional, with further polish planned before full launch.
+      </p>
+
+      <div class="change-group">
+        <div class="change-group-title">New in this release</div>
+        <ul class="change-list">
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Variation Notice Generator</strong> — complete, production-quality tool. Auto-numbered VN references, cost and time extension calculations with GST, AI writing modes, PDF export, email workflow, draft autosave, and document history.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Quote Builder</strong> — dynamic line items pricing table, GST calculations, inclusions/exclusions, validity period, payment schedule, and AI writing assistance.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Scope of Works</strong> — comprehensive scope documentation with site details, materials, inclusions, exclusions, authority requirements, and contract conditions.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Site Diary</strong> — daily site records including weather, workforce, works completed, deliveries, incidents, inspections, and sub-contractor notes.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Defect Report</strong> — structured defect identification with severity levels, location, access requirements, trade responsible, and rectification instructions.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>AI Writer</strong> — six writing modes: Rewrite Professionally, Strengthen for Contract, Spell &amp; Grammar, Simplify for Client, Formal Version, Plain English. Uses your own Anthropic API key.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Builder Profile</strong> — set once, auto-fills across all documents. Business name, ABN, licence, phone, email, address, and authorised representative.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Document History</strong> — all generated documents saved automatically with full load/duplicate/delete functionality.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Draft Autosave</strong> — forms autosave every 1.2 seconds. Drafts survive browser refreshes and can be restored on next visit.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Beta feedback widget</strong> — leave a bug report, idea, feature request, or rating from the banner on every page.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Trust documents</strong> — Privacy Policy, Terms of Use, AI Usage Notice, Support, and Release Notes now published.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="change-group">
+        <div class="change-group-title">Known issues in 0.9 Beta</div>
+        <div class="known-issues">
+          <div class="known-issues-title">Known issues</div>
+          <ul>
+            <li>PDF print quality may vary between browsers. Chrome and Edge produce the best results. On Safari, use File → Print for best layout.</li>
+            <li>Quote Builder line items may occasionally wrap awkwardly across PDF page breaks on very long quotes. Workaround: use Edit document mode to adjust spacing before printing.</li>
+            <li>Defect severity badge colours may not print on some printers with colour printing disabled. Check print preview before sending.</li>
+            <li>Document history is limited to this browser and device. There is no cloud sync in Version 0.9.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="change-group">
+        <div class="change-group-title">Coming in Version 1.0</div>
+        <ul class="change-list">
+          <li class="change-item"><span class="change-dot">●</span><span>Progress Claim tool — highest priority commercial tool</span></li>
+          <li class="change-item"><span class="change-dot">●</span><span>Cloud document sync — access your documents across devices</span></li>
+          <li class="change-item"><span class="change-dot">●</span><span>Accounting software integration — Xero, MYOB, QuickBooks</span></li>
+          <li class="change-item"><span class="change-dot">●</span><span>Construction software integration — Buildxact, ServiceM8, SimPRO, AroFlo</span></li>
+          <li class="change-item"><span class="change-dot">●</span><span>Document templates library</span></li>
+          <li class="change-item"><span class="change-dot">●</span><span>Team access — multiple users, one account</span></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-inner">
+      <div class="footer-top">
+        <a href="index.html" class="logo footer-logo" aria-label="BIK Solutions - home">
+          <div class="logo-mark" aria-hidden="true"><span>B</span></div>
+          <div class="logo-text">
+            <span class="logo-name">IK SOLUTIONS PTY LTD</span>
+            <span class="logo-tagline">Beyond Industry Knowledge</span>
+          </div>
+        </a>
+        <nav class="footer-links" aria-label="Footer navigation">
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="terms-of-use.html">Terms of Use</a>
+          <a href="ai-usage-notice.html">AI Usage Notice</a>
+          <a href="support.html">Support</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copyright">&copy; 2026 BIK Solutions Pty Ltd. All rights reserved.</p>
+        <p class="footer-tagline">Beyond Industry Knowledge</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

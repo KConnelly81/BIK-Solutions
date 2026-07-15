@@ -433,3 +433,29 @@
   .dash-tools-grid { grid-template-columns: 1fr; }
   .dash-main { padding: 20px 16px 48px; }
 }
+
+/* ── Footer ── */
+.dash-footer {
+  border-top: 1px solid #dedad4;
+  background: #f5f0e8;
+  padding: 20px 24px;
+  text-align: center;
+}
+.dash-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 20px;
+  margin-bottom: 10px;
+}
+.dash-footer-links a {
+  font-size: 0.75rem;
+  color: #888780;
+  text-decoration: none;
+}
+.dash-footer-links a:hover { color: #D85A30; text-decoration: underline; }
+.dash-footer-copy {
+  font-size: 0.72rem;
+  color: #aaa9a6;
+  margin: 0;
+}

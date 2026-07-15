@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Privacy Policy for BIK Business Toolkit — how your data is handled, what we collect, and your rights." />
+  <title>Privacy Policy — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .legal-hero { background: var(--charcoal, #252320); color: #fff; padding: 56px 0 40px; }
+    .legal-hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 8px; }
+    .legal-hero-meta { color: #9c9893; font-size: 0.82rem; }
+    .legal-body { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+    .legal-body h2 { font-size: 1.05rem; font-weight: 700; color: #252320; margin: 36px 0 10px; padding-top: 8px; border-top: 1px solid #eee; }
+    .legal-body h2:first-of-type { border-top: none; margin-top: 0; }
+    .legal-body p { font-size: 0.88rem; line-height: 1.7; color: #444; margin-bottom: 12px; }
+    .legal-body ul { padding-left: 20px; margin-bottom: 12px; }
+    .legal-body ul li { font-size: 0.88rem; line-height: 1.7; color: #444; margin-bottom: 6px; }
+    .legal-highlight { background: #f5f0e8; border-left: 3px solid #D85A30; padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 20px; font-size: 0.85rem; color: #444; line-height: 1.6; }
+    .legal-toc { background: #f5f0e8; border-radius: 8px; padding: 20px 24px; margin-bottom: 36px; }
+    .legal-toc h3 { font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin-bottom: 10px; }
+    .legal-toc a { font-size: 0.84rem; color: #D85A30; text-decoration: none; display: block; margin-bottom: 6px; }
+    .legal-toc a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <nav class="site-nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="index.html" class="logo" aria-label="BIK Solutions - home">
+        <div class="logo-mark" aria-hidden="true"><span>B</span></div>
+        <div class="logo-text">
+          <span class="logo-name">IK SOLUTIONS</span>
+          <span class="logo-tagline">Beyond Industry Knowledge</span>
+        </div>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="services.html">Services</a></li>
+        <li><a href="builders.html">Builders / Deconstruction</a></li>
+        <li><a href="about.html">About</a></li>
+        <li>
+          <a href="toolkit.html" aria-haspopup="true">Business Toolkit <span class="nav-dropdown-arrow">&#9660;</span></a>
+          <ul class="nav-dropdown" role="list">
+            <li><a href="toolkit.html">Toolkit Overview</a></li>
+            <li><a href="ai-documents.html">AI Documents</a></li>
+            <li><a href="dashboard.html">Open Toolkit</a></li>
+          </ul>
+        </li>
+        <li><a href="resources.html">Resources</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <a href="dashboard.html" class="btn btn--coral nav-cta">Open Toolkit</a>
+      <button class="nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+  <nav id="nav-drawer" class="nav-drawer" aria-label="Mobile navigation">
+    <a href="services.html">Services</a>
+    <a href="builders.html">Builders / Deconstruction</a>
+    <a href="about.html">About</a>
+    <span class="drawer-section-label">Business Toolkit</span>
+    <a href="toolkit.html">Toolkit Overview</a>
+    <a href="ai-documents.html">AI Documents</a>
+    <a href="dashboard.html">Open Toolkit</a>
+    <a href="resources.html">Resources</a>
+    <a href="contact.html">Contact</a>
+    <a href="dashboard.html" class="btn btn--coral">Open Toolkit</a>
+  </nav>
+
+  <section class="legal-hero">
+    <div class="container">
+      <h1>Privacy Policy</h1>
+      <p class="legal-hero-meta">Effective date: 15 July 2026 &nbsp;·&nbsp; Version 0.9 Beta</p>
+    </div>
+  </section>
+
+  <div class="legal-body">
+
+    <div class="legal-highlight">
+      <strong>Short version:</strong> BIK Business Toolkit is a local-first application. Your documents, form data, and builder profile are stored in your browser only — never on our servers. When you use the AI Writer, your text is sent directly from your browser to Anthropic's API using an API key you supply. We do not see or store it.
+    </div>
+
+    <div class="legal-toc">
+      <h3>Contents</h3>
+      <a href="#what-we-collect">1. What we collect</a>
+      <a href="#how-data-is-stored">2. How your data is stored</a>
+      <a href="#ai-writer">3. AI Writer and Anthropic API</a>
+      <a href="#cookies">4. Cookies and local storage</a>
+      <a href="#third-parties">5. Third parties</a>
+      <a href="#children">6. Children's privacy</a>
+      <a href="#your-rights">7. Your rights</a>
+      <a href="#contact">8. Contact us</a>
+    </div>
+
+    <h2 id="what-we-collect">1. What we collect</h2>
+    <p>BIK Business Toolkit is a static web application hosted on GitHub Pages. We do not operate a backend server that collects or stores personal information.</p>
+    <p>The following data is created when you use the Toolkit:</p>
+    <ul>
+      <li><strong>Builder profile</strong> — business name, ABN, licence number, phone, email, business address, authorised representative name. Stored in your browser's <code>localStorage</code> only.</li>
+      <li><strong>Document data</strong> — variation notices, quotes, scope of works, site diary entries, defect reports. Stored in your browser's <code>localStorage</code> only.</li>
+      <li><strong>Anthropic API key</strong> — the key you enter to use the AI Writer. Stored in your browser's <code>localStorage</code> only.</li>
+      <li><strong>Beta feedback</strong> — optional feedback you submit through the feedback widget. Stored in your browser's <code>localStorage</code> only.</li>
+    </ul>
+    <p>None of this data is transmitted to, or stored on, any BIK Solutions server.</p>
+
+    <h2 id="how-data-is-stored">2. How your data is stored</h2>
+    <p>All data is stored locally in your browser using the <code>localStorage</code> Web Storage API. This means:</p>
+    <ul>
+      <li>Your data exists only on the device and browser you used to create it.</li>
+      <li>Clearing your browser data, or using a different browser or device, will result in loss of your saved data.</li>
+      <li>We recommend exporting or printing important documents rather than relying solely on local storage.</li>
+    </ul>
+    <p>We have no ability to recover data lost from your browser storage, as we never had access to it.</p>
+
+    <h2 id="ai-writer">3. AI Writer and Anthropic API</h2>
+    <p>The AI Writer feature sends text you have written directly from your browser to Anthropic's API, using the API key you supply. This is a direct connection from your browser to Anthropic — BIK Solutions is not a party to that request and does not see, intercept, or store the content.</p>
+    <p>When using the AI Writer:</p>
+    <ul>
+      <li>Your text is sent to Anthropic's servers for processing. Anthropic's own <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener">Privacy Policy</a> governs how they handle that data.</li>
+      <li>Your Anthropic API key is stored in your browser's <code>localStorage</code> only and is never transmitted to BIK Solutions.</li>
+      <li>You are responsible for the API costs associated with your use of the AI Writer.</li>
+    </ul>
+
+    <h2 id="cookies">4. Cookies and local storage</h2>
+    <p>BIK Business Toolkit does not use tracking cookies or third-party analytics cookies. The application uses the browser's <code>localStorage</code> (not cookies) to persist your data between sessions.</p>
+    <p>GitHub Pages, which hosts this site, may set basic security or session cookies as part of its standard hosting infrastructure. We do not control or have access to these.</p>
+
+    <h2 id="third-parties">5. Third parties</h2>
+    <p>This application is hosted on GitHub Pages (Microsoft). GitHub's own privacy policy governs the serving of static files. We do not embed analytics, advertising, social media tracking, or other third-party services in the Toolkit application.</p>
+    <p>The AI Writer connects to Anthropic's API directly from your browser. See Section 3.</p>
+
+    <h2 id="children">6. Children's privacy</h2>
+    <p>BIK Business Toolkit is designed for use by building and construction professionals. It is not directed at individuals under 18 years of age.</p>
+
+    <h2 id="your-rights">7. Your rights</h2>
+    <p>Because all data is stored exclusively in your browser, you have complete control over it at all times. You can:</p>
+    <ul>
+      <li>View, edit, or delete any data by using the tools within the application (e.g. Builder Profile settings, document history).</li>
+      <li>Remove all stored data by clearing your browser's site data for this domain.</li>
+    </ul>
+    <p>As we hold no personal information on our servers, there is no data we can provide to you, correct on your behalf, or delete from a central system — because none exists.</p>
+
+    <h2 id="contact">8. Contact us</h2>
+    <p>If you have questions about this policy, please contact us via the <a href="contact.html">Contact page</a>.</p>
+    <p>BIK Solutions Pty Ltd — biksolutions.com.au</p>
+
+  </div>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-inner">
+      <div class="footer-top">
+        <a href="index.html" class="logo footer-logo" aria-label="BIK Solutions - home">
+          <div class="logo-mark" aria-hidden="true"><span>B</span></div>
+          <div class="logo-text">
+            <span class="logo-name">IK SOLUTIONS PTY LTD</span>
+            <span class="logo-tagline">Beyond Industry Knowledge</span>
+          </div>
+        </a>
+        <nav class="footer-links" aria-label="Footer navigation">
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="terms-of-use.html">Terms of Use</a>
+          <a href="ai-usage-notice.html">AI Usage Notice</a>
+          <a href="support.html">Support</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copyright">&copy; 2026 BIK Solutions Pty Ltd. All rights reserved.</p>
+        <p class="footer-tagline">Beyond Industry Knowledge</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

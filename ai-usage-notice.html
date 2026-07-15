@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI Usage Notice for BIK Business Toolkit — how AI writing works, what it can and cannot do, and your responsibilities." />
+  <title>AI Usage Notice — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .legal-hero { background: var(--charcoal, #252320); color: #fff; padding: 56px 0 40px; }
+    .legal-hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 8px; }
+    .legal-hero-meta { color: #9c9893; font-size: 0.82rem; }
+    .legal-body { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+    .legal-body h2 { font-size: 1.05rem; font-weight: 700; color: #252320; margin: 36px 0 10px; padding-top: 8px; border-top: 1px solid #eee; }
+    .legal-body h2:first-of-type { border-top: none; margin-top: 0; }
+    .legal-body p { font-size: 0.88rem; line-height: 1.7; color: #444; margin-bottom: 12px; }
+    .legal-body ul { padding-left: 20px; margin-bottom: 12px; }
+    .legal-body ul li { font-size: 0.88rem; line-height: 1.7; color: #444; margin-bottom: 6px; }
+    .legal-highlight { background: #f5f0e8; border-left: 3px solid #D85A30; padding: 14px 18px; border-radius: 0 6px 6px 0; margin-bottom: 20px; font-size: 0.85rem; color: #444; line-height: 1.6; }
+    .ai-mode-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.83rem; }
+    .ai-mode-table th { background: #252320; color: #fff; text-align: left; padding: 9px 12px; font-weight: 600; }
+    .ai-mode-table td { padding: 9px 12px; border-bottom: 1px solid #eee; color: #444; vertical-align: top; }
+    .ai-mode-table tr:last-child td { border-bottom: none; }
+    .ai-mode-table tr:nth-child(even) td { background: #fafaf8; }
+    .ai-mode-name { font-weight: 600; color: #252320; white-space: nowrap; }
+  </style>
+</head>
+<body>
+
+  <nav class="site-nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="index.html" class="logo" aria-label="BIK Solutions - home">
+        <div class="logo-mark" aria-hidden="true"><span>B</span></div>
+        <div class="logo-text">
+          <span class="logo-name">IK SOLUTIONS</span>
+          <span class="logo-tagline">Beyond Industry Knowledge</span>
+        </div>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="services.html">Services</a></li>
+        <li><a href="builders.html">Builders / Deconstruction</a></li>
+        <li><a href="about.html">About</a></li>
+        <li>
+          <a href="toolkit.html" aria-haspopup="true">Business Toolkit <span class="nav-dropdown-arrow">&#9660;</span></a>
+          <ul class="nav-dropdown" role="list">
+            <li><a href="toolkit.html">Toolkit Overview</a></li>
+            <li><a href="ai-documents.html">AI Documents</a></li>
+            <li><a href="dashboard.html">Open Toolkit</a></li>
+          </ul>
+        </li>
+        <li><a href="resources.html">Resources</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <a href="dashboard.html" class="btn btn--coral nav-cta">Open Toolkit</a>
+      <button class="nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+  <nav id="nav-drawer" class="nav-drawer" aria-label="Mobile navigation">
+    <a href="services.html">Services</a>
+    <a href="builders.html">Builders / Deconstruction</a>
+    <a href="about.html">About</a>
+    <a href="dashboard.html">Open Toolkit</a>
+    <a href="resources.html">Resources</a>
+    <a href="contact.html">Contact</a>
+    <a href="dashboard.html" class="btn btn--coral">Open Toolkit</a>
+  </nav>
+
+  <section class="legal-hero">
+    <div class="container">
+      <h1>AI Usage Notice</h1>
+      <p class="legal-hero-meta">Effective date: 15 July 2026 &nbsp;·&nbsp; Version 0.9 Beta</p>
+    </div>
+  </section>
+
+  <div class="legal-body">
+
+    <div class="legal-highlight">
+      <strong>The core rule:</strong> The AI Writer will never invent facts, figures, names, dates, amounts, or claims not present in what you have written. It is an editor, not an author. You are the source of truth — always.
+    </div>
+
+    <h2>What the AI Writer does</h2>
+    <p>The AI Writer is a professional writing assistant built into BIK Business Toolkit. It helps you turn rough notes and field language into clear, professional construction documents.</p>
+    <p>When you click an AI mode button, the text you have written is sent to Anthropic's Claude API, processed, and returned with improvements applied. The result replaces or is shown alongside your original text for review.</p>
+
+    <h2>What the AI Writer will and will not do</h2>
+    <ul>
+      <li><strong>Will do:</strong> Improve grammar, spelling, and punctuation.</li>
+      <li><strong>Will do:</strong> Rewrite your text in more professional or formal Australian construction language.</li>
+      <li><strong>Will do:</strong> Strengthen contract-protective language — without changing what you said.</li>
+      <li><strong>Will do:</strong> Simplify your text into plain language for client-facing communication.</li>
+      <li><strong>Will not do:</strong> Add facts, figures, amounts, dates, names, specifications, or claims you have not already written.</li>
+      <li><strong>Will not do:</strong> Provide legal advice or guarantee legal enforceability of any document.</li>
+      <li><strong>Will not do:</strong> Fabricate information if it cannot improve the text without doing so — it will return your original text instead.</li>
+    </ul>
+
+    <h2>Available AI writing modes</h2>
+    <table class="ai-mode-table">
+      <thead>
+        <tr>
+          <th>Mode</th>
+          <th>What it does</th>
+          <th>When to use it</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="ai-mode-name">Rewrite Professionally</td>
+          <td>Rewrites in formal Australian construction English. Improves clarity and structure.</td>
+          <td>Default choice for most variation notices, scopes, and formal documents.</td>
+        </tr>
+        <tr>
+          <td class="ai-mode-name">Strengthen for Contract</td>
+          <td>Rewrites to be legally precise and builder-protective. Reduces ambiguity.</td>
+          <td>When the document will be used in a dispute, claim, or formal contract context.</td>
+        </tr>
+        <tr>
+          <td class="ai-mode-name">Spell &amp; Grammar</td>
+          <td>Corrects errors only. Does not rephrase or restructure.</td>
+          <td>When you are happy with the words but want errors fixed.</td>
+        </tr>
+        <tr>
+          <td class="ai-mode-name">Simplify for Client</td>
+          <td>Rewrites in plain language, avoiding construction jargon.</td>
+          <td>Client-facing cover emails, explanatory notes, or descriptions for homeowners.</td>
+        </tr>
+        <tr>
+          <td class="ai-mode-name">Formal Version</td>
+          <td>Rewrites in formal business English.</td>
+          <td>Correspondence with head contractors, councils, or insurers.</td>
+        </tr>
+        <tr>
+          <td class="ai-mode-name">Plain English</td>
+          <td>Short sentences, active voice, everyday words.</td>
+          <td>When clarity and brevity matter more than formality.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Your API key</h2>
+    <p>To use the AI Writer, you need your own Anthropic API key. This key is stored in your browser only — BIK Solutions never sees it. API usage is billed directly to your Anthropic account. BIK Solutions does not charge separately for AI usage.</p>
+    <p>You can obtain an API key at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>. See the <a href="support.html">Support page</a> for setup guidance.</p>
+
+    <h2>How AI output reaches Anthropic</h2>
+    <p>When you use the AI Writer, your text travels directly from your browser to Anthropic's servers. BIK Solutions is not involved in that request and does not store or process the content. Anthropic's <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener">Privacy Policy</a> governs how they handle it.</p>
+
+    <h2>Your responsibilities</h2>
+    <p>You must review all AI output before including it in a document you send to a client, contractor, or other party. You are responsible for the accuracy and appropriateness of the final document. AI output is a starting point — not a finished, guaranteed-correct product.</p>
+
+    <h2>Not legal advice</h2>
+    <p>Nothing produced by the AI Writer, including text generated in "Strengthen for Contract" mode, constitutes legal advice. If you need legal advice regarding a construction dispute, contract, or claim, consult a qualified solicitor experienced in construction law.</p>
+
+  </div>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-inner">
+      <div class="footer-top">
+        <a href="index.html" class="logo footer-logo" aria-label="BIK Solutions - home">
+          <div class="logo-mark" aria-hidden="true"><span>B</span></div>
+          <div class="logo-text">
+            <span class="logo-name">IK SOLUTIONS PTY LTD</span>
+            <span class="logo-tagline">Beyond Industry Knowledge</span>
+          </div>
+        </a>
+        <nav class="footer-links" aria-label="Footer navigation">
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="terms-of-use.html">Terms of Use</a>
+          <a href="ai-usage-notice.html">AI Usage Notice</a>
+          <a href="support.html">Support</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copyright">&copy; 2026 BIK Solutions Pty Ltd. All rights reserved.</p>
+        <p class="footer-tagline">Beyond Industry Knowledge</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
