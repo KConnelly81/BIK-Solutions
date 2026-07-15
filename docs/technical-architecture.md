@@ -58,10 +58,40 @@ BIK-Solutions/
 - Component sections clearly commented
 
 ### JavaScript Architecture
-- All JS in `js/main.js`; no modules
-- IIFE pattern for encapsulation (no globals)
+- Marketing site: `js/main.js` — IIFE pattern, no modules
+- Document tools: ES6 modules (`type="module"`) in `js/toolkit/` and `js/tools/`
+- No bundler — browsers load modules natively
 - IntersectionObserver for scroll animations and stat counters
-- Formspree AJAX for all forms
+- Formspree AJAX for contact/waitlist forms
+
+### Document Intelligence Engine
+
+Added in Phase 1 (2026-07-15) to support the Variation Notice Generator and all future document tools.
+
+```
+js/toolkit/
+  engine.js         FormEngine — form rendering, validation, autosave, builder profile
+  renderer.js       DocumentRenderer — async HTML generation, contenteditable edit mode
+  exporter.js       ExportManager — print/PDF, clipboard copy
+  calculator.js     Pure GST/currency/date functions
+  analytics.js      Privacy-safe event stubs (ANALYTICS_INTEGRATION_POINT)
+
+js/tools/
+  variation-notice/
+    config.js       SCHEMA (25 fields) + generateDocument() template
+    index.js        Tool wiring
+
+css/
+  styles.css        Main site stylesheet (unchanged)
+  toolkit-app.css   App shell, split panel, document page, print CSS
+```
+
+**Key architectural decisions:**
+- `generateDocument(data)` is the only AI integration point — swap to async API call, no other changes needed
+- `profile: true` fields persist in `bik-builder-profile` (localStorage) — builders enter details once
+- All user data is client-side only in Phase 1 (see ADR-006)
+- Print-to-PDF via native browser dialog (see ADR-007)
+- XSS protection: all user input is HTML-entity-escaped before document rendering
 
 ### Brand Design Tokens
 ```css

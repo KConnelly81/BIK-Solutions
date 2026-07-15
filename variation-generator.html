@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Generate a professional variation notice for your construction project. Fill in the form and download a signed-ready PDF in minutes." />
+  <meta name="description" content="Generate a professional Australian Variation Notice in minutes. Fill in the form, review, and download a PDF. Built for builders and tradies." />
+  <meta name="robots" content="noindex" />
   <title>Variation Notice Generator — BIK Business Toolkit</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/toolkit-app.css" />
@@ -13,93 +14,165 @@
 <div class="app-shell">
 
   <!-- ====== APP HEADER ====== -->
-  <header class="app-header">
-    <a href="index.html" class="app-header-logo" aria-label="BIK Solutions home">
+  <header class="app-header" role="banner">
+
+    <a href="index.html" class="app-header-logo" aria-label="BIK Solutions — home">
       <div class="logo-mark" aria-hidden="true"><span>B</span></div>
       <div class="app-title-group">
         <span class="tool-name">Variation Notice</span>
-        <a href="ai-documents.html" class="tool-back">← Back to AI Documents</a>
+        <a href="ai-documents.html" class="tool-back">← AI Documents</a>
       </div>
     </a>
 
     <div class="app-header-spacer"></div>
 
-    <div class="autosave-indicator" aria-live="polite">
+    <div class="autosave-indicator" aria-live="polite" aria-label="Autosave status">
       <div class="autosave-dot" id="autosave-dot" aria-hidden="true"></div>
       <span id="autosave-text">Autosave on</span>
     </div>
 
     <div class="app-header-actions">
-      <button class="app-btn app-btn--ghost" id="btn-clear" title="Clear form">
+      <button class="app-btn app-btn--ghost" id="btn-clear" type="button"
+        title="Clear all fields and start a new variation"
+        aria-label="Clear form">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
         <span>Clear</span>
       </button>
-      <button class="app-btn app-btn--ghost" id="btn-copy" disabled title="Copy document text">
+      <button class="app-btn app-btn--ghost" id="btn-copy" type="button" disabled
+        title="Copy document text to clipboard"
+        aria-label="Copy document text">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         <span>Copy</span>
       </button>
-      <button class="app-btn app-btn--ghost" id="btn-print" disabled title="Print or save as PDF">
+      <button class="app-btn app-btn--ghost" id="btn-print" type="button" disabled
+        title="Save as PDF or print"
+        aria-label="Save as PDF">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         <span>Save PDF</span>
       </button>
-      <button class="app-btn app-btn--coral" id="btn-generate">
+      <button class="app-btn app-btn--coral" id="btn-generate" type="button">
         Generate document
       </button>
     </div>
+
   </header>
 
   <!-- ====== TOOLBAR ====== -->
-  <div class="app-toolbar" role="status" aria-label="Form completion status">
+  <div class="app-toolbar">
+
     <div class="progress-wrap">
-      <span class="progress-label" id="progress-label" aria-live="polite">0% complete</span>
+      <span class="progress-label" id="progress-label" aria-live="polite" aria-atomic="true">
+        0% of required fields complete
+      </span>
       <div class="progress-bar-track" aria-hidden="true">
-        <div class="progress-bar-fill" id="progress-fill"></div>
+        <div class="progress-bar-fill" id="progress-fill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
       </div>
     </div>
 
-    <div class="tab-bar" role="group" aria-label="Switch between form and preview">
-      <button class="tab-btn active" id="tab-form" aria-pressed="true">Form</button>
-      <button class="tab-btn" id="tab-preview" aria-pressed="false">Preview</button>
+    <div class="tab-bar" role="group" aria-label="Switch panel">
+      <button class="tab-btn active" id="tab-form" type="button" aria-pressed="true">Form</button>
+      <button class="tab-btn" id="tab-preview" type="button" aria-pressed="false">Preview</button>
     </div>
+
   </div>
 
   <!-- ====== DRAFT BANNER ====== -->
-  <div class="draft-banner" id="draft-banner" hidden aria-live="polite">
-    <span>You have an unsaved draft. Do you want to restore it?</span>
+  <div class="draft-banner" id="draft-banner" hidden role="alert" aria-live="polite">
+    <div class="draft-banner-text">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      You have a saved draft.
+      <span class="draft-banner-meta" id="draft-meta"></span>
+    </div>
     <div class="draft-banner-actions">
-      <button class="draft-banner-btn draft-banner-btn--restore" id="btn-restore-draft">Restore draft</button>
-      <button class="draft-banner-btn draft-banner-btn--discard" id="btn-discard-draft">Discard</button>
+      <button class="draft-btn draft-btn--restore" id="btn-restore-draft" type="button">Restore draft</button>
+      <button class="draft-btn draft-btn--discard" id="btn-discard-draft" type="button">Discard</button>
     </div>
   </div>
 
   <!-- ====== WORKSPACE ====== -->
   <div class="workspace">
 
-    <!-- Form panel -->
-    <div class="form-panel" id="form-panel" role="form" aria-label="Variation notice form">
+    <!-- ── FORM PANEL ── -->
+    <div class="form-panel" id="form-panel" role="main">
       <div class="form-panel-inner">
-        <div id="form-container">
-          <!-- FormEngine renders here -->
+
+        <!-- Privacy notice -->
+        <div class="privacy-notice" role="note">
+          <span class="privacy-notice-icon" aria-hidden="true">🔒</span>
+          <div>
+            <p>Your information stays on this device. Nothing you enter here is sent to a server. Drafts are saved in your browser's local storage only.</p>
+            <div class="draft-delete-wrap">
+              <button id="btn-delete-draft" type="button" style="display:none"
+                aria-label="Delete saved draft from this device">
+                Delete saved draft from this device
+              </button>
+            </div>
+          </div>
         </div>
+
+        <!-- FormEngine renders sections here -->
+        <div id="form-container" aria-label="Variation notice form fields">
+          <!-- JS renders all fields here -->
+        </div>
+
+        <!-- GST calculation summary (rendered after Cost and Time section) -->
+        <div class="calc-summary" id="calc-summary" hidden aria-live="polite" aria-label="Calculated cost summary">
+          <div class="calc-summary-heading">Indicative cost summary</div>
+          <div class="calc-row">
+            <span>Cost excl. GST</span>
+            <span class="calc-value" id="calc-excl">$0.00</span>
+          </div>
+          <div class="calc-row" id="calc-gst-row">
+            <span>GST</span>
+            <span class="calc-value" id="calc-gst">$0.00</span>
+          </div>
+          <div class="calc-row calc-total">
+            <span>Total incl. GST</span>
+            <span class="calc-value" id="calc-total">$0.00</span>
+          </div>
+          <p class="calc-note">Indicative only — not tax advice. Verify GST obligations with your accountant.</p>
+        </div>
+
+        <!-- Generate CTA (repeated at bottom of long form for mobile) -->
+        <div style="margin-top:28px;">
+          <button class="btn btn--coral" id="btn-generate-bottom" type="button"
+            style="width:100%;padding:14px;font-size:0.95rem;"
+            onclick="document.getElementById('btn-generate').click()">
+            Generate variation notice
+          </button>
+        </div>
+
       </div>
     </div>
 
-    <!-- Preview panel -->
-    <div class="preview-panel" id="preview-panel-wrap" aria-label="Document preview" aria-live="polite">
+    <!-- ── PREVIEW PANEL ── -->
+    <div class="preview-panel" id="preview-panel-wrap" aria-label="Document preview">
+
       <div class="preview-panel-header">
         <span class="preview-label">Document preview</span>
+        <div class="preview-actions">
+          <button class="app-btn app-btn--ghost-dark" id="btn-edit-toggle" type="button" disabled
+            title="Click to make last-minute edits to the document before printing">
+            Edit document
+          </button>
+        </div>
       </div>
 
       <!-- Empty state -->
-      <div class="preview-empty" id="preview-empty" role="status">
+      <div class="preview-empty" id="preview-empty" aria-live="polite">
         <div class="preview-empty-icon" aria-hidden="true">📄</div>
-        <p>Fill in the form and click <strong>Generate document</strong> to preview your Variation Notice here.</p>
+        <p>Fill in the form and click <strong>Generate document</strong> to see your Variation Notice here.</p>
+        <p style="font-size:0.78rem;color:#bbb;margin-top:8px;">Takes about 2 seconds.</p>
       </div>
 
       <!-- Loading -->
-      <div class="preview-loading" id="preview-loading" role="status" aria-label="Generating document">
+      <div class="preview-loading" id="preview-loading" role="status" aria-label="Generating document…">
         <div class="loading-spinner" aria-hidden="true"></div>
       </div>
 
-      <!-- DocumentRenderer inserts .doc-page here -->
-      <div id="preview-panel"></div>
+      <!-- DocumentRenderer inserts .doc-page inside here -->
+      <div id="preview-target" aria-live="polite" aria-label="Generated document"></div>
+
     </div>
 
   </div><!-- /.workspace -->
@@ -108,7 +181,13 @@
 
 <script type="module">
   import { init } from './js/tools/variation-notice/index.js';
-  init();
+
+  // Initialise when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 </script>
 
 </body>

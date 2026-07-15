@@ -20,20 +20,35 @@
 ## [Unreleased] — In Progress
 
 ### Added
-- **AI Document Engine** — Reusable modular architecture powering all document generators
-  - `js/toolkit/engine.js` — FormEngine class (dynamic form rendering, validation, autosave)
-  - `js/toolkit/renderer.js` — DocumentRenderer class (async render, AI integration point)
-  - `js/toolkit/exporter.js` — ExportManager class (print-to-PDF, clipboard copy)
-  - `css/toolkit-app.css` — App shell, split-panel layout, document styles, print CSS
-- **Variation Notice Generator** (first AI Document Engine implementation)
-  - `js/tools/variation-notice/config.js` — 14-field schema + generateDocument() template
-  - `js/tools/variation-notice/index.js` — Tool wiring (FormEngine + Renderer + Exporter)
-  - `variation-generator.html` — Full split-panel app page
-  - Features: autosave drafts, progress bar, live preview after first generation, print/PDF, clipboard copy, mobile tabs, draft restore banner, variation number counter
-- /docs folder with 22 documentation files covering product, business, design, and technical standards
-- Business Toolkit nav dropdown across all pages
-- 6 new toolkit pages: toolkit.html, ai-documents.html, templates.html, construction-resources.html, productivity.html, coming-soon.html
-- SaaS component CSS (styles.css additions)
+- **BIK Document Intelligence Engine** (SPEC-001) — production-quality reusable framework
+  - `js/toolkit/calculator.js` — Pure GST/currency/date functions (8 tests, all passing)
+  - `js/toolkit/analytics.js` — Privacy-safe event stubs with ANALYTICS_INTEGRATION_POINT
+  - `js/toolkit/engine.js` — FormEngine: form rendering, validation, autosave, builder profile persistence, radio fields, public draftInfo() API
+  - `js/toolkit/renderer.js` — DocumentRenderer: async generation, contenteditable edit mode, AI_INTEGRATION_POINT
+  - `js/toolkit/exporter.js` — ExportManager: print-to-PDF, clipboard copy with fallback
+  - `css/toolkit-app.css` — App shell, split panel, document page, print CSS
+- **Variation Notice Generator** — production-ready tool, first engine implementation
+  - 25-field schema across 7 sections including ABN, contact details, exclusions/assumptions, cost type, payment terms, revised completion date, builder/client approval names
+  - Builder profile persistence (business name, ABN, contact auto-fill on every return visit)
+  - Live GST calculator in form (indicative, not tax advice)
+  - Conditional document sections (only rendered when data present)
+  - Compliant disclaimer: user-supplied content, review before issue, not legal advice, not certified compliant
+  - XSS protection: all user input entity-escaped before document rendering
+  - Autosave (1.2s debounce), draft restore banner with timestamp, visible draft delete button
+  - Progress bar, variation number auto-increment with localStorage counter
+  - Live preview re-render after first generation (800ms debounce)
+  - Print-to-PDF (native browser, @media print A4 layout, no dependencies)
+  - Clipboard copy with execCommand fallback
+  - Mobile tab switching (Form / Preview), large touch targets (42px min), radio pills
+  - Inline edit mode (contenteditable) for last-minute changes before print
+  - Privacy notice in UI explaining local-only data storage
+  - Analytics event hooks: tool_opened, document_generated, pdf_downloaded, text_copied, draft_saved, draft_restored, draft_deleted, form_cleared, validation_error
+- **Documentation updates**
+  - `docs/specifications/document-intelligence-engine.md` (SPEC-001) — full engine spec
+  - ADR-005 (engine architecture), ADR-006 (client-side storage), ADR-007 (print-to-PDF)
+  - `docs/technical-architecture.md` — updated with engine module structure
+  - `docs/feature-backlog.md` — BT-012, BT-013 marked Done
+- Phase 1 website complete: nav, 6 toolkit pages, SaaS CSS
 
 ---
 
