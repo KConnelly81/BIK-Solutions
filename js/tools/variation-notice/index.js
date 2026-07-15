@@ -10,6 +10,7 @@ import { FormEngine }         from '../../toolkit/engine.js';
 import { DocumentRenderer }   from '../../toolkit/renderer.js';
 import { ExportManager }      from '../../toolkit/exporter.js';
 import { createTracker }      from '../../toolkit/analytics.js';
+import { AIWriter }           from '../../toolkit/ai-writer.js';
 import { calcGST, calcTotal, formatAUD } from '../../toolkit/calculator.js';
 import { SCHEMA, generateDocument } from './config.js';
 
@@ -57,6 +58,7 @@ export function init() {
 
   const renderer = new DocumentRenderer(generateDocument);
   const exporter = new ExportManager('.doc-page', 'Variation Notice', track);
+  const aiWriter = new AIWriter();
 
   // ── Mount form ───────────────────────────────────────────────
   engine.mount(formContainer);
@@ -74,6 +76,13 @@ export function init() {
       calcSummary.hidden = false;
     }
   }
+
+  // ── AI Writing buttons ───────────────────────────────────────
+  injectAIAssist('descriptionOfWork',     aiWriter, engine, track, toast);
+  injectAIAssist('reasonForVariation',    aiWriter, engine, track, toast);
+  injectAIAssist('exclusionsAssumptions', aiWriter, engine, track, toast);
+
+  $('btn-ai-setup')?.addEventListener('click', () => showAIKeyModal(aiWriter, null, toast));
 
   updateProgress();
   updateCalcSummary(engine.getState());
@@ -298,4 +307,232 @@ export function init() {
     clearTimeout(el._timer);
     el._timer = setTimeout(() => el.classList.remove('show'), duration);
   }
+}
+
+// ── AI Writing Engine — field injection ──────────────────────
+// Module-level so it can be reused by other tools in the future.
+
+/**
+ * Inject AI rewrite buttons below a textarea field after engine.mount().
+ * The same pattern works for any tool — pass the field id and engine instance.
+ *
+ * @param {string}     fieldId  — SCHEMA field id (textarea fields only)
+ * @param {AIWriter}   writer   — shared AIWriter instance
+ * @param {FormEngine} engine   — current form engine
+ * @param {Function}   track    — analytics tracker
+ * @param {Function}   toastFn  — toast notification function
+ */
+function injectAIAssist(fieldId, writer, engine, track, toastFn) {
+  const container = document.getElementById('form-container');
+  const fieldWrap = container?.querySelector(`[data-field-id="${fieldId}"]`);
+  if (!fieldWrap) return;
+
+  const textarea = fieldWrap.querySelector('textarea');
+  if (!textarea) return;
+
+  // Build button bar
+  const bar = document.createElement('div');
+  bar.className = 'ai-assist-bar';
+
+  const btn1 = document.createElement('button');
+  btn1.type = 'button';
+  btn1.className = 'ai-btn ai-btn--writing';
+  btn1.setAttribute('aria-label', 'Rewrite professionally using AI');
+  btn1.innerHTML = '<span class="ai-btn-icon" aria-hidden="true">✦</span> Rewrite Professionally';
+
+  const btn2 = document.createElement('button');
+  btn2.type = 'button';
+  btn2.className = 'ai-btn ai-btn--contract';
+  btn2.setAttribute('aria-label', 'Strengthen for contract protection using AI');
+  btn2.innerHTML = '<span class="ai-btn-icon" aria-hidden="true">⚖</span> Strengthen for Contract';
+
+  bar.appendChild(btn1);
+  bar.appendChild(btn2);
+  textarea.after(bar);
+
+  // Disclaimer shown after first successful rewrite
+  function showDisclaimer() {
+    if (fieldWrap.querySelector('.ai-disclaimer')) return;
+    const d = document.createElement('p');
+    d.className = 'ai-disclaimer';
+    d.textContent = 'This content is AI-assisted. Please review and ensure it accurately reflects the work completed before issuing.';
+    bar.after(d);
+  }
+
+  async function handleAI(mode) {
+    const text = textarea.value.trim();
+    if (!text) {
+      toastFn('Enter some text first, then click the AI button.');
+      return;
+    }
+    if (!writer.hasKey()) {
+      showAIKeyModal(writer, () => handleAI(mode), toastFn);
+      return;
+    }
+
+    setLoading(true, mode);
+    try {
+      const state = engine.getState();
+      const rewritten = await writer.write(text, mode, {
+        projectName: state.projectName,
+        clientName:  state.clientName
+      });
+
+      // Set value and fire input event so FormEngine updates its state
+      textarea.value = rewritten;
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+      showDisclaimer();
+      track('ai_text_rewritten', { mode, field: fieldId });
+      toastFn(mode === 'professional'
+        ? 'Text rewritten professionally.'
+        : 'Text strengthened for contract protection.');
+
+    } catch (err) {
+      if (err.message === 'NO_KEY') {
+        showAIKeyModal(writer, () => handleAI(mode), toastFn);
+      } else if (err.message === 'INVALID_KEY') {
+        writer.clearKey();
+        toastFn('API key invalid — please re-enter it.');
+        showAIKeyModal(writer, () => handleAI(mode), toastFn);
+      } else {
+        toastFn(`AI writing failed: ${err.message}`);
+        console.error('[BIK AI]', err);
+      }
+    } finally {
+      setLoading(false, mode);
+    }
+  }
+
+  function setLoading(on, mode) {
+    btn1.disabled = on;
+    btn2.disabled = on;
+    if (on) {
+      const activeBtn = mode === 'professional' ? btn1 : btn2;
+      activeBtn.classList.add('loading');
+      activeBtn.innerHTML = mode === 'professional'
+        ? '<span class="ai-btn-icon" aria-hidden="true">✦</span> Rewriting…'
+        : '<span class="ai-btn-icon" aria-hidden="true">⚖</span> Strengthening…';
+    } else {
+      btn1.classList.remove('loading');
+      btn2.classList.remove('loading');
+      btn1.innerHTML = '<span class="ai-btn-icon" aria-hidden="true">✦</span> Rewrite Professionally';
+      btn2.innerHTML = '<span class="ai-btn-icon" aria-hidden="true">⚖</span> Strengthen for Contract';
+    }
+  }
+
+  btn1.addEventListener('click', () => handleAI('professional'));
+  btn2.addEventListener('click', () => handleAI('contract-protection'));
+}
+
+// ── AI Key Setup Modal ────────────────────────────────────────
+
+/**
+ * Show the API key setup modal. Created once; reused on subsequent calls.
+ *
+ * @param {AIWriter}      writer    — AIWriter instance
+ * @param {Function|null} onSuccess — called after key is saved (retry the AI action)
+ * @param {Function}      toastFn   — toast notification function
+ */
+function showAIKeyModal(writer, onSuccess, toastFn) {
+  let modal = document.getElementById('ai-key-modal');
+
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'ai-key-modal';
+    modal.className = 'ai-key-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'ai-modal-title');
+    modal.innerHTML = `
+      <div class="ai-key-modal-inner">
+        <div class="ai-modal-header">
+          <span class="ai-modal-icon" aria-hidden="true">&#10022;</span>
+          <h2 class="ai-modal-title" id="ai-modal-title">AI Professional Writer Setup</h2>
+        </div>
+        <p class="ai-modal-body">
+          The AI Writer uses Anthropic Claude to rewrite your variation text into professional,
+          contract-ready Australian construction language. You supply your own Anthropic API key
+          &mdash; it is stored only in this browser and never sent to BIK servers.
+        </p>
+        <div class="ai-modal-field">
+          <label class="form-label" for="ai-key-input">Anthropic API key</label>
+          <input type="password" class="form-input" id="ai-key-input"
+            placeholder="sk-ant-api03-&hellip;"
+            autocomplete="off" spellcheck="false" />
+          <span class="field-hint">
+            Get a key at
+            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">
+              console.anthropic.com/settings/keys</a>
+            &mdash; typical cost is a few cents per rewrite.
+          </span>
+        </div>
+        <div class="ai-modal-security">
+          <span aria-hidden="true">&#128274;</span>
+          Your key is stored only in this browser&rsquo;s local storage on this device.
+          It is never transmitted to BIK Solutions servers.
+        </div>
+        <div class="ai-modal-actions">
+          <button class="app-btn app-btn--ghost-dark" id="ai-modal-cancel" type="button">Cancel</button>
+          <button class="app-btn app-btn--coral" id="ai-modal-save" type="button">Save key</button>
+        </div>
+        <div id="ai-modal-clear-wrap" class="ai-modal-clear-wrap" style="display:none">
+          <button class="ai-modal-clear-btn" id="ai-modal-clear" type="button">
+            Remove saved key from this device
+          </button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !modal.hidden) closeModal();
+    });
+  }
+
+  const keyInput  = document.getElementById('ai-key-input');
+  const saveBtn   = document.getElementById('ai-modal-save');
+  const cancelBtn = document.getElementById('ai-modal-cancel');
+  const clearBtn  = document.getElementById('ai-modal-clear');
+  const clearWrap = document.getElementById('ai-modal-clear-wrap');
+
+  clearWrap.style.display = writer.hasKey() ? '' : 'none';
+  keyInput.value = '';
+
+  function closeModal() {
+    modal.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  // Replace nodes to clear stale listeners from previous open
+  const newSave = saveBtn.cloneNode(true);
+  saveBtn.replaceWith(newSave);
+  newSave.addEventListener('click', () => {
+    const k = keyInput.value.trim();
+    if (!k.startsWith('sk-ant-')) {
+      toastFn('That doesn\'t look right — Anthropic keys start with sk-ant-');
+      keyInput.focus();
+      return;
+    }
+    writer.setKey(k);
+    closeModal();
+    toastFn('API key saved. AI writing is ready to use.');
+    onSuccess?.();
+  });
+
+  const newCancel = cancelBtn.cloneNode(true);
+  cancelBtn.replaceWith(newCancel);
+  newCancel.addEventListener('click', closeModal);
+
+  const newClear = clearBtn.cloneNode(true);
+  clearBtn.replaceWith(newClear);
+  newClear.addEventListener('click', () => {
+    writer.clearKey();
+    closeModal();
+    toastFn('API key removed from this device.');
+  });
+
+  modal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => keyInput.focus(), 50);
 }

@@ -942,6 +942,189 @@
   letter-spacing: 0.02em;
 }
 
+/* ── AI Writing buttons ── */
+.ai-assist-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(216,90,48,0.25);
+  background: rgba(216,90,48,0.05);
+  color: var(--coral);
+  font-size: 0.74rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  min-height: 30px;
+}
+
+.ai-btn:hover:not(:disabled) {
+  border-color: rgba(216,90,48,0.5);
+  background: rgba(216,90,48,0.1);
+}
+
+.ai-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ai-btn.loading {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.ai-btn-icon {
+  font-style: normal;
+  flex-shrink: 0;
+}
+
+.ai-btn--contract {
+  border-color: rgba(28,28,26,0.15);
+  background: rgba(28,28,26,0.03);
+  color: var(--stone);
+}
+
+.ai-btn--contract:hover:not(:disabled) {
+  border-color: rgba(28,28,26,0.3);
+  background: rgba(28,28,26,0.06);
+  color: var(--charcoal);
+}
+
+/* AI disclaimer shown after rewrite */
+.ai-disclaimer {
+  margin: 6px 0 0;
+  font-size: 0.7rem;
+  color: var(--stone);
+  line-height: 1.45;
+  padding: 6px 10px;
+  background: rgba(216,90,48,0.05);
+  border-left: 2px solid rgba(216,90,48,0.3);
+  border-radius: 0 3px 3px 0;
+}
+
+/* AI Setup header button accent */
+.app-btn--ai {
+  border-color: rgba(216,90,48,0.3);
+  color: rgba(216,90,48,0.85);
+}
+
+.app-btn--ai:hover:not(:disabled) {
+  border-color: rgba(216,90,48,0.6);
+  color: var(--coral);
+}
+
+/* ── AI Key Modal ── */
+.ai-key-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(28,28,26,0.65);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(2px);
+}
+
+.ai-key-modal[hidden] { display: none; }
+
+.ai-key-modal-inner {
+  background: #fff;
+  border-radius: 8px;
+  padding: 28px 28px 24px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+}
+
+.ai-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ai-modal-icon {
+  color: var(--coral);
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.ai-modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin: 0;
+}
+
+.ai-modal-body {
+  font-size: 0.82rem;
+  color: #555;
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+
+.ai-modal-field {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ai-modal-field .field-hint a {
+  color: var(--coral);
+  text-decoration: underline;
+}
+
+.ai-modal-security {
+  font-size: 0.72rem;
+  color: var(--stone);
+  background: rgba(28,28,26,0.03);
+  border: 1px solid rgba(28,28,26,0.08);
+  border-radius: 5px;
+  padding: 8px 10px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  line-height: 1.45;
+}
+
+.ai-modal-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ai-modal-clear-wrap {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.ai-modal-clear-btn {
+  font-size: 0.72rem;
+  color: var(--stone);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+  transition: color 0.15s;
+}
+
+.ai-modal-clear-btn:hover { color: #d32f2f; }
+
 /* ── Toast ── */
 .toast {
   position: fixed;

@@ -20,6 +20,18 @@
 ## [Unreleased] — In Progress
 
 ### Added
+- **AI Professional Writer** — reusable AI writing engine powering the Variation Generator
+  - `js/toolkit/ai-writer.js` — `AIWriter` class: shared service, mode-based system prompts, direct Anthropic API call with `anthropic-dangerous-direct-browser-access` header, API key management in `bik-ai-key` localStorage, typed error codes (`NO_KEY`, `INVALID_KEY`)
+  - Two AI writing modes: "Rewrite Professionally" (clear, formal Australian construction language) and "Strengthen for Contract Protection" (defensible, unambiguous, legally grounded)
+  - AI assist buttons injected after `descriptionOfWork`, `reasonForVariation`, and `exclusionsAssumptions` textarea fields
+  - First-use API key setup modal with privacy notice, key validation, remove-key option
+  - AI disclaimer shown inline after each rewrite: "This content is AI-assisted. Please review and ensure it accurately reflects the work completed before issuing."
+  - `AI_WRITING_ENGINE_INTEGRATION_POINT` documented in `ai-writer.js` for Phase 2 backend proxy swap
+  - Analytics event: `ai_text_rewritten` with `{ mode, field }` props
+  - `✦ AI Writer` button in app header for key management access at any time
+  - Architecture designed for reuse: same `AIWriter` + `injectAIAssist()` pattern applies to Quotes, Defect Reports, Site Diaries, Emails, etc.
+- **Mobile migration plan** (`docs/mobile-migration-plan.md`) — assessment of current architecture against mobile app requirements; component-by-component reusability analysis; fastest path to Android/iOS with maximum code reuse
+
 - **BIK Document Intelligence Engine** (SPEC-001) — production-quality reusable framework
   - `js/toolkit/calculator.js` — Pure GST/currency/date functions (8 tests, all passing)
   - `js/toolkit/analytics.js` — Privacy-safe event stubs with ANALYTICS_INTEGRATION_POINT
