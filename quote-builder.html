@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Generate a professional Australian Variation Notice in minutes. Fill in the form, review, and download a PDF. Built for builders and tradies." />
+  <meta name="description" content="Generate professional Australian quotes in minutes. Fill in the form, review, and download a PDF. Built for builders and tradies." />
   <meta name="robots" content="noindex" />
-  <title>Variation Notice Generator — BIK Business Toolkit</title>
+  <title>Quote Builder — BIK Business Toolkit</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/toolkit-app.css" />
 </head>
@@ -19,7 +19,7 @@
     <a href="dashboard.html" class="app-header-logo" aria-label="BIK Solutions — dashboard">
       <div class="logo-mark" aria-hidden="true"><span>B</span></div>
       <div class="app-title-group">
-        <span class="tool-name">Variation Notice</span>
+        <span class="tool-name">Quote Builder</span>
         <a href="dashboard.html" class="tool-back">← Dashboard</a>
       </div>
     </a>
@@ -43,7 +43,7 @@
         <span>History</span>
       </button>
       <button class="app-btn app-btn--ghost" id="btn-clear" type="button"
-        title="Clear all fields and start a new variation" aria-label="Clear form">
+        title="Clear all fields and start a new quote" aria-label="Clear form">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
         <span>Clear</span>
       </button>
@@ -63,7 +63,7 @@
         <span>Email</span>
       </button>
       <button class="app-btn app-btn--coral" id="btn-generate" type="button">
-        Generate document
+        Generate quote
       </button>
     </div>
 
@@ -108,7 +108,6 @@
     <div class="form-panel" id="form-panel" role="main">
       <div class="form-panel-inner">
 
-        <!-- Privacy notice -->
         <div class="privacy-notice" role="note">
           <span class="privacy-notice-icon" aria-hidden="true">🔒</span>
           <div>
@@ -122,35 +121,15 @@
           </div>
         </div>
 
-        <!-- FormEngine renders sections here -->
-        <div id="form-container" aria-label="Variation notice form fields">
+        <div id="form-container" aria-label="Quote form fields">
           <!-- JS renders all fields here -->
         </div>
 
-        <!-- GST calculation summary (rendered after Cost and Time section) -->
-        <div class="calc-summary" id="calc-summary" hidden aria-live="polite" aria-label="Calculated cost summary">
-          <div class="calc-summary-heading">Indicative cost summary</div>
-          <div class="calc-row">
-            <span>Cost excl. GST</span>
-            <span class="calc-value" id="calc-excl">$0.00</span>
-          </div>
-          <div class="calc-row" id="calc-gst-row">
-            <span>GST</span>
-            <span class="calc-value" id="calc-gst">$0.00</span>
-          </div>
-          <div class="calc-row calc-total">
-            <span>Total incl. GST</span>
-            <span class="calc-value" id="calc-total">$0.00</span>
-          </div>
-          <p class="calc-note">Indicative only — not tax advice. Verify GST obligations with your accountant.</p>
-        </div>
-
-        <!-- Generate CTA (repeated at bottom of long form for mobile) -->
         <div style="margin-top:28px;">
           <button class="btn btn--coral" id="btn-generate-bottom" type="button"
             style="width:100%;padding:14px;font-size:0.95rem;"
             onclick="document.getElementById('btn-generate').click()">
-            Generate variation notice
+            Generate quote
           </button>
         </div>
 
@@ -170,19 +149,16 @@
         </div>
       </div>
 
-      <!-- Empty state -->
       <div class="preview-empty" id="preview-empty" aria-live="polite">
-        <div class="preview-empty-icon" aria-hidden="true">📄</div>
-        <p>Fill in the form and click <strong>Generate document</strong> to see your Variation Notice here.</p>
+        <div class="preview-empty-icon" aria-hidden="true">📋</div>
+        <p>Fill in the form and click <strong>Generate quote</strong> to see your Quote here.</p>
         <p style="font-size:0.78rem;color:#bbb;margin-top:8px;">Takes about 2 seconds.</p>
       </div>
 
-      <!-- Loading -->
       <div class="preview-loading" id="preview-loading" role="status" aria-label="Generating document…">
         <div class="loading-spinner" aria-hidden="true"></div>
       </div>
 
-      <!-- DocumentRenderer inserts .doc-page inside here -->
       <div id="preview-target" aria-live="polite" aria-label="Generated document"></div>
 
     </div>
@@ -192,9 +168,8 @@
 </div><!-- /.app-shell -->
 
 <script type="module">
-  import { init } from './js/tools/variation-notice/index.js';
+  import { init } from './js/tools/quote-builder/index.js';
 
-  // Initialise when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

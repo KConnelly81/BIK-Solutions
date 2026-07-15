@@ -26,7 +26,7 @@ const SYSTEM_PROMPTS = {
 
   professional: `You are an expert Australian construction documentation writer. \
 Rewrite the provided text into clear, professional Australian construction language \
-suitable for a formal variation notice.
+suitable for formal construction documents.
 
 Rules — follow these exactly:
 - Preserve the exact meaning and all facts from the original. Do not add, invent, or assume any information.
@@ -39,7 +39,7 @@ contract works, latent conditions, provisional sum, and similar.
 - Output ONLY the rewritten text. No preamble, no explanation, no quotation marks.`,
 
   'contract-protection': `You are an expert Australian construction documentation writer \
-specialising in contract-protective variation notices. Rewrite the provided text to be \
+specialising in contract-protective construction documents. Rewrite the provided text to be \
 clear, professional, and legally defensible.
 
 Rules — follow these exactly:
@@ -48,15 +48,39 @@ Rules — follow these exactly:
 - Never exaggerate costs, entitlements, or urgency.
 - Use terminology familiar to Australian residential builders: practical completion, scope of works, \
 contract works, latent conditions, provisional sum, and similar.
-- Clearly distinguish between client-requested changes and unforeseen site conditions where the \
-original text implies this distinction.
+- Clearly distinguish between client-requested changes and unforeseen site conditions.
 - Reduce ambiguity in scope, entitlement, and responsibility.
 - Use factual, defensible language that would hold up in a dispute or adjudication.
 - Avoid wording that could be misleading or create unintended legal obligations.
-- Reference relevant contract concepts where appropriate: "at the direction of the client", \
-"unforeseen latent condition", "client-directed variation", etc.
+- Reference relevant contract concepts where appropriate.
 - Improve grammar, spelling, punctuation, and readability.
-- Output ONLY the rewritten text. No preamble, no explanation, no quotation marks.`
+- Output ONLY the rewritten text. No preamble, no explanation, no quotation marks.`,
+
+  'spell-grammar': `You are a professional Australian English proofreader. \
+Correct all spelling mistakes, grammatical errors, and punctuation issues in the provided text. \
+Preserve the original meaning, style, tone, and all factual content exactly. \
+Only fix errors — do not rephrase, restructure, or improve style. \
+Output ONLY the corrected text. No preamble, no explanation.`,
+
+  'simplify-client': `You are an expert at making construction language clear and accessible. \
+Rewrite the provided text so it is easy for a non-builder client to understand. \
+Use plain, everyday language. Avoid construction jargon or technical terms — if you must use one, \
+briefly explain it in plain language. Keep it friendly but professional. \
+Preserve all facts and the complete meaning. \
+Output ONLY the rewritten text. No preamble, no explanation.`,
+
+  formal: `You are an expert in formal Australian business writing. \
+Rewrite the provided text in formal business language suitable for official correspondence. \
+Use formal vocabulary, correct grammar, and complete sentences. \
+Avoid contractions, colloquialisms, and informal language. \
+Preserve all facts and the complete meaning. \
+Output ONLY the rewritten text. No preamble, no explanation.`,
+
+  'plain-english': `You are an expert technical writer. \
+Rewrite the provided text in plain, simple English. \
+Use short sentences, everyday words, and active voice. \
+Make it easy to understand quickly while preserving all facts and the complete meaning. \
+Output ONLY the rewritten text. No preamble, no explanation.`
 
 };
 
@@ -97,7 +121,7 @@ export class AIWriter {
    * Rewrite text using AI.
    *
    * @param {string} text                           — original text to rewrite
-   * @param {'professional'|'contract-protection'} mode
+   * @param {'professional'|'contract-protection'|'spell-grammar'|'simplify-client'|'formal'|'plain-english'} mode
    * @param {{ projectName?: string, clientName?: string, toolName?: string }} [context]
    * @returns {Promise<string>} rewritten text
    * @throws {Error} message === 'NO_KEY'      — no API key stored

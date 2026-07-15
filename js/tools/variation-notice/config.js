@@ -107,6 +107,17 @@ export const SCHEMA = [
     errorMsg: 'Client name is required'
   },
   {
+    id: 'clientEmail',
+    label: 'Client email',
+    section: 'Project Details',
+    type: 'email',
+    width: 'half',
+    required: false,
+    placeholder: 'client@email.com',
+    hint: 'Used for email workflow',
+    autocomplete: 'off'
+  },
+  {
     id: 'projectName',
     label: 'Project name',
     section: 'Project Details',
@@ -338,6 +349,39 @@ export const SCHEMA = [
   }
 
 ];
+
+// ── Tool configuration for ToolController ────────────────────
+
+export const DOC_CONFIG = {
+  toolId:      'variation-notice',
+  toolName:    'Variation Notice',
+  autosaveKey: 'bik-variation-draft',
+  docPrefix:   'VN',
+  aiFields:    ['descriptionOfWork', 'reasonForVariation', 'exclusionsAssumptions'],
+  printTitle:  'Variation Notice',
+
+  getDocTitle(state) {
+    return `Variation Notice VN-${state.variationNumber || '??'} — ${state.projectName || state.clientName || 'Untitled'}`;
+  },
+  getDocRef(state) {
+    return `VN-${state.variationNumber || '??'}`;
+  },
+  onCalcUpdate(state, engine, $) {
+    const calcSummary = $('calc-summary');
+    if (!calcSummary) return;
+    const cost    = parseFloat(state.additionalCost) || 0;
+    const hasGST  = state.gstApplicable === 'yes';
+    const gst     = calcGST(cost, hasGST);
+    const total   = calcTotal(cost, hasGST);
+    const excl    = $('calc-excl');
+    const gstEl   = $('calc-gst');
+    const totalEl = $('calc-total');
+    if (excl)    excl.textContent    = formatAUD(cost);
+    if (gstEl)   gstEl.textContent   = hasGST ? formatAUD(gst) : 'Not applicable';
+    if (totalEl) totalEl.textContent = formatAUD(total);
+    calcSummary.hidden = false;
+  }
+};
 
 // ── Payment terms label lookup ───────────────────────────────
 
