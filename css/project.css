@@ -1,0 +1,365 @@
+/* ============================================================
+   BIK PROJECT DETAIL — project.css
+   ============================================================ */
+
+/* ── Back link in header ── */
+.proj-back-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.proj-back-link:hover { background: rgba(255,255,255,0.16); }
+
+.dash-logo-mark-link { display: flex; align-items: center; }
+
+/* ── Main layout ── */
+.proj-main {
+  width: 100%;
+}
+
+/* ── Not found / empty states ── */
+.proj-empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  color: #666;
+}
+.proj-empty-state .proj-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+.proj-empty-state h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px;
+}
+.proj-empty-state p { margin: 0; }
+
+/* ── Project header ── */
+.proj-header {
+  margin-bottom: 28px;
+}
+.proj-status-dot-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.proj-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.proj-status-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #666;
+}
+.proj-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.proj-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 4px;
+  font-size: 0.85rem;
+  color: #555;
+}
+.proj-meta-sep {
+  color: #bbb;
+  margin: 0 2px;
+}
+
+/* ── Tool launch row ── */
+.proj-tools-row {
+  background: #fff;
+  border: 1px solid #e0ddd9;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 28px;
+}
+.proj-tools-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 10px;
+}
+.proj-tools-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.proj-tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: #f5f3f0;
+  border: 1px solid #e0ddd9;
+  border-radius: 7px;
+  text-decoration: none;
+  color: #333;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+}
+.proj-tool-btn:hover {
+  background: #eeece9;
+  border-color: #ccc;
+  color: var(--coral);
+}
+.proj-tool-icon { font-size: 1rem; }
+.proj-tool-name { font-size: 0.82rem; }
+
+/* ── Two-col body ── */
+.proj-body {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 28px;
+  align-items: start;
+  margin-bottom: 40px;
+}
+@media (max-width: 768px) {
+  .proj-body { grid-template-columns: 1fr; }
+  .proj-timeline-col { order: 2; }
+  .proj-docs-col     { order: 1; }
+}
+
+.proj-col-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #999;
+  margin: 0 0 14px;
+}
+
+/* ── Timeline ── */
+.proj-timeline-col {
+  position: sticky;
+  top: 74px;
+}
+.proj-timeline {
+  background: #fff;
+  border: 1px solid #e0ddd9;
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.timeline-empty {
+  font-size: 0.82rem;
+  color: #aaa;
+  text-align: center;
+  padding: 16px 0;
+}
+.timeline-item {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 0 10px;
+  padding-bottom: 14px;
+}
+.timeline-item--last { padding-bottom: 0; }
+.timeline-track {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.timeline-icon {
+  font-size: 0.9rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f3f0;
+  border: 1px solid #e0ddd9;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.timeline-line {
+  width: 2px;
+  flex: 1;
+  background: #e0ddd9;
+  margin: 4px 0;
+  min-height: 10px;
+}
+.timeline-body {
+  padding-top: 4px;
+}
+.timeline-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+.timeline-label--link {
+  text-decoration: none;
+  color: var(--coral);
+}
+.timeline-label--link:hover { text-decoration: underline; }
+.timeline-detail {
+  font-size: 0.73rem;
+  color: #999;
+}
+
+/* ── Documents ── */
+.proj-docs-col {
+  min-width: 0;
+}
+.proj-doc-group {
+  background: #fff;
+  border: 1px solid #e0ddd9;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.proj-doc-group-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #444;
+  margin: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0ede9;
+  background: #faf9f7;
+}
+.proj-doc-group-heading--alert {
+  color: #c05a0f;
+  background: #fff8f3;
+  border-bottom-color: #ffe0c8;
+}
+.proj-doc-group-count {
+  margin-left: auto;
+  background: #e8e5e0;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 7px;
+  color: #666;
+}
+.proj-doc-list { }
+.proj-doc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-bottom: 1px solid #f5f3f0;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s;
+}
+.proj-doc-row:last-child { border-bottom: none; }
+.proj-doc-row:hover { background: #faf9f7; }
+.proj-doc-row-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.proj-doc-ref {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #999;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.proj-doc-title {
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.proj-doc-row-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.proj-doc-date {
+  font-size: 0.73rem;
+  color: #aaa;
+  white-space: nowrap;
+}
+.proj-doc-arrow {
+  color: #ccc;
+  font-size: 0.8rem;
+}
+.proj-doc-row:hover .proj-doc-arrow { color: var(--coral); }
+
+.proj-empty-docs {
+  background: #fff;
+  border: 1px solid #e0ddd9;
+  border-radius: 10px;
+  padding: 28px;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.85rem;
+}
+
+/* ── Future / coming soon section ── */
+.proj-future-section {
+  margin-top: 8px;
+  padding-top: 32px;
+  border-top: 1px solid #e0ddd9;
+}
+.proj-future-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+.proj-future-card {
+  background: #fff;
+  border: 1px solid #e0ddd9;
+  border-radius: 10px;
+  padding: 18px 16px;
+  opacity: 0.7;
+}
+.proj-future-icon { font-size: 1.5rem; margin-bottom: 8px; }
+.proj-future-name {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 4px;
+}
+.proj-future-desc {
+  font-size: 0.75rem;
+  color: #888;
+  line-height: 1.4;
+  margin-bottom: 10px;
+}
+.proj-future-badge {
+  display: inline-block;
+  background: #f0ede9;
+  color: #999;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 4px;
+}

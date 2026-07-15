@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Project — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/project.css" />
+</head>
+<body>
+
+<div class="dash-shell">
+
+  <!-- ====== HEADER ====== -->
+  <header class="dash-header" role="banner">
+    <div class="dash-header-inner">
+      <div class="dash-logo">
+        <a href="dashboard.html" class="proj-back-link" aria-label="Back to dashboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <div class="dash-logo-mark-link" aria-hidden="true">
+          <div class="logo-mark"><span>B</span></div>
+        </div>
+        <div>
+          <div class="dash-logo-name">BIK Business Toolkit</div>
+          <div class="dash-logo-tag">Beyond Industry Knowledge</div>
+        </div>
+      </div>
+      <div class="dash-header-actions">
+        <button class="dash-btn dash-btn--ghost" id="btn-edit-project" type="button">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <span>Edit Project</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ====== MAIN ====== -->
+  <main class="dash-main proj-main" id="proj-main">
+
+    <!-- Project not found state -->
+    <div id="proj-not-found" hidden>
+      <div class="proj-empty-state">
+        <div class="proj-empty-icon">📁</div>
+        <h2>Project not found</h2>
+        <p>This project may have been deleted, or the link is incorrect.</p>
+        <a href="dashboard.html" class="dash-btn dash-btn--coral" style="margin-top:16px;text-decoration:none">Back to dashboard</a>
+      </div>
+    </div>
+
+    <!-- Project content -->
+    <div id="proj-content" hidden>
+
+      <!-- Project header -->
+      <div class="proj-header">
+        <div class="proj-header-left">
+          <div class="proj-status-dot-wrap">
+            <span class="proj-status-dot" id="proj-status-dot"></span>
+            <span class="proj-status-label" id="proj-status-label"></span>
+          </div>
+          <h1 class="proj-name" id="proj-name"></h1>
+          <div class="proj-meta" id="proj-meta"></div>
+        </div>
+      </div>
+
+      <!-- Tool launch row -->
+      <div class="proj-tools-row" id="proj-tools-row">
+        <div class="proj-tools-label">Open in tool</div>
+        <div class="proj-tools-grid" id="proj-tools-grid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Two-col layout: timeline + documents -->
+      <div class="proj-body">
+
+        <!-- LEFT: Timeline -->
+        <aside class="proj-timeline-col">
+          <h2 class="proj-col-heading">Timeline</h2>
+          <div id="proj-timeline" class="proj-timeline">
+            <!-- Rendered by JS -->
+          </div>
+        </aside>
+
+        <!-- RIGHT: Documents -->
+        <section class="proj-docs-col">
+          <h2 class="proj-col-heading">Documents</h2>
+
+          <!-- Pending approvals sub-section -->
+          <div id="proj-pending" class="proj-doc-group" hidden>
+            <h3 class="proj-doc-group-heading proj-doc-group-heading--alert">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Awaiting Approval
+            </h3>
+            <div id="proj-pending-list" class="proj-doc-list"></div>
+          </div>
+
+          <!-- Per-tool document groups -->
+          <div id="proj-doc-groups"></div>
+
+          <!-- Empty state -->
+          <div id="proj-docs-empty" class="proj-empty-docs" hidden>
+            <p>No documents yet. Use the tools above to create your first document for this project.</p>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Future-ready section (coming soon stubs) -->
+      <section class="proj-future-section">
+        <h2 class="proj-col-heading">Coming Soon</h2>
+        <div class="proj-future-grid">
+          <div class="proj-future-card">
+            <div class="proj-future-icon" aria-hidden="true">🧾</div>
+            <div class="proj-future-name">Progress Claims</div>
+            <div class="proj-future-desc">BCIPA-compliant progress claims with supporting schedules</div>
+            <span class="proj-future-badge">Coming soon</span>
+          </div>
+          <div class="proj-future-card">
+            <div class="proj-future-icon" aria-hidden="true">💳</div>
+            <div class="proj-future-name">Invoices & Payments</div>
+            <div class="proj-future-desc">Track invoices, payments received, and outstanding balances</div>
+            <span class="proj-future-badge">Coming soon</span>
+          </div>
+          <div class="proj-future-card">
+            <div class="proj-future-icon" aria-hidden="true">🌐</div>
+            <div class="proj-future-name">Client Portal</div>
+            <div class="proj-future-desc">Share documents, collect digital approvals and signatures online</div>
+            <span class="proj-future-badge">Coming soon</span>
+          </div>
+          <div class="proj-future-card">
+            <div class="proj-future-icon" aria-hidden="true">✍️</div>
+            <div class="proj-future-name">Digital Signatures</div>
+            <div class="proj-future-desc">Legally binding eSignatures on all documents</div>
+            <span class="proj-future-badge">Coming soon</span>
+          </div>
+          <div class="proj-future-card">
+            <div class="proj-future-icon" aria-hidden="true">📷</div>
+            <div class="proj-future-name">Site Photos</div>
+            <div class="proj-future-desc">Attach and organise site photos directly to documents</div>
+            <span class="proj-future-badge">Coming soon</span>
+          </div>
+          <div class="proj-future-card">
+            <div class="proj-future-icon" aria-hidden="true">🎙️</div>
+            <div class="proj-future-name">Voice Notes</div>
+            <div class="proj-future-desc">Record voice memos on site — transcribed and saved automatically</div>
+            <span class="proj-future-badge">Coming soon</span>
+          </div>
+          <div class="proj-future-card">
+            <div class="proj-future-icon" aria-hidden="true">📎</div>
+            <div class="proj-future-name">Attachments</div>
+            <div class="proj-future-desc">Upload contracts, plans, and supporting files to the project</div>
+            <span class="proj-future-badge">Coming soon</span>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /#proj-content -->
+
+  </main>
+
+  <!-- ====== PROJECT MODAL (edit) ====== -->
+  <div class="modal-overlay" id="project-overlay" hidden aria-modal="true" role="dialog" aria-label="Edit Project">
+    <div class="modal-box modal-box--wide">
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Project</h2>
+        <button class="modal-close" id="btn-project-close" type="button" aria-label="Close">✕</button>
+      </div>
+      <div id="project-modal-fields" class="project-modal-fields"></div>
+      <div class="modal-actions" style="justify-content:space-between">
+        <button class="dash-btn dash-btn--danger" id="btn-project-delete" type="button">Delete project</button>
+        <div style="display:flex;gap:8px;margin-left:auto">
+          <button class="dash-btn dash-btn--ghost-dark" id="btn-project-cancel" type="button">Cancel</button>
+          <button class="dash-btn dash-btn--coral" id="btn-project-save" type="button">Save project</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.dash-shell -->
+
+<footer class="dash-footer" role="contentinfo">
+  <nav class="dash-footer-links" aria-label="Legal and support links">
+    <a href="privacy-policy.html">Privacy Policy</a>
+    <a href="terms-of-use.html">Terms of Use</a>
+    <a href="ai-usage-notice.html">AI Usage Notice</a>
+    <a href="support.html">Support</a>
+    <a href="release-notes.html">Release Notes</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+  <p class="dash-footer-copy">&copy; 2026 BIK Solutions Pty Ltd &nbsp;·&nbsp; v0.9 Beta &nbsp;·&nbsp; All data stored on this device only</p>
+</footer>
+
+<script type="module">
+import { documentHistory } from './js/toolkit/document-history.js';
+import { projectStore, PROJECT_STATUSES } from './js/toolkit/project-store.js';
+
+// ── Constants ──────────────────────────────────────────────────────
+
+const TOOL_META = {
+  'variation-notice': { name: 'Variation Notice', url: 'variation-generator.html', icon: '📋' },
+  'quote-builder':    { name: 'Quote Builder',    url: 'quote-builder.html',       icon: '💰' },
+  'scope-of-works':   { name: 'Scope of Works',   url: 'scope-of-works.html',      icon: '📝' },
+  'site-diary':       { name: 'Site Diary',        url: 'site-diary.html',          icon: '📅' },
+  'defect-report':    { name: 'Defect Report',     url: 'defect-report.html',       icon: '🔍' }
+};
+
+const TOOL_ORDER = ['quote-builder','variation-notice','scope-of-works','site-diary','defect-report'];
+
+const APPROVAL_LABEL = {
+  draft:    { label: 'Draft',    cls: 'approval--draft'    },
+  sent:     { label: 'Sent',     cls: 'approval--sent'     },
+  approved: { label: 'Approved', cls: 'approval--approved' },
+  rejected: { label: 'Rejected', cls: 'approval--rejected' },
+  archived: { label: 'Archived', cls: 'approval--archived' }
+};
+
+const PROJECT_FORM_FIELDS = [
+  { id: 'name',          label: 'Project name',               type: 'text',     required: true, placeholder: 'e.g. Smith Residence Renovation', grid: 'full' },
+  { id: 'clientName',    label: 'Client name',                type: 'text',     placeholder: 'John & Jane Smith' },
+  { id: 'clientEmail',   label: 'Client email',               type: 'email',    placeholder: 'client@email.com' },
+  { id: 'clientPhone',   label: 'Client phone',               type: 'tel',      placeholder: '0400 000 000' },
+  { id: 'contractRef',   label: 'Contract / job reference',   type: 'text',     placeholder: 'e.g. JOB-2026-014' },
+  { id: 'siteAddress',   label: 'Site address',               type: 'textarea', placeholder: '123 Example St, Brisbane QLD 4000', grid: 'full' },
+  { id: 'status',        label: 'Status',                     type: 'select',   options: PROJECT_STATUSES },
+  { id: 'contractValue', label: 'Contract value ($ excl. GST)', type: 'number', placeholder: '0.00', min: 0, step: 0.01 },
+  { id: 'notes',         label: 'Notes',                      type: 'textarea', placeholder: 'Any internal notes', grid: 'full' }
+];
+
+// ── Utilities ──────────────────────────────────────────────────────
+
+function esc(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function formatRelative(ts) {
+  if (!ts) return '—';
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)  return `${d}d ago`;
+  return new Date(ts).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function formatDate(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function approvalChip(status) {
+  const cfg = APPROVAL_LABEL[status] || APPROVAL_LABEL.draft;
+  return `<span class="rdi-approval rdi-approval--${status}">${cfg.label}</span>`;
+}
+
+// ── URL param ──────────────────────────────────────────────────────
+
+function getProjectId() {
+  return new URLSearchParams(location.search).get('id');
+}
+
+// ── Build timeline events ──────────────────────────────────────────
+
+function buildTimeline(project, docs) {
+  const events = [];
+
+  // Project created
+  events.push({
+    ts: project.createdAt,
+    icon: '📁',
+    label: 'Project created',
+    detail: formatDate(project.createdAt),
+    type: 'system'
+  });
+
+  // Each document: created, sent, approved/rejected
+  docs.forEach(doc => {
+    const meta = TOOL_META[doc.toolId];
+    if (!meta) return;
+
+    events.push({
+      ts: doc.createdAt,
+      icon: meta.icon,
+      label: `${meta.name} created`,
+      detail: `${esc(doc.reference)} · ${formatDate(doc.createdAt)}`,
+      docId: doc.id,
+      docUrl: `${meta.url}?resume=${doc.id}`,
+      type: 'doc-created'
+    });
+
+    const a = doc.approval;
+    if (!a) return;
+
+    if (a.sentAt) {
+      events.push({
+        ts: a.sentAt,
+        icon: '📤',
+        label: `${doc.reference} sent for approval`,
+        detail: a.sentTo ? `Sent to ${esc(a.sentTo)}` : formatDate(a.sentAt),
+        docId: doc.id,
+        docUrl: `${meta.url}?resume=${doc.id}`,
+        type: 'approval-sent'
+      });
+    }
+
+    if (a.approvedAt) {
+      events.push({
+        ts: a.approvedAt,
+        icon: '✅',
+        label: `${doc.reference} approved`,
+        detail: formatDate(a.approvedAt),
+        docId: doc.id,
+        docUrl: `${meta.url}?resume=${doc.id}`,
+        type: 'approval-approved'
+      });
+    }
+
+    if (a.rejectedAt) {
+      events.push({
+        ts: a.rejectedAt,
+        icon: '❌',
+        label: `${doc.reference} rejected`,
+        detail: formatDate(a.rejectedAt),
+        docId: doc.id,
+        docUrl: `${meta.url}?resume=${doc.id}`,
+        type: 'approval-rejected'
+      });
+    }
+  });
+
+  // Project status changes for complete
+  if (project.status === 'complete') {
+    events.push({
+      ts: project.updatedAt,
+      icon: '🏁',
+      label: 'Project completed',
+      detail: formatDate(project.updatedAt),
+      type: 'system'
+    });
+  }
+
+  // Sort newest first for display, then reverse for visual chronological order (oldest at top)
+  events.sort((a, b) => new Date(a.ts) - new Date(b.ts));
+  return events;
+}
+
+// ── Render timeline ────────────────────────────────────────────────
+
+function renderTimeline(events) {
+  const container = document.getElementById('proj-timeline');
+  if (events.length === 0) {
+    container.innerHTML = '<div class="timeline-empty">No activity yet.</div>';
+    return;
+  }
+
+  container.innerHTML = events.map((ev, i) => {
+    const isLast = i === events.length - 1;
+    const inner = ev.docUrl
+      ? `<a href="${ev.docUrl}" class="timeline-label timeline-label--link">${ev.label}</a>`
+      : `<span class="timeline-label">${ev.label}</span>`;
+    return `
+      <div class="timeline-item${isLast ? ' timeline-item--last' : ''}">
+        <div class="timeline-track">
+          <div class="timeline-icon" aria-hidden="true">${ev.icon}</div>
+          ${!isLast ? '<div class="timeline-line" aria-hidden="true"></div>' : ''}
+        </div>
+        <div class="timeline-body">
+          ${inner}
+          <div class="timeline-detail">${ev.detail}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── Render documents ───────────────────────────────────────────────
+
+function renderDocuments(docs) {
+  // Pending approvals
+  const pending = docs.filter(d => d.approval?.status === 'sent');
+  const pendingSection = document.getElementById('proj-pending');
+  const pendingList    = document.getElementById('proj-pending-list');
+
+  if (pending.length > 0) {
+    pendingSection.hidden = false;
+    pendingList.innerHTML = pending.map(doc => docRow(doc)).join('');
+  }
+
+  // Group by tool
+  const groups = document.getElementById('proj-doc-groups');
+  const byTool = {};
+  docs.forEach(doc => {
+    if (!byTool[doc.toolId]) byTool[doc.toolId] = [];
+    byTool[doc.toolId].push(doc);
+  });
+
+  let hasAny = docs.length > 0;
+  document.getElementById('proj-docs-empty').hidden = hasAny;
+
+  groups.innerHTML = TOOL_ORDER
+    .filter(toolId => byTool[toolId]?.length > 0)
+    .map(toolId => {
+      const meta  = TOOL_META[toolId];
+      const items = byTool[toolId];
+      return `
+        <div class="proj-doc-group">
+          <h3 class="proj-doc-group-heading">
+            <span aria-hidden="true">${meta.icon}</span> ${meta.name}
+            <span class="proj-doc-group-count">${items.length}</span>
+          </h3>
+          <div class="proj-doc-list">
+            ${items.map(doc => docRow(doc)).join('')}
+          </div>
+        </div>`;
+    }).join('');
+}
+
+function docRow(doc) {
+  const meta     = TOOL_META[doc.toolId];
+  const approval = doc.approval?.status;
+  const chip     = approval && approval !== 'draft'
+    ? approvalChip(approval) : '';
+  return `
+    <a href="${meta.url}?resume=${esc(doc.id)}" class="proj-doc-row">
+      <div class="proj-doc-row-left">
+        <span class="proj-doc-ref">${esc(doc.reference)}</span>
+        <span class="proj-doc-title">${esc(doc.title)}</span>
+      </div>
+      <div class="proj-doc-row-right">
+        ${chip}
+        <span class="proj-doc-date">${formatRelative(doc.updatedAt)}</span>
+        <span class="proj-doc-arrow" aria-hidden="true">→</span>
+      </div>
+    </a>`;
+}
+
+// ── Render project header ──────────────────────────────────────────
+
+function renderHeader(project) {
+  const statusCfg = PROJECT_STATUSES.find(s => s.value === project.status) || PROJECT_STATUSES[0];
+  document.getElementById('proj-status-dot').style.background   = statusCfg.colour;
+  document.getElementById('proj-status-label').textContent      = statusCfg.label;
+  document.getElementById('proj-name').textContent              = project.name;
+
+  const metaParts = [];
+  if (project.clientName)   metaParts.push(`<span>${esc(project.clientName)}</span>`);
+  if (project.siteAddress)  metaParts.push(`<span>${esc(project.siteAddress.split('\n')[0])}</span>`);
+  if (project.contractRef)  metaParts.push(`<span>Ref: ${esc(project.contractRef)}</span>`);
+  if (project.contractValue) metaParts.push(`<span>$${Number(project.contractValue).toLocaleString('en-AU')} excl. GST</span>`);
+  document.getElementById('proj-meta').innerHTML = metaParts.join('<span class="proj-meta-sep">·</span>');
+}
+
+// ── Render tool launch row ─────────────────────────────────────────
+
+function renderToolRow(projectId) {
+  const grid = document.getElementById('proj-tools-grid');
+  grid.innerHTML = Object.entries(TOOL_META).map(([toolId, meta]) =>
+    `<a href="${meta.url}?project=${esc(projectId)}" class="proj-tool-btn">
+      <span class="proj-tool-icon" aria-hidden="true">${meta.icon}</span>
+      <span class="proj-tool-name">${meta.name}</span>
+    </a>`
+  ).join('');
+}
+
+// ── Project edit modal ─────────────────────────────────────────────
+
+let _projectId = null;
+
+function openEditModal(project) {
+  const container = document.getElementById('project-modal-fields');
+  container.innerHTML = `<div class="project-form-grid">` +
+    PROJECT_FORM_FIELDS.map(f => {
+      const val = esc((project || {})[f.id] || '');
+      const cls = f.grid === 'full' ? 'project-form-field-full' : 'project-form-field-half';
+      if (f.type === 'select') {
+        return `<div class="${cls}">
+          <label class="pf-label" for="pm-${f.id}">${f.label}</label>
+          <select class="pf-input" id="pm-${f.id}">
+            ${f.options.map(o => `<option value="${o.value}"${(project?.status||'active')===o.value?' selected':''}>${o.label}</option>`).join('')}
+          </select>
+        </div>`;
+      }
+      if (f.type === 'textarea') {
+        return `<div class="${cls}">
+          <label class="pf-label" for="pm-${f.id}">${f.label}${f.required?' *':''}</label>
+          <textarea class="pf-input pf-textarea" id="pm-${f.id}" rows="2" placeholder="${esc(f.placeholder||'')}">${val}</textarea>
+        </div>`;
+      }
+      return `<div class="${cls}">
+        <label class="pf-label" for="pm-${f.id}">${f.label}${f.required?' *':''}</label>
+        <input class="pf-input" type="${f.type}" id="pm-${f.id}" value="${val}" placeholder="${esc(f.placeholder||'')}"
+          ${f.min!==undefined?`min="${f.min}"`:''}
+          ${f.step!==undefined?`step="${f.step}"`:''}
+        />
+      </div>`;
+    }).join('') + `</div>`;
+
+  document.getElementById('project-overlay').hidden = false;
+  document.getElementById('pm-name')?.focus();
+}
+
+function closeEditModal() {
+  document.getElementById('project-overlay').hidden = true;
+}
+
+function saveProject() {
+  const name = document.getElementById('pm-name')?.value.trim();
+  if (!name) { alert('Project name is required.'); return; }
+
+  const data = {};
+  PROJECT_FORM_FIELDS.forEach(f => {
+    const el = document.getElementById(`pm-${f.id}`);
+    if (!el) return;
+    data[f.id] = f.type === 'number'
+      ? (parseFloat(el.value) || null)
+      : el.value.trim();
+  });
+
+  projectStore.update(_projectId, data);
+  closeEditModal();
+  init(); // re-render with updated data
+}
+
+// ── Init ───────────────────────────────────────────────────────────
+
+function init() {
+  _projectId = getProjectId();
+  if (!_projectId) {
+    document.getElementById('proj-not-found').hidden = false;
+    return;
+  }
+
+  const project = projectStore.get(_projectId);
+  if (!project) {
+    document.getElementById('proj-not-found').hidden = false;
+    return;
+  }
+
+  document.getElementById('proj-content').hidden = false;
+  document.title = `${project.name} — BIK Business Toolkit`;
+
+  const docs = documentHistory.listByProject(_projectId, 200);
+
+  renderHeader(project);
+  renderToolRow(_projectId);
+  renderTimeline(buildTimeline(project, docs));
+  renderDocuments(docs);
+}
+
+init();
+
+// ── Edit modal wiring ──────────────────────────────────────────────
+
+document.getElementById('btn-edit-project').addEventListener('click', () => {
+  const project = projectStore.get(_projectId);
+  if (project) openEditModal(project);
+});
+
+document.getElementById('btn-project-close').addEventListener('click', closeEditModal);
+document.getElementById('btn-project-cancel').addEventListener('click', closeEditModal);
+document.getElementById('project-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('project-overlay')) closeEditModal();
+});
+document.getElementById('btn-project-save').addEventListener('click', saveProject);
+document.getElementById('btn-project-delete').addEventListener('click', () => {
+  const project = projectStore.get(_projectId);
+  if (!project) return;
+  if (!confirm(`Delete "${project.name}"? Documents linked to this project will not be deleted.`)) return;
+  projectStore.delete(_projectId);
+  location.href = 'dashboard.html';
+});
+</script>
+
+<script type="module" src="./js/toolkit/beta-banner.js"></script>
+</body>
+</html>

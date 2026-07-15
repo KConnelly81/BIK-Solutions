@@ -140,6 +140,18 @@
       </div>
     </section>
 
+    <!-- Pending Approvals -->
+    <section class="dash-section" id="pending-section" aria-labelledby="pending-heading" hidden>
+      <h2 class="dash-section-title" id="pending-heading">Awaiting Approval</h2>
+      <div id="pending-list" class="recent-docs-list"></div>
+    </section>
+
+    <!-- Draft Documents -->
+    <section class="dash-section" id="drafts-section" aria-labelledby="drafts-heading" hidden>
+      <h2 class="dash-section-title" id="drafts-heading">Draft Documents</h2>
+      <div id="drafts-list" class="recent-docs-list"></div>
+    </section>
+
     <!-- Recent documents -->
     <section class="dash-section" aria-labelledby="recent-heading">
       <div class="dash-section-header">
@@ -308,8 +320,10 @@ function renderProjects() {
     const docCount = docs.length;
     const client   = p.clientName ? `<div class="pcard-client">${esc(p.clientName)}</div>` : '';
     const addr     = p.siteAddress ? `<div class="pcard-addr">${esc(p.siteAddress.split('\n')[0])}</div>` : '';
+    const pendingCount = docs.filter(d => d.approval?.status === 'sent').length;
+    const pendingBadge = pendingCount > 0 ? `<span class="pcard-pending-badge">${pendingCount} awaiting approval</span>` : '';
     return `
-      <div class="project-card" data-project-id="${esc(p.id)}" role="group" aria-label="${esc(p.name)}">
+      <a href="project.html?id=${esc(p.id)}" class="project-card" aria-label="${esc(p.name)}">
         <div class="pcard-top">
           <div class="pcard-title-row">
             <span class="pcard-dot" style="background:${colour}" title="${esc(PROJECT_STATUSES.find(s=>s.value===p.status)?.label||p.status)}"></span>
@@ -325,17 +339,18 @@ function renderProjects() {
           <span class="pcard-stat-sep">·</span>
           <span class="pcard-stat">${lastActivity}</span>
         </div>
+        ${pendingBadge}
         <div class="pcard-tools">
           ${Object.entries(TOOL_META).slice(0,4).map(([toolId, meta]) =>
-            `<a href="${meta.url}?project=${esc(p.id)}" class="pcard-tool-btn" title="Open ${meta.name}" aria-label="${meta.name}">
+            `<a href="${meta.url}?project=${esc(p.id)}" class="pcard-tool-btn" title="Open ${meta.name}" aria-label="${meta.name}" onclick="event.stopPropagation()">
               <span aria-hidden="true">${meta.icon}</span>
             </a>`
           ).join('')}
-          <a href="${TOOL_META['defect-report'].url}?project=${esc(p.id)}" class="pcard-tool-btn" title="Open Defect Report" aria-label="Defect Report">
+          <a href="${TOOL_META['defect-report'].url}?project=${esc(p.id)}" class="pcard-tool-btn" title="Open Defect Report" aria-label="Defect Report" onclick="event.stopPropagation()">
             <span aria-hidden="true">🔍</span>
           </a>
         </div>
-      </div>`;
+      </a>`;
   }).join('') + `
     <button class="project-card project-card--new" type="button" id="btn-new-project-card" aria-label="Create a new project">
       <div class="pcard-new-icon" aria-hidden="true">+</div>
@@ -344,6 +359,7 @@ function renderProjects() {
 
   grid.querySelectorAll('.pcard-edit-btn').forEach(btn => {
     btn.addEventListener('click', e => {
+      e.preventDefault();
       e.stopPropagation();
       openProjectModal(btn.dataset.projectId);
     });
@@ -527,6 +543,90 @@ function saveProject() {
   renderAll();
 }
 
+// ── Pending Approvals ──────────────────────────────────────────────
+
+function renderPendingApprovals() {
+  const section = document.getElementById('pending-section');
+  const list    = document.getElementById('pending-list');
+
+  const allRecords = documentHistory.list(null, 200);
+  const pending = allRecords.filter(r => r.approval?.status === 'sent');
+
+  if (pending.length === 0) {
+    section.hidden = true;
+    return;
+  }
+
+  section.hidden = false;
+  list.querySelectorAll('.recent-doc-item').forEach(el => el.remove());
+
+  pending.slice(0, 10).forEach(rec => {
+    const meta    = TOOL_META[rec.toolId];
+    if (!meta) return;
+    const project = rec.projectId ? projectStore.get(rec.projectId) : null;
+    const projTag = project ? `<span class="rdi-project">📁 ${esc(project.name)}</span> · ` : '';
+    const sentTo  = rec.approval?.sentTo ? ` · Sent to ${esc(rec.approval.sentTo)}` : '';
+    const item = document.createElement('a');
+    item.className = 'recent-doc-item';
+    item.href = `${meta.url}?resume=${rec.id}`;
+    item.innerHTML = `
+      <div class="rdi-left">
+        <div class="rdi-title">${esc(rec.title || 'Untitled')} <span class="rdi-approval rdi-approval--sent">Awaiting approval</span></div>
+        <div class="rdi-meta">${projTag}<span class="rdi-tool">${esc(meta.name)}</span>${sentTo} · ${formatRelative(rec.approval?.sentAt || rec.updatedAt)}</div>
+      </div>
+      <div class="rdi-arrow" aria-hidden="true">→</div>`;
+    list.appendChild(item);
+  });
+}
+
+// ── Draft Documents ────────────────────────────────────────────────
+
+const DRAFT_KEYS = {
+  'variation-notice': { key: 'bik-variation-draft', url: 'variation-generator.html', name: 'Variation Notice', icon: '📋' },
+  'quote-builder':    { key: 'bik-quote-draft',     url: 'quote-builder.html',       name: 'Quote Builder',    icon: '💰' },
+  'scope-of-works':   { key: 'bik-scope-draft',     url: 'scope-of-works.html',      name: 'Scope of Works',   icon: '📝' },
+  'site-diary':       { key: 'bik-diary-draft',      url: 'site-diary.html',          name: 'Site Diary',       icon: '📅' },
+  'defect-report':    { key: 'bik-defect-draft',     url: 'defect-report.html',       name: 'Defect Report',    icon: '🔍' }
+};
+
+function renderDrafts() {
+  const section = document.getElementById('drafts-section');
+  const list    = document.getElementById('drafts-list');
+
+  const drafts = [];
+  for (const [toolId, cfg] of Object.entries(DRAFT_KEYS)) {
+    try {
+      const raw = localStorage.getItem(cfg.key);
+      if (!raw) continue;
+      const data = JSON.parse(raw);
+      // Only show if draft has at least one non-empty field
+      const hasContent = Object.values(data).some(v => v && String(v).trim().length > 0);
+      if (hasContent) drafts.push({ toolId, cfg, data });
+    } catch { /* skip corrupt draft */ }
+  }
+
+  if (drafts.length === 0) {
+    section.hidden = true;
+    return;
+  }
+
+  section.hidden = false;
+  list.querySelectorAll('.recent-doc-item').forEach(el => el.remove());
+
+  drafts.forEach(({ toolId, cfg }) => {
+    const item = document.createElement('a');
+    item.className = 'recent-doc-item';
+    item.href = cfg.url;
+    item.innerHTML = `
+      <div class="rdi-left">
+        <div class="rdi-title"><span aria-hidden="true">${cfg.icon}</span> ${cfg.name} <span class="rdi-approval rdi-approval--draft">Draft</span></div>
+        <div class="rdi-meta">Unsaved draft — click to continue</div>
+      </div>
+      <div class="rdi-arrow" aria-hidden="true">→</div>`;
+    list.appendChild(item);
+  });
+}
+
 // ── Profile Modal ──────────────────────────────────────────────────
 
 function renderProfileModal() {
@@ -553,6 +653,8 @@ function renderAll() {
   renderHero();
   renderProjects();
   renderContinue();
+  renderPendingApprovals();
+  renderDrafts();
   renderRecentDocs();
 }
 

@@ -782,10 +782,31 @@
   margin-left: 4px;
   color: #fff;
 }
+.rdi-approval--draft    { background: #bbb; }
 .rdi-approval--sent     { background: #2c7dd4; }
 .rdi-approval--approved { background: #2b9e3f; }
 .rdi-approval--rejected { background: #c0392b; }
 .rdi-approval--archived { background: #aaa; }
+
+/* ── Pending approval badge on project card ── */
+.pcard-pending-badge {
+  display: inline-block;
+  background: #fff5eb;
+  border: 1px solid #f5c98a;
+  color: #b36a00;
+  font-size: 0.67rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  margin-top: 2px;
+}
+
+/* ── project-card as <a> tag ── */
+a.project-card {
+  text-decoration: none;
+  cursor: pointer;
+  display: flex;
+}
 
 /* ── Responsive ── */
 @media (max-width: 600px) {
