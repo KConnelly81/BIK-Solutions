@@ -80,6 +80,90 @@
 
   <div class="rn-body">
 
+    <!-- ── Sprint 5.1 — Founding Builder Experience ── -->
+    <div class="release">
+      <div class="release-header">
+        <span class="release-version">Version 0.11</span>
+        <span class="release-badge">Beta</span>
+        <span class="release-date">16 July 2026 — Founding Builder Experience</span>
+      </div>
+
+      <p class="release-intro">
+        Sprint 5.1 is focused entirely on the first-week experience for Founding Builders. No new document generators — all effort went into onboarding, value demonstration, and the connected workflow. The goal: a builder who has never seen BIK can receive a single email, open the dashboard, and understand the full value of the product within five minutes — without any training.
+      </p>
+
+      <div class="change-group">
+        <div class="change-group-title">New in this release</div>
+        <ul class="change-list">
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Guided onboarding wizard</strong> — 3-step setup modal for new users. Step 1: business profile (name, builder type, state, ABN, licence, GST, existing software). Step 2: create first project. Step 3: celebration with CTA to generate first document. Includes confetti animation, back navigation, and skip option. Profile auto-fills after step 1 so every subsequent document is pre-populated.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Founding Builder program page</strong> (<code>founding-builder.html</code>) — dedicated welcome page explaining the Founding Builder program, founder message, benefits (early access, locked pricing, roadmap voting, direct team access), and live value metrics (documents created, hours saved, estimated cost saved).</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Quick Start Guide</strong> (<code>quick-start.html</code>) — step-by-step onboarding guide covering profile setup, first project, first document, tool selection reference, and the feedback commitment. Designed for a builder who receives one email and opens BIK independently.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>FAQ page</strong> (<code>faq.html</code>) — comprehensive answers covering getting started, privacy, AI Writer, tools, documents, and Beta program questions.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Today's Priorities panel</strong> — new dashboard section showing critical and warning alerts across all active projects in a single prioritised list. Each priority row has a one-click action button so the most important task is always one click away.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Value Metrics bar</strong> — live display of documents created, admin hours saved, and estimated cost saved. Calculated using per-document-type time estimates at $75/hr. Transparent methodology documented in the Founding Builder page and FAQ.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Founding Builder banner</strong> — dismissible banner on the dashboard for new users, linking to the Founding Builder program page. Sets context for the Beta relationship before the builder opens any tools.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Richer demo project</strong> — "Smith Residence — Double Storey Addition" seeded with 15 documents across 8 tool types, with correct approval states and contract values. The demo project now shows a working Running Contract Value ($489,800 excl. GST: base quote $485k + approved $4.8k kitchen variation), an active pending variation, a missing site diary alert, and a suggested next action. First-time visitors see a fully operational dashboard within seconds.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Feedback email fallback</strong> — feedback submitted via the Beta button now opens a pre-filled mailto link so the feedback actually reaches BIK, not just localStorage. Previously, feedback was stored locally only with no delivery mechanism.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Star rating hover fixed</strong> — the star rating in the feedback widget now correctly highlights all stars up to the hovered star (was broken due to CSS <code>~</code> sibling selector limitation).</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Health engine expanded</strong> — all 16 tools now registered in the health engine and project TOOL_META. Previously, 11 Phase 2 tools were invisible to project health analysis and the project tool history panel.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="known-issues">
+        <div class="known-issues-title">Known issues in this release</div>
+        <ul>
+          <li>Demo data (Smith Residence) uses placeholder document body text rather than fully generated documents. Opening a document from History will show form fields but not a rendered preview — this is expected in the Beta.</li>
+          <li>The onboarding wizard's project creation uses a direct localStorage write as a fallback if <code>projectStore.create()</code> is unavailable. This is a minor timing issue on first load and will be resolved in v0.12.</li>
+          <li>Value metrics are estimates only. The $75/hr admin rate and per-document time estimates are conservative and clearly labelled as estimates. Actual savings depend on your existing workflow and document complexity.</li>
+          <li>The Founding Builder banner and Value Metrics bar are not yet visible on mobile screen widths below 380px due to flex wrapping — to be addressed in v0.12 polish pass.</li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="rn-divider">
+
+    <!-- ── What's Coming ── -->
+    <div class="release">
+      <div class="release-header">
+        <span class="release-version">What's Coming</span>
+        <span class="release-date">Sprint 6 — planned</span>
+      </div>
+      <p class="release-intro">The following items are planned for Sprint 6. Priority order is driven by Founding Builder feedback.</p>
+      <div class="change-group">
+        <ul class="change-list">
+          <li class="change-item"><span class="change-dot">●</span><span><strong>Cloud sync</strong> — optional account-based storage so your data syncs across devices and can't be lost if browser storage is cleared. Opt-in, free tier available.</span></li>
+          <li class="change-item"><span class="change-dot">●</span><span><strong>Professional review completion</strong> — SWMS, Notice to Show Cause, Contract Termination Notice, and Subcontractor Agreement are currently under WHS and construction law review. Expected to release in controlled beta once review is complete.</span></li>
+          <li class="change-item"><span class="change-dot">●</span><span><strong>Document sharing</strong> — send a document as a shareable link directly from BIK, without needing to download a PDF first.</span></li>
+          <li class="change-item"><span class="change-dot">●</span><span><strong>Mobile polish</strong> — improved layout on phones, including a simplified toolbar and touch-optimised form fields.</span></li>
+          <li class="change-item"><span class="change-dot">●</span><span><strong>Founding Builder roadmap vote</strong> — Founding Builders will be able to vote on which features get built in Sprint 7. Voting opens when Sprint 6 ships.</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="rn-divider">
+
     <div class="release">
       <div class="release-header">
         <span class="release-version">Version 0.10</span>

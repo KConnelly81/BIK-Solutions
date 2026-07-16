@@ -8,6 +8,143 @@
   <title>Dashboard — BIK Business Toolkit</title>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
+  <style>
+    /* ── Founding Builder Banner ── */
+    .founding-banner {
+      background: linear-gradient(135deg, #252320 0%, #3a3835 100%);
+      border-radius: 10px;
+      margin: 0 0 20px;
+    }
+    .founding-banner-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 20px;
+      flex-wrap: wrap;
+    }
+    .founding-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: #fff;
+      font-size: 0.84rem;
+      line-height: 1.4;
+    }
+    .founding-badge {
+      background: #D85A30;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .founding-desc { color: rgba(255,255,255,0.65); font-size: 0.78rem; }
+    .founding-banner-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .founding-learn-link {
+      color: #D85A30;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .founding-learn-link:hover { text-decoration: underline; }
+    .founding-dismiss {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.4);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+    }
+    .founding-dismiss:hover { color: rgba(255,255,255,0.8); }
+
+    /* ── Today's Priorities ── */
+    .priorities-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    .priority-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #fff;
+      border: 1px solid #e8e4de;
+      border-left: 4px solid #e8e4de;
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+    .priority-row--critical { border-left-color: #c0392b; }
+    .priority-row--warning  { border-left-color: #e67e22; }
+    .priority-icon { font-size: 0.9rem; flex-shrink: 0; }
+    .priority-body { flex: 1; min-width: 0; }
+    .priority-headline { font-size: 0.84rem; font-weight: 600; color: #252320; }
+    .priority-project  { font-size: 0.76rem; color: #888; margin-top: 2px; }
+    .priority-action {
+      white-space: nowrap;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #D85A30;
+      border: 1.5px solid #D85A30;
+      border-radius: 5px;
+      padding: 5px 10px;
+      flex-shrink: 0;
+      transition: all 0.12s;
+    }
+    .priority-action:hover { background: #D85A30; color: #fff; }
+
+    /* ── Value Metrics Bar ── */
+    .value-metrics-bar {
+      display: flex;
+      align-items: center;
+      background: #f5f0e8;
+      border-radius: 8px;
+      padding: 14px 24px;
+      margin-bottom: 24px;
+      gap: 0;
+    }
+    .vmb-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      text-align: center;
+    }
+    .vmb-stat--link { flex: 0 0 auto; }
+    .vmb-num {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #252320;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .vmb-label { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+    .vmb-divider {
+      width: 1px; height: 32px;
+      background: #ddd;
+      margin: 0 20px;
+      flex-shrink: 0;
+    }
+    .vmb-detail-link {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #D85A30;
+      white-space: nowrap;
+    }
+    .vmb-detail-link:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .vmb-divider--hide-sm { display: none; }
+      .founding-banner-inner { padding: 14px 16px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -45,6 +182,21 @@
       <p class="dash-hero-sub" id="hero-sub">Your professional document toolkit — built for Australian builders and tradies.</p>
     </div>
 
+    <!-- ── Founding Builder Banner ── -->
+    <div id="founding-banner" class="founding-banner" hidden>
+      <div class="founding-banner-inner">
+        <div class="founding-banner-left">
+          <span class="founding-badge">Founding Builder</span>
+          <strong>You're in. Welcome to the BIK Beta.</strong>
+          <span class="founding-desc">Your feedback shapes what gets built next. Every document you create, every issue you find — it all goes directly to the roadmap.</span>
+        </div>
+        <div class="founding-banner-right">
+          <a href="founding-builder.html" class="founding-learn-link">Learn more →</a>
+          <button type="button" class="founding-dismiss" id="btn-dismiss-founding" aria-label="Dismiss">✕</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ── Health Summary Bar ── -->
     <div id="health-summary-bar" class="health-summary-bar" hidden>
       <div class="hsb-stat" id="hsb-projects">
@@ -60,6 +212,36 @@
       <div class="hsb-stat hsb-stat--alert" id="hsb-alerts-wrap">
         <span class="hsb-num" id="hsb-num-alerts">0</span>
         <span class="hsb-label" id="hsb-label-alerts">items need attention</span>
+      </div>
+    </div>
+
+    <!-- ── Today's Priorities ── -->
+    <section id="priorities-section" aria-labelledby="priorities-heading" hidden>
+      <div class="dash-section-header">
+        <h2 class="dash-section-title" id="priorities-heading">Today's Priorities</h2>
+      </div>
+      <div id="priorities-list" class="priorities-list"></div>
+    </section>
+
+    <!-- ── Value Metrics ── -->
+    <div id="value-metrics-bar" class="value-metrics-bar" hidden>
+      <div class="vmb-stat">
+        <span class="vmb-num" id="vmb-docs">0</span>
+        <span class="vmb-label">documents created</span>
+      </div>
+      <div class="vmb-divider"></div>
+      <div class="vmb-stat">
+        <span class="vmb-num" id="vmb-hours">0h</span>
+        <span class="vmb-label">admin time saved</span>
+      </div>
+      <div class="vmb-divider"></div>
+      <div class="vmb-stat">
+        <span class="vmb-num" id="vmb-cost">$0</span>
+        <span class="vmb-label">estimated cost saved</span>
+      </div>
+      <div class="vmb-divider vmb-divider--hide-sm"></div>
+      <div class="vmb-stat vmb-stat--link vmb-divider--hide-sm">
+        <a href="founding-builder.html" class="vmb-detail-link">Your impact →</a>
       </div>
     </div>
 
@@ -347,7 +529,8 @@
 import { documentHistory } from './js/toolkit/document-history.js';
 import { projectStore, PROJECT_STATUSES } from './js/toolkit/project-store.js';
 import { evaluateAll, aggregateMetrics } from './js/toolkit/health-engine.js';
-import { seedDemoData, isDemoActive } from './js/toolkit/demo-data.js';
+import { seedDemoData, isDemoActive, calcTimeSaved } from './js/toolkit/demo-data.js';
+import { checkAndInit as checkOnboarding } from './js/toolkit/onboarding.js';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -657,7 +840,65 @@ function renderProfileModal() {
   }).join('');
 }
 
+// ── Today's Priorities ────────────────────────────────────────────
+
+function renderPriorities(reports) {
+  const section = document.getElementById('priorities-section');
+  const list    = document.getElementById('priorities-list');
+
+  // Collect critical + warning alerts across all projects
+  const priorities = [];
+  reports.forEach(r => {
+    r.alerts.filter(a => a.severity !== 'info').forEach(a => {
+      priorities.push({ ...a, projectName: r.project.name, projectId: r.project.id });
+    });
+  });
+
+  if (priorities.length === 0) { section.hidden = true; return; }
+  section.hidden = false;
+
+  list.innerHTML = priorities.slice(0, 5).map(a => {
+    const primaryAction = a.actions?.find(x => x.isPrimary) || a.actions?.[0];
+    return `
+      <div class="priority-row priority-row--${a.severity}">
+        <span class="priority-icon" aria-hidden="true">${a.severity === 'critical' ? '⚠️' : '●'}</span>
+        <div class="priority-body">
+          <div class="priority-headline">${esc(a.headline)}</div>
+          <div class="priority-project">${esc(a.projectName)}${a.detail ? ' — ' + esc(a.detail) : ''}</div>
+        </div>
+        ${primaryAction ? `<a href="${esc(primaryAction.href)}" class="priority-action">${esc(primaryAction.label)}</a>` : ''}
+      </div>`;
+  }).join('');
+}
+
+// ── Value Metrics ─────────────────────────────────────────────────
+
+function renderValueMetrics() {
+  const bar  = document.getElementById('value-metrics-bar');
+  const docs = documentHistory.list(undefined, 500);
+  if (docs.length === 0) { bar.hidden = true; return; }
+
+  bar.hidden = false;
+  const { totalHrs, costSaved } = calcTimeSaved(docs);
+
+  document.getElementById('vmb-docs').textContent  = docs.length;
+  document.getElementById('vmb-hours').textContent = totalHrs + 'h';
+  document.getElementById('vmb-cost').textContent  = '$' + costSaved.toLocaleString('en-AU');
+}
+
+// ── Founding Builder Banner ────────────────────────────────────────
+
+function renderFoundingBanner() {
+  const banner    = document.getElementById('founding-banner');
+  const dismissed = localStorage.getItem('bik-founding-banner-dismissed') === '1';
+  if (dismissed) { banner.hidden = true; return; }
+  banner.hidden = false;
+}
+
 // ── Main render ────────────────────────────────────────────────────
+
+// Expose for onboarding wizard callback
+window.bikRenderAll = renderAll;
 
 function renderAll() {
   const projects = projectStore.list();
@@ -666,7 +907,10 @@ function renderAll() {
 
   renderHero(metrics);
   renderSummaryBar(metrics);
+  renderPriorities(reports);
+  renderValueMetrics();
   renderHealthGrid(reports);
+  renderFoundingBanner();
 }
 
 // Seed demo data for first-time visitors (no existing projects or profile)
@@ -718,10 +962,19 @@ document.getElementById('btn-profile-save').addEventListener('click', () => {
   renderAll();
 });
 
+// Founding banner dismiss
+document.getElementById('btn-dismiss-founding')?.addEventListener('click', () => {
+  localStorage.setItem('bik-founding-banner-dismissed', '1');
+  document.getElementById('founding-banner').hidden = true;
+});
+
 // Filter buttons
 document.querySelectorAll('.hf-btn').forEach(btn => {
   btn.addEventListener('click', () => applyFilter(btn.dataset.filter));
 });
+
+// Launch onboarding wizard for new users (after page renders)
+setTimeout(() => checkOnboarding(projectStore), 300);
 
 // Edit project buttons (delegated — grid is re-rendered)
 document.getElementById('health-grid').addEventListener('click', e => {

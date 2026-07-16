@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BIK Business Toolkit Quick Start Guide — set up your profile, create a project, and generate your first document in five minutes." />
+  <meta name="robots" content="noindex" />
+  <title>Quick Start Guide — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .qs-hero {
+      background: #252320;
+      color: #fff;
+      padding: 56px 24px 48px;
+    }
+    .qs-hero-inner { max-width: 680px; margin: 0 auto; }
+    .qs-eyebrow {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #D85A30;
+      margin-bottom: 12px;
+    }
+    .qs-hero h1 {
+      font-size: clamp(1.5rem, 4vw, 2.2rem);
+      font-weight: 900;
+      margin-bottom: 12px;
+      line-height: 1.15;
+    }
+    .qs-hero p { color: rgba(255,255,255,0.65); font-size: 0.9rem; line-height: 1.7; }
+
+    .qs-nav {
+      background: #1a1816;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .qs-nav-logo { display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:700;font-size:0.88rem; }
+    .qs-nav-logo-mark { width:30px;height:30px;background:#D85A30;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:0.9rem; }
+    .qs-nav-back { color:rgba(255,255,255,0.5);font-size:0.78rem;text-decoration:none; }
+    .qs-nav-back:hover { color:#fff; }
+
+    .qs-body { max-width: 680px; margin: 0 auto; padding: 56px 24px 80px; }
+
+    .qs-time-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f5f0e8;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 40px;
+    }
+
+    /* Step cards */
+    .qs-step { margin-bottom: 48px; }
+    .qs-step-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+    .qs-step-num {
+      width: 40px; height: 40px;
+      background: #252320;
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .qs-step-header-text {}
+    .qs-step h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #252320;
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+    .qs-step-time {
+      font-size: 0.75rem;
+      color: #D85A30;
+      font-weight: 600;
+    }
+    .qs-step p {
+      font-size: 0.88rem;
+      color: #444;
+      line-height: 1.75;
+      margin-bottom: 12px;
+    }
+    .qs-step ul, .qs-step ol {
+      padding-left: 20px;
+      margin-bottom: 14px;
+    }
+    .qs-step li {
+      font-size: 0.87rem;
+      color: #444;
+      line-height: 1.7;
+      margin-bottom: 5px;
+    }
+    .qs-step li strong { color: #252320; }
+
+    .qs-tip {
+      background: #f5f0e8;
+      border-left: 3px solid #D85A30;
+      border-radius: 4px;
+      padding: 12px 16px;
+      font-size: 0.82rem;
+      color: #555;
+      margin-top: 14px;
+      line-height: 1.6;
+    }
+    .qs-tip strong { color: #252320; }
+
+    .qs-cta-box {
+      background: #252320;
+      color: #fff;
+      border-radius: 12px;
+      padding: 32px 28px;
+      text-align: center;
+      margin-top: 48px;
+    }
+    .qs-cta-box h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 10px; }
+    .qs-cta-box p { font-size: 0.85rem; color: rgba(255,255,255,0.65); margin-bottom: 20px; }
+    .qs-cta-btn {
+      background: #D85A30;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 12px 26px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .qs-cta-btn:hover { background: #c04e28; }
+
+    .qs-divider { border: none; border-top: 1px solid #e8e4de; margin: 40px 0; }
+
+    /* Tool reference */
+    .qs-tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .qs-tool-ref {
+      background: #fafaf8;
+      border: 1px solid #e8e4de;
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.82rem;
+    }
+    .qs-tool-ref-name { font-weight: 700; color: #252320; margin-bottom: 4px; }
+    .qs-tool-ref-desc { color: #666; line-height: 1.5; font-size: 0.78rem; }
+    .qs-tool-ref-why {
+      margin-top: 8px;
+      font-size: 0.74rem;
+      color: #D85A30;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="qs-nav">
+  <a href="dashboard.html" class="qs-nav-logo">
+    <div class="qs-nav-logo-mark">B</div>
+    BIK Business Toolkit
+  </a>
+  <a href="dashboard.html" class="qs-nav-back">← Dashboard</a>
+</nav>
+
+<header class="qs-hero">
+  <div class="qs-hero-inner">
+    <div class="qs-eyebrow">Founding Builder Program</div>
+    <h1>Quick Start Guide</h1>
+    <p>Everything you need to get from zero to a running project with documents in about five minutes.</p>
+  </div>
+</header>
+
+<main class="qs-body">
+
+  <div class="qs-time-badge">
+    ⏱ Estimated setup time: 5 minutes
+  </div>
+
+  <!-- Step 1 -->
+  <div class="qs-step">
+    <div class="qs-step-header">
+      <div class="qs-step-num">1</div>
+      <div class="qs-step-header-text">
+        <h2>Set up your Builder Profile</h2>
+        <div class="qs-step-time">About 2 minutes</div>
+      </div>
+    </div>
+    <p>Your profile stores your business name, ABN, licence number, and contact details. Once saved, BIK fills these into every document automatically — you never retype them again.</p>
+    <p>To set up your profile:</p>
+    <ol>
+      <li>Click the <strong>Profile</strong> button at the top right of the dashboard.</li>
+      <li>Enter your business name, ABN, QBCC or state licence number, phone, email, and business address.</li>
+      <li>Add the name of the person who signs documents (usually the principal or site supervisor).</li>
+      <li>Click <strong>Save profile</strong>.</li>
+    </ol>
+    <div class="qs-tip">
+      <strong>Tip:</strong> Your profile is stored on this device only — nothing is sent to a server. If you use BIK on multiple devices, you'll need to set up the profile on each one.
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="qs-step">
+    <div class="qs-step-header">
+      <div class="qs-step-num">2</div>
+      <div class="qs-step-header-text">
+        <h2>Create your first project</h2>
+        <div class="qs-step-time">About 1 minute</div>
+      </div>
+    </div>
+    <p>Projects connect all your documents in one place. The dashboard then monitors activity and tells you what needs attention.</p>
+    <ol>
+      <li>Click <strong>New Project</strong> at the top of the dashboard.</li>
+      <li>Enter a project name (e.g. "Smith Residence — Ashgrove").</li>
+      <li>Add the client name, site address, and contract reference if you have them.</li>
+      <li>Set the status to <strong>Active</strong> and enter the contract value (excl. GST).</li>
+      <li>Click <strong>Save project</strong>.</li>
+    </ol>
+    <p>Your project will now appear on the dashboard with a health indicator. BIK will start tracking activity and alert you to anything that needs attention.</p>
+    <div class="qs-tip">
+      <strong>Tip:</strong> Don't worry about filling in every field right now. A name and status is enough to get started — you can add more detail later.
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="qs-step">
+    <div class="qs-step-header">
+      <div class="qs-step-num">3</div>
+      <div class="qs-step-header-text">
+        <h2>Generate your first document</h2>
+        <div class="qs-step-time">About 2 minutes</div>
+      </div>
+    </div>
+    <p>Start with whichever document type is most useful for your current project. We recommend a <strong>Quote</strong> for a new job, or a <strong>Site Diary</strong> if work has already started.</p>
+    <ol>
+      <li>Click on a tool card from the dashboard (e.g. <strong>Quote Builder</strong>).</li>
+      <li>Fill in the form fields. Your builder profile will auto-fill where relevant.</li>
+      <li>Click <strong>Generate document</strong> — the document appears in the Preview panel on the right.</li>
+      <li>Review the document. Use <strong>Edit document</strong> to make any last-minute changes.</li>
+      <li>Use <strong>Save PDF</strong> to download it, or <strong>Email</strong> to open a pre-filled email draft.</li>
+    </ol>
+    <div class="qs-tip">
+      <strong>AI Writer:</strong> Most tools have an AI Writer option. Click the <strong>✦ AI Writer</strong> button in the toolbar to set up your API key. Once connected, AI will rewrite your notes into professional, clear language — without inventing facts or changing your meaning.
+    </div>
+  </div>
+
+  <hr class="qs-divider" />
+
+  <!-- Tool Guide -->
+  <div class="qs-step">
+    <h2 style="font-size:1.2rem;font-weight:800;color:#252320;margin-bottom:6px;">Which tool should I use when?</h2>
+    <p>A quick reference for the tools you'll use most often on an active project.</p>
+    <div class="qs-tools-grid">
+      <div class="qs-tool-ref">
+        <div class="qs-tool-ref-name">💰 Quote Builder</div>
+        <div class="qs-tool-ref-desc">Priced quote with line items, GST, and validity date. Clients can approve with a signature.</div>
+        <div class="qs-tool-ref-why">Use before any work starts.</div>
+      </div>
+      <div class="qs-tool-ref">
+        <div class="qs-tool-ref-name">📝 Scope of Works</div>
+        <div class="qs-tool-ref-desc">Written definition of exactly what is — and isn't — included. Essential protection in a dispute.</div>
+        <div class="qs-tool-ref-why">Issue with or before your quote.</div>
+      </div>
+      <div class="qs-tool-ref">
+        <div class="qs-tool-ref-name">📋 Variation Notice</div>
+        <div class="qs-tool-ref-desc">Documents scope changes, cost impact, and time extension. Requires client approval before work proceeds.</div>
+        <div class="qs-tool-ref-why">Every time scope changes — no exceptions.</div>
+      </div>
+      <div class="qs-tool-ref">
+        <div class="qs-tool-ref-name">📅 Site Diary</div>
+        <div class="qs-tool-ref-desc">Daily record of weather, workforce, works completed, and incidents. Your best protection if a dispute arises later.</div>
+        <div class="qs-tool-ref-why">Every day on site, or as often as possible.</div>
+      </div>
+      <div class="qs-tool-ref">
+        <div class="qs-tool-ref-name">🧾 Progress Claim</div>
+        <div class="qs-tool-ref-desc">Payment claim with schedule of values. Verify your state's security of payment legislation before issuing.</div>
+        <div class="qs-tool-ref-why">At each agreed claim milestone.</div>
+      </div>
+      <div class="qs-tool-ref">
+        <div class="qs-tool-ref-name">🔍 Defect Report</div>
+        <div class="qs-tool-ref-desc">Formal record of a defect with severity, location, and recommended action. Creates a paper trail for rectification.</div>
+        <div class="qs-tool-ref-why">When defects are identified at inspection.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="qs-divider" />
+
+  <!-- Feedback -->
+  <div class="qs-step">
+    <div class="qs-step-header">
+      <div class="qs-step-num">4</div>
+      <div class="qs-step-header-text">
+        <h2>Send your first feedback</h2>
+        <div class="qs-step-time">30 seconds</div>
+      </div>
+    </div>
+    <p>Look for the <strong>Beta</strong> button at the bottom right of every page. Use it to report a bug, suggest an improvement, or just tell us what you think. Every piece of feedback goes directly to the product roadmap.</p>
+    <p>You can also rate the tool, tell us how much time you saved, and whether you'd recommend BIK to other builders. It takes about 30 seconds and it genuinely shapes what gets built next.</p>
+    <div class="qs-tip">
+      <strong>Founding Builder commitment:</strong> We're asking for one piece of meaningful feedback per week during the Beta. In return, we're committed to responding to every piece of feedback and crediting you when your suggestion lands in the product.
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="qs-cta-box">
+    <h3>You're ready. Go build something.</h3>
+    <p>Your dashboard is live. Start with a quote or a site diary — whichever is more useful right now.</p>
+    <a href="dashboard.html" class="qs-cta-btn">Go to dashboard →</a>
+  </div>
+
+</main>
+
+<footer style="background:#f5f0e8;padding:28px 24px;text-align:center;border-top:1px solid #e8e4de">
+  <nav style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:10px">
+    <a href="dashboard.html"      style="font-size:0.78rem;color:#888">Dashboard</a>
+    <a href="founding-builder.html" style="font-size:0.78rem;color:#888">Founding Builder</a>
+    <a href="faq.html"            style="font-size:0.78rem;color:#888">FAQ</a>
+    <a href="support.html"        style="font-size:0.78rem;color:#888">Support</a>
+    <a href="release-notes.html"  style="font-size:0.78rem;color:#888">Release Notes</a>
+  </nav>
+  <p style="font-size:0.75rem;color:#aaa">&copy; 2026 BIK Solutions Pty Ltd &nbsp;·&nbsp; Beta v0.9 &nbsp;·&nbsp; All data stored on this device only</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Join BIK's Founding Builder Program — shape the future of builder software from day one." />
+  <meta name="robots" content="noindex" />
+  <title>Founding Builder Program — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* ── Hero ── */
+    .fb-hero {
+      background: #252320;
+      color: #fff;
+      padding: 72px 24px 64px;
+      text-align: center;
+    }
+    .fb-badge {
+      display: inline-block;
+      background: #D85A30;
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+    .fb-hero h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 900;
+      line-height: 1.12;
+      margin-bottom: 18px;
+      max-width: 640px;
+      margin-inline: auto;
+    }
+    .fb-hero p {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.72);
+      max-width: 540px;
+      margin-inline: auto;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+    .fb-hero-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .fb-btn-primary {
+      background: #D85A30;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 13px 28px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .fb-btn-primary:hover { background: #c04e28; }
+    .fb-btn-ghost {
+      background: transparent;
+      color: rgba(255,255,255,0.8);
+      border: 1.5px solid rgba(255,255,255,0.3);
+      border-radius: 7px;
+      padding: 12px 24px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .fb-btn-ghost:hover { border-color: rgba(255,255,255,0.7); color: #fff; }
+
+    /* ── Nav ── */
+    .fb-nav {
+      background: #1a1816;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .fb-nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .fb-nav-logo-mark {
+      width: 32px; height: 32px;
+      background: #D85A30;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 900; font-size: 0.95rem;
+    }
+    .fb-nav-back {
+      color: rgba(255,255,255,0.55);
+      font-size: 0.8rem;
+      text-decoration: none;
+    }
+    .fb-nav-back:hover { color: #fff; }
+
+    /* ── Founder Message ── */
+    .fb-message-section {
+      max-width: 700px;
+      margin: 64px auto;
+      padding: 0 24px;
+    }
+    .fb-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #D85A30;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 14px;
+    }
+    .fb-message-section h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #252320;
+      margin-bottom: 20px;
+      line-height: 1.2;
+    }
+    .fb-message-section p {
+      font-size: 0.92rem;
+      color: #444;
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+    .fb-signature {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid #e8e4de;
+      font-size: 0.85rem;
+      color: #252320;
+    }
+    .fb-signature strong { display: block; font-weight: 700; }
+    .fb-signature span { color: #888; font-size: 0.8rem; }
+
+    /* ── Benefits ── */
+    .fb-benefits {
+      background: #f5f0e8;
+      padding: 64px 24px;
+    }
+    .fb-benefits-inner {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .fb-benefits h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #252320;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .fb-benefits-sub {
+      text-align: center;
+      font-size: 0.88rem;
+      color: #666;
+      margin-bottom: 40px;
+    }
+    .fb-benefit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 20px;
+    }
+    .fb-benefit-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px 20px;
+      border: 1px solid #e8e4de;
+    }
+    .fb-benefit-icon {
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .fb-benefit-card h3 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #252320;
+      margin-bottom: 8px;
+    }
+    .fb-benefit-card p {
+      font-size: 0.81rem;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* ── How it works ── */
+    .fb-how {
+      max-width: 700px;
+      margin: 64px auto;
+      padding: 0 24px;
+    }
+    .fb-how h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #252320;
+      margin-bottom: 32px;
+    }
+    .fb-step-list { display: flex; flex-direction: column; gap: 24px; }
+    .fb-step {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .fb-step-num {
+      width: 36px; height: 36px;
+      background: #252320;
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .fb-step-content h3 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #252320;
+      margin-bottom: 4px;
+    }
+    .fb-step-content p {
+      font-size: 0.82rem;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    /* ── Impact ── */
+    .fb-impact {
+      background: #252320;
+      color: #fff;
+      padding: 64px 24px;
+    }
+    .fb-impact-inner { max-width: 700px; margin: 0 auto; }
+    .fb-impact h2 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 28px;
+    }
+    .fb-impact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+    .fb-impact-stat { text-align: center; }
+    .fb-impact-num {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #D85A30;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .fb-impact-label {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.6);
+      line-height: 1.4;
+    }
+    .fb-impact-fine {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.35);
+      margin-top: 20px;
+      line-height: 1.6;
+    }
+
+    /* ── Value Dashboard ── */
+    .fb-your-impact {
+      max-width: 700px;
+      margin: 64px auto;
+      padding: 0 24px;
+    }
+    .fb-your-impact h2 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #252320;
+      margin-bottom: 20px;
+    }
+    .fb-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .fb-metric-card {
+      background: #f5f0e8;
+      border-radius: 10px;
+      padding: 20px 16px;
+      text-align: center;
+    }
+    .fb-metric-num {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #252320;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .fb-metric-label { font-size: 0.72rem; color: #888; line-height: 1.4; text-transform: uppercase; letter-spacing: 0.04em; }
+    .fb-metric-fine { font-size: 0.72rem; color: #aaa; margin-top: 12px; line-height: 1.5; }
+
+    /* ── CTA ── */
+    .fb-cta {
+      text-align: center;
+      padding: 64px 24px 80px;
+      border-top: 1px solid #e8e4de;
+    }
+    .fb-cta h2 { font-size: 1.4rem; font-weight: 800; color: #252320; margin-bottom: 12px; }
+    .fb-cta p { font-size: 0.88rem; color: #666; margin-bottom: 28px; }
+
+    @media (max-width: 600px) {
+      .fb-metrics-grid { grid-template-columns: 1fr 1fr; }
+      .fb-metrics-grid .fb-metric-card:last-child { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="fb-nav">
+  <a href="dashboard.html" class="fb-nav-logo">
+    <div class="fb-nav-logo-mark">B</div>
+    BIK Business Toolkit
+  </a>
+  <a href="dashboard.html" class="fb-nav-back">← Back to dashboard</a>
+</nav>
+
+<!-- Hero -->
+<section class="fb-hero">
+  <div class="fb-badge">Founding Builder Program</div>
+  <h1>You're shaping what BIK becomes.</h1>
+  <p>As a Founding Builder, you're not just a user — you're a co-designer. The tools you use most, the problems you hit, the things that don't work — every piece of that directly influences what gets built next.</p>
+  <div class="fb-hero-actions">
+    <a href="dashboard.html" class="fb-btn-primary">Go to dashboard →</a>
+    <a href="quick-start.html" class="fb-btn-ghost">Quick Start Guide</a>
+  </div>
+</section>
+
+<!-- Founder Message -->
+<section class="fb-message-section">
+  <div class="fb-eyebrow">A note from BIK</div>
+  <h2>Why we built this — and why your feedback matters more than you think.</h2>
+  <p>BIK started with one observation: builders spend hours every week on paperwork that has nothing to do with building. Quotes, variations, site diaries, progress claims — the admin load on small building businesses is genuinely punishing.</p>
+  <p>Most software built for builders is either too expensive, too complicated, or built by people who've never been on a construction site. We wanted to build something different: fast, practical, Australian, and designed around how builders actually work.</p>
+  <p>The Beta you're using today is real, functional software — but it's not finished. The tools are complete enough to use on live projects. What's missing is the friction you'll discover by actually using it. The fields that don't make sense. The steps that feel backwards. The document that doesn't quite cover your situation.</p>
+  <p>That's exactly what we need from you. Not polished feedback — just honest reactions. "This confused me." "I needed X and couldn't find it." "This saved me an hour." Every response goes directly to the product roadmap.</p>
+  <p>In return, Founding Builders receive early access to every new tool, locked-in pricing when we launch commercially, and the ability to vote on what gets built in each sprint.</p>
+  <div class="fb-signature">
+    <strong>The BIK Team</strong>
+    <span>July 2026 &nbsp;·&nbsp; Beta v0.9</span>
+  </div>
+</section>
+
+<!-- Benefits -->
+<section class="fb-benefits">
+  <div class="fb-benefits-inner">
+    <h2>What Founding Builders receive</h2>
+    <p class="fb-benefits-sub">Benefits that scale as BIK grows.</p>
+    <div class="fb-benefit-grid">
+      <div class="fb-benefit-card">
+        <span class="fb-benefit-icon">🔑</span>
+        <h3>Early access to every tool</h3>
+        <p>New tools land in your account before they're released publicly. You get first use and first say.</p>
+      </div>
+      <div class="fb-benefit-card">
+        <span class="fb-benefit-icon">💰</span>
+        <h3>Locked-in pricing</h3>
+        <p>The price you pay during Beta is locked in for the life of your account. You'll never pay the public rate.</p>
+      </div>
+      <div class="fb-benefit-card">
+        <span class="fb-benefit-icon">🗺️</span>
+        <h3>Roadmap voting rights</h3>
+        <p>Founding Builders vote on what gets built in each sprint. Your business needs drive the product direction.</p>
+      </div>
+      <div class="fb-benefit-card">
+        <span class="fb-benefit-icon">🤝</span>
+        <h3>Direct line to the team</h3>
+        <p>Questions, bugs, suggestions — Founding Builders get a direct reply, not a support ticket queue.</p>
+      </div>
+      <div class="fb-benefit-card">
+        <span class="fb-benefit-icon">📛</span>
+        <h3>Founding Builder badge</h3>
+        <p>Permanently recognised as a founding contributor. Your business name on the BIK acknowledgements page.</p>
+      </div>
+      <div class="fb-benefit-card">
+        <span class="fb-benefit-icon">📊</span>
+        <h3>Your own impact dashboard</h3>
+        <p>See exactly how much time and admin cost BIK has saved your business — updated in real time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it Works -->
+<section class="fb-how">
+  <h2>How the program works</h2>
+  <div class="fb-step-list">
+    <div class="fb-step">
+      <div class="fb-step-num">1</div>
+      <div class="fb-step-content">
+        <h3>Set up your profile</h3>
+        <p>Enter your business details once. BIK fills them across every document automatically — no retyping on every form.</p>
+      </div>
+    </div>
+    <div class="fb-step">
+      <div class="fb-step-num">2</div>
+      <div class="fb-step-content">
+        <h3>Use BIK on a real project</h3>
+        <p>Create a project, generate a quote, a site diary, a variation. Use the tools the way you'd use them in real life — not in demo conditions.</p>
+      </div>
+    </div>
+    <div class="fb-step">
+      <div class="fb-step-num">3</div>
+      <div class="fb-step-content">
+        <h3>Send feedback when something stands out</h3>
+        <p>Use the feedback button on any page — it takes 30 seconds. A bug, a missing field, a document that printed wrong, a feature you wish existed. All of it helps.</p>
+      </div>
+    </div>
+    <div class="fb-step">
+      <div class="fb-step-num">4</div>
+      <div class="fb-step-content">
+        <h3>Watch your feedback become features</h3>
+        <p>Every sprint we ship improvements based on Founding Builder feedback. You'll see your suggestions land in the product — and we'll tell you when they do.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Impact Section -->
+<section class="fb-impact">
+  <div class="fb-impact-inner">
+    <h2>What BIK is designed to save you</h2>
+    <div class="fb-impact-grid">
+      <div class="fb-impact-stat">
+        <div class="fb-impact-num">25+</div>
+        <div class="fb-impact-label">minutes saved per document on average</div>
+      </div>
+      <div class="fb-impact-stat">
+        <div class="fb-impact-num">$75/hr</div>
+        <div class="fb-impact-label">estimated admin cost rate used in calculations</div>
+      </div>
+      <div class="fb-impact-stat">
+        <div class="fb-impact-num">16</div>
+        <div class="fb-impact-label">document tools available now</div>
+      </div>
+    </div>
+    <p class="fb-impact-fine">Time savings are estimates based on a conservative 25-minute average per document type. Actual savings depend on document complexity and your existing workflow. Calculations are transparent — you can review the methodology on your impact dashboard.</p>
+  </div>
+</section>
+
+<!-- Your Impact (live metrics from localStorage) -->
+<section class="fb-your-impact">
+  <h2>Your impact so far</h2>
+  <div class="fb-metrics-grid">
+    <div class="fb-metric-card">
+      <div class="fb-metric-num" id="fb-docs">—</div>
+      <div class="fb-metric-label">Documents created</div>
+    </div>
+    <div class="fb-metric-card">
+      <div class="fb-metric-num" id="fb-hours">—</div>
+      <div class="fb-metric-label">Admin hours saved</div>
+    </div>
+    <div class="fb-metric-card">
+      <div class="fb-metric-num" id="fb-cost">—</div>
+      <div class="fb-metric-label">Estimated cost saved</div>
+    </div>
+  </div>
+  <p class="fb-metric-fine">Estimates based on conservative per-document time savings at $75/hr admin rate. Your calculations update automatically as you create more documents. All data is stored on your device only — nothing is sent to a server.</p>
+</section>
+
+<!-- CTA -->
+<section class="fb-cta">
+  <h2>Ready to use BIK on your next project?</h2>
+  <p>Your dashboard is live. Start with a quote or a site diary — whichever is most useful right now.</p>
+  <a href="dashboard.html" class="fb-btn-primary">Go to dashboard →</a>
+</section>
+
+<footer style="background:#f5f0e8;padding:28px 24px;text-align:center">
+  <nav style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:10px">
+    <a href="privacy-policy.html" style="font-size:0.78rem;color:#888">Privacy Policy</a>
+    <a href="terms-of-use.html"   style="font-size:0.78rem;color:#888">Terms of Use</a>
+    <a href="support.html"        style="font-size:0.78rem;color:#888">Support</a>
+    <a href="quick-start.html"    style="font-size:0.78rem;color:#888">Quick Start</a>
+    <a href="faq.html"            style="font-size:0.78rem;color:#888">FAQ</a>
+  </nav>
+  <p style="font-size:0.75rem;color:#aaa">&copy; 2026 BIK Solutions Pty Ltd &nbsp;·&nbsp; Beta v0.9 &nbsp;·&nbsp; All data stored on this device only</p>
+</footer>
+
+<script type="module">
+import { calcTimeSaved } from './js/toolkit/demo-data.js';
+import { documentHistory } from './js/toolkit/document-history.js';
+
+const docs = documentHistory.list(undefined, 500);
+if (docs.length > 0) {
+  const { totalHrs, costSaved } = calcTimeSaved(docs);
+  document.getElementById('fb-docs').textContent  = docs.length;
+  document.getElementById('fb-hours').textContent = totalHrs + 'h';
+  document.getElementById('fb-cost').textContent  = '$' + costSaved.toLocaleString('en-AU');
+} else {
+  document.getElementById('fb-docs').textContent  = '0';
+  document.getElementById('fb-hours').textContent = '0h';
+  document.getElementById('fb-cost').textContent  = '$0';
+}
+</script>
+
+</body>
+</html>

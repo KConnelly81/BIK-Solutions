@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Frequently asked questions about the BIK Business Toolkit Beta — privacy, tools, AI Writer, and more." />
+  <meta name="robots" content="noindex" />
+  <title>FAQ — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .faq-nav {
+      background: #252320; padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .faq-nav-logo { display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:700;font-size:0.88rem; }
+    .faq-nav-mark  { width:30px;height:30px;background:#D85A30;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:0.9rem; }
+    .faq-nav-back  { color:rgba(255,255,255,0.5);font-size:0.78rem;text-decoration:none; }
+    .faq-nav-back:hover { color:#fff; }
+
+    .faq-hero { background: #252320; color: #fff; padding: 56px 24px 48px; }
+    .faq-hero-inner { max-width: 680px; margin: 0 auto; }
+    .faq-eyebrow { font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#D85A30;margin-bottom:12px; }
+    .faq-hero h1 { font-size:clamp(1.4rem,4vw,2rem);font-weight:900;margin-bottom:10px; }
+    .faq-hero p { color:rgba(255,255,255,0.65);font-size:0.88rem;line-height:1.7; }
+
+    .faq-body { max-width: 700px; margin: 0 auto; padding: 56px 24px 80px; }
+
+    .faq-category { margin-bottom: 40px; }
+    .faq-category-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #D85A30;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e8e4de;
+    }
+
+    .faq-item { border: 1px solid #e8e4de; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+    .faq-q {
+      background: #fafaf8; padding: 15px 18px;
+      font-size: 0.88rem; font-weight: 600; color: #252320;
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+      gap: 12px; list-style: none; user-select: none;
+    }
+    .faq-q::after { content: '+'; font-size: 1.1rem; color: #D85A30; flex-shrink: 0; }
+    details[open] .faq-q::after { content: '−'; }
+    .faq-a { padding: 14px 18px; font-size: 0.85rem; color: #444; line-height: 1.75; border-top: 1px solid #e8e4de; }
+    .faq-a p { margin-bottom: 10px; }
+    .faq-a p:last-child { margin-bottom: 0; }
+    .faq-a ul, .faq-a ol { padding-left: 18px; margin-bottom: 10px; }
+    .faq-a li { margin-bottom: 5px; }
+    .faq-a a { color: #D85A30; text-decoration: underline; }
+    .faq-a strong { color: #252320; }
+
+    .faq-contact {
+      background: #f5f0e8;
+      border-radius: 10px;
+      padding: 28px 24px;
+      margin-top: 40px;
+      text-align: center;
+    }
+    .faq-contact h3 { font-size: 1rem; font-weight: 700; color: #252320; margin-bottom: 8px; }
+    .faq-contact p { font-size: 0.85rem; color: #555; margin-bottom: 16px; }
+    .faq-contact a {
+      background: #D85A30; color: #fff;
+      padding: 10px 22px; border-radius: 6px;
+      font-size: 0.85rem; font-weight: 700; text-decoration: none;
+      display: inline-block;
+    }
+    .faq-contact a:hover { background: #c04e28; }
+  </style>
+</head>
+<body>
+
+<nav class="faq-nav">
+  <a href="dashboard.html" class="faq-nav-logo">
+    <div class="faq-nav-mark">B</div>
+    BIK Business Toolkit
+  </a>
+  <a href="dashboard.html" class="faq-nav-back">← Dashboard</a>
+</nav>
+
+<header class="faq-hero">
+  <div class="faq-hero-inner">
+    <div class="faq-eyebrow">Beta v0.9</div>
+    <h1>Frequently Asked Questions</h1>
+    <p>Common questions about BIK, the Beta, privacy, AI Writer, and how the tools work.</p>
+  </div>
+</header>
+
+<main class="faq-body">
+
+  <!-- Getting Started -->
+  <div class="faq-category">
+    <div class="faq-category-title">Getting Started</div>
+
+    <details class="faq-item">
+      <summary class="faq-q">What is BIK and who is it for?</summary>
+      <div class="faq-a">
+        <p>BIK (Beyond Industry Knowledge) is a professional document toolkit for Australian builders and tradies. It helps you create quotes, variations, site diaries, progress claims, and other construction documents quickly and professionally.</p>
+        <p>BIK is designed for small-to-medium building businesses — typically residential builders, commercial fitout contractors, and specialist subcontractors who handle their own administration.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">How do I get started?</summary>
+      <div class="faq-a">
+        <p>The fastest path is:</p>
+        <ol>
+          <li>Set up your <strong>Builder Profile</strong> (click Profile in the top right of the dashboard)</li>
+          <li>Create your first project (click <strong>New Project</strong>)</li>
+          <li>Open a tool and generate a document</li>
+        </ol>
+        <p>The whole setup takes about five minutes. See the <a href="quick-start.html">Quick Start Guide</a> for a detailed walkthrough.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">Do I need to create an account?</summary>
+      <div class="faq-a">
+        <p>No. BIK runs entirely in your browser. There's no login, no account creation, and no email required. Your data is stored on this device only.</p>
+        <p>This means you can start using BIK immediately — but it also means your data doesn't sync between devices. If you clear your browser data, your drafts and documents will be lost. See <a href="privacy-policy.html">Privacy Policy</a> for full details.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">Is BIK free?</summary>
+      <div class="faq-a">
+        <p>Yes — during the Beta, BIK is completely free. Founding Builders who participate during the Beta period will receive locked-in pricing when BIK moves to a paid model.</p>
+        <p>AI Writer features that use an external AI service require you to provide your own API key (see the AI Writer FAQ below). There is no cost to BIK for these features — you pay the AI provider directly at standard API rates, which are typically very low.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- Privacy & Data -->
+  <div class="faq-category">
+    <div class="faq-category-title">Privacy &amp; Data</div>
+
+    <details class="faq-item">
+      <summary class="faq-q">Where is my data stored?</summary>
+      <div class="faq-a">
+        <p>All your data — builder profile, projects, documents, drafts — is stored in your browser's <strong>local storage</strong> on this device only. Nothing is transmitted to BIK's servers.</p>
+        <p>This means:</p>
+        <ul>
+          <li>Your data is private by default</li>
+          <li>BIK cannot access, view, or recover your data</li>
+          <li>If you clear browser data or use a different browser or device, your data will not be there</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">Is it safe to enter real client and project details?</summary>
+      <div class="faq-a">
+        <p>Yes. Your data stays on your device and is never sent to BIK. The only exceptions are:</p>
+        <ul>
+          <li><strong>AI Writer:</strong> If you use AI Writer, your document text is sent to the AI provider (Anthropic or OpenAI) via their API. You control this by choosing whether to use AI Writer and by managing your API key.</li>
+          <li><strong>Email:</strong> Clicking the Email button opens your email client with a pre-filled draft. Nothing is sent automatically — you review and send the email yourself.</li>
+          <li><strong>Feedback:</strong> When you submit feedback using the Beta button, the feedback is saved locally and a mailto link opens your email client. Your email client sends the feedback — BIK does not automatically receive it.</li>
+        </ul>
+        <p>See the full <a href="privacy-policy.html">Privacy Policy</a> and <a href="ai-usage-notice.html">AI Usage Notice</a>.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">What happens to my data if I clear my browser?</summary>
+      <div class="faq-a">
+        <p>Clearing browser data (cookies, local storage, or cache) will permanently delete your BIK profile, projects, drafts, and document history. BIK cannot recover this data.</p>
+        <p>Before clearing browser data, you can save important documents as PDFs using the <strong>Save PDF</strong> button on each tool.</p>
+        <p>A future version of BIK will offer cloud backup — this is on the roadmap but not available in the Beta.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- AI Writer -->
+  <div class="faq-category">
+    <div class="faq-category-title">AI Writer</div>
+
+    <details class="faq-item">
+      <summary class="faq-q">What does AI Writer do?</summary>
+      <div class="faq-a">
+        <p>AI Writer rewrites your notes into professional, clear construction language. You provide rough bullet points or shorthand — AI Writer turns them into a formal, well-structured document.</p>
+        <p><strong>Important:</strong> AI Writer never adds information you didn't provide. It will not invent figures, dates, names, amounts, or claims. Its job is to make your words clearer and more professional — not to generate content from scratch.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">How do I set up AI Writer?</summary>
+      <div class="faq-a">
+        <p>Click the <strong>✦ AI Writer</strong> button in the toolbar on any tool page. You'll be asked to enter an API key from an AI provider (Anthropic Claude or OpenAI). Your key is stored on this device only — it's never sent to BIK.</p>
+        <p>API keys are available from:</p>
+        <ul>
+          <li>Anthropic: console.anthropic.com</li>
+          <li>OpenAI: platform.openai.com</li>
+        </ul>
+        <p>Usage costs are charged directly by the AI provider at standard API rates. Most document rewrites cost a fraction of a cent.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">Do I have to use AI Writer?</summary>
+      <div class="faq-a">
+        <p>No. AI Writer is optional. Every tool works fully without it. You can write your documents manually and the output will be just as professional — AI Writer simply speeds up the writing of longer narrative sections.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- Tools & Documents -->
+  <div class="faq-category">
+    <div class="faq-category-title">Tools &amp; Documents</div>
+
+    <details class="faq-item">
+      <summary class="faq-q">Are the documents legally binding?</summary>
+      <div class="faq-a">
+        <p>BIK generates professionally structured document drafts. Whether a document is legally binding depends on:</p>
+        <ul>
+          <li>The terms of your contract</li>
+          <li>How and when the document was served</li>
+          <li>The applicable legislation in your state</li>
+          <li>The specific circumstances of your project</li>
+        </ul>
+        <p>BIK does not provide legal advice. For documents with legal significance — progress claims, extension of time claims, notices, contract termination — you should seek advice from a qualified construction lawyer before issuing.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">Why do some tools show "Controlled Beta" or "Review in progress"?</summary>
+      <div class="faq-a">
+        <p><strong>Controlled Beta</strong> tools are functional and can be used, but they carry elevated legal or regulatory risk. These tools are released for Founding Builder testing with the expectation that you review them carefully before issuing.</p>
+        <p><strong>Review in progress</strong> tools (SWMS, Notice to Show Cause, Contract Termination Notice, Subcontractor Agreement) are awaiting review by a WHS professional or construction lawyer before public release. They're not accessible from the dashboard, but their pages still exist for internal testing.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">Can I save my documents?</summary>
+      <div class="faq-a">
+        <p>Yes. After generating a document, use the <strong>Save PDF</strong> button to download it as a PDF. You can also use <strong>Copy</strong> to copy the text.</p>
+        <p>Documents are also saved to your browser's Document History automatically after generation. You can access recent documents from the History button on any tool page.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">Can I edit a document after generating it?</summary>
+      <div class="faq-a">
+        <p>Yes. After generating a document, click <strong>Edit document</strong> in the Preview panel. This makes the document directly editable so you can make last-minute changes before printing or saving to PDF.</p>
+        <p>Note: edits made in the preview are not saved back to the form. If you re-generate the document, you'll need to re-apply any edits.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">What is the progress claim legislation for my state?</summary>
+      <div class="faq-a">
+        <p>Security of payment legislation varies by state. The generated progress claim document includes a jurisdiction notice with the applicable Act for each state. As a reference:</p>
+        <ul>
+          <li><strong>Queensland:</strong> Building Industry Fairness (Security of Payment) Act 2017 (BIF Act)</li>
+          <li><strong>NSW:</strong> Building and Construction Industry Security of Payment Act 1999</li>
+          <li><strong>Victoria:</strong> Building and Construction Industry Security of Payment Act 2002</li>
+          <li><strong>SA:</strong> Building and Construction Industry Security of Payment Act 2009</li>
+          <li><strong>WA:</strong> Construction Contracts Act 2004</li>
+        </ul>
+        <p>We recommend you verify the current legislation with a construction lawyer before issuing a payment claim.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- Feedback -->
+  <div class="faq-category">
+    <div class="faq-category-title">Beta &amp; Feedback</div>
+
+    <details class="faq-item">
+      <summary class="faq-q">How do I report a bug or suggest an improvement?</summary>
+      <div class="faq-a">
+        <p>Click the <strong>Beta</strong> button at the bottom right of any page. You can report a bug, suggest a feature, or leave general feedback. It takes about 30 seconds.</p>
+        <p>When you submit, a mailto link opens with your feedback pre-filled in the email body. Your email client will send it to the BIK team. Your feedback is also saved locally on your device.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">What happens to my feedback?</summary>
+      <div class="faq-a">
+        <p>Every piece of feedback is reviewed by the BIK team. Bugs are triaged and added to the fix queue. Suggestions are evaluated against the product roadmap and Founding Builder priorities.</p>
+        <p>We respond to every piece of meaningful feedback — usually within a few days. When your suggestion becomes a feature, we'll credit you in the release notes.</p>
+      </div>
+    </details>
+
+    <details class="faq-item">
+      <summary class="faq-q">When will BIK come out of Beta?</summary>
+      <div class="faq-a">
+        <p>We don't have a fixed launch date yet. The Beta will continue until the product meets our internal quality bar across all core workflows. Founding Builder feedback is the primary input to that decision.</p>
+        <p>You'll be notified before the Beta ends and before any pricing changes take effect.</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- Contact CTA -->
+  <div class="faq-contact">
+    <h3>Didn't find your answer?</h3>
+    <p>Contact us directly — we respond to every question from Founding Builders.</p>
+    <a href="mailto:support@biksolutions.com.au?subject=BIK Beta Support">Email support →</a>
+  </div>
+
+</main>
+
+<footer style="background:#f5f0e8;padding:28px 24px;text-align:center;border-top:1px solid #e8e4de">
+  <nav style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:10px">
+    <a href="dashboard.html"       style="font-size:0.78rem;color:#888">Dashboard</a>
+    <a href="quick-start.html"     style="font-size:0.78rem;color:#888">Quick Start</a>
+    <a href="founding-builder.html" style="font-size:0.78rem;color:#888">Founding Builder</a>
+    <a href="support.html"         style="font-size:0.78rem;color:#888">Support</a>
+    <a href="privacy-policy.html"  style="font-size:0.78rem;color:#888">Privacy Policy</a>
+    <a href="release-notes.html"   style="font-size:0.78rem;color:#888">Release Notes</a>
+  </nav>
+  <p style="font-size:0.75rem;color:#aaa">&copy; 2026 BIK Solutions Pty Ltd &nbsp;·&nbsp; Beta v0.9 &nbsp;·&nbsp; All data stored on this device only</p>
+</footer>
+
+</body>
+</html>
