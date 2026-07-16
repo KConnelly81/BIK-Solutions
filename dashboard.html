@@ -347,6 +347,7 @@
 import { documentHistory } from './js/toolkit/document-history.js';
 import { projectStore, PROJECT_STATUSES } from './js/toolkit/project-store.js';
 import { evaluateAll, aggregateMetrics } from './js/toolkit/health-engine.js';
+import { seedDemoData, isDemoActive } from './js/toolkit/demo-data.js';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -667,6 +668,15 @@ function renderAll() {
   renderSummaryBar(metrics);
   renderHealthGrid(reports);
 }
+
+// Seed demo data for first-time visitors (no existing projects or profile)
+(function () {
+  const hasProjects = projectStore.list().length > 0;
+  const hasProfile  = !!localStorage.getItem('bik-builder-profile');
+  if (!hasProjects && !hasProfile && !isDemoActive()) {
+    seedDemoData();
+  }
+})();
 
 renderAll();
 

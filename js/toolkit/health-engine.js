@@ -62,19 +62,41 @@
 // ── Tool meta (must stay in sync with TOOL_META in UI files) ────────
 
 const TOOLS = {
-  'variation-notice': { name: 'Variation Notice', url: 'variation-generator.html', icon: '📋' },
-  'quote-builder':    { name: 'Quote Builder',     url: 'quote-builder.html',       icon: '💰' },
-  'scope-of-works':   { name: 'Scope of Works',    url: 'scope-of-works.html',      icon: '📝' },
-  'site-diary':       { name: 'Site Diary',         url: 'site-diary.html',          icon: '📅' },
-  'defect-report':    { name: 'Defect Report',      url: 'defect-report.html',       icon: '🔍' }
+  'variation-notice':    { name: 'Variation Notice',       url: 'variation-generator.html',  icon: '📋' },
+  'quote-builder':       { name: 'Quote Builder',          url: 'quote-builder.html',         icon: '💰' },
+  'scope-of-works':      { name: 'Scope of Works',         url: 'scope-of-works.html',        icon: '📝' },
+  'site-diary':          { name: 'Site Diary',             url: 'site-diary.html',            icon: '📅' },
+  'defect-report':       { name: 'Defect Report',          url: 'defect-report.html',         icon: '🔍' },
+  'progress-claim':      { name: 'Progress Claim',         url: 'progress-claim.html',        icon: '🧾' },
+  'toolbox-talk':        { name: 'Toolbox Talk',           url: 'toolbox-talk.html',          icon: '🦺' },
+  'payment-reminder':    { name: 'Payment Reminder',       url: 'payment-reminder.html',      icon: '💳' },
+  'practical-completion':{ name: 'Practical Completion',   url: 'practical-completion.html',  icon: '🏁' },
+  'handover-checklist':  { name: 'Handover Checklist',     url: 'handover-checklist.html',    icon: '✅' },
+  'itp':                 { name: 'Inspection & Test Plan', url: 'itp.html',                   icon: '🔬' },
+  'non-conformance-report':{ name: 'Non-Conformance Report', url: 'ncr.html',                 icon: '⚠️' },
+  'incident-report':     { name: 'Incident Report',        url: 'incident-report.html',       icon: '🚑' },
+  'eot-claim':           { name: 'EOT Claim',              url: 'eot-claim.html',             icon: '⏱️' },
+  'delay-notice':        { name: 'Delay Notice',           url: 'delay-notice.html',          icon: '📢' },
+  'inspection-checklist':{ name: 'Inspection Checklist',   url: 'inspection-checklist.html',  icon: '📋' }
 };
 
 const AUTOSAVE_KEYS = {
-  'variation-notice': 'bik-variation-draft',
-  'quote-builder':    'bik-quote-draft',
-  'scope-of-works':   'bik-scope-draft',
-  'site-diary':       'bik-diary-draft',
-  'defect-report':    'bik-defect-draft'
+  'variation-notice':    'bik-variation-draft',
+  'quote-builder':       'bik-quote-draft',
+  'scope-of-works':      'bik-scope-draft',
+  'site-diary':          'bik-diary-draft',
+  'defect-report':       'bik-defect-draft',
+  'progress-claim':      'bik-progress-claim-draft',
+  'toolbox-talk':        'bik-toolbox-talk-draft',
+  'payment-reminder':    'bik-payment-reminder-draft',
+  'practical-completion':'bik-practical-completion-draft',
+  'handover-checklist':  'bik-handover-checklist-draft',
+  'itp':                 'bik-itp-draft',
+  'non-conformance-report':'bik-non-conformance-report-draft',
+  'incident-report':     'bik-incident-report-draft',
+  'eot-claim':           'bik-eot-claim-draft',
+  'delay-notice':        'bik-delay-notice-draft',
+  'inspection-checklist':'bik-inspection-checklist-draft'
 };
 
 // ── Utility ─────────────────────────────────────────────────────────

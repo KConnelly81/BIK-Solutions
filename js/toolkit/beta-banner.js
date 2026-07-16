@@ -130,8 +130,7 @@ const CSS = `
   background: none; border: none; font-size: 1.4rem; cursor: pointer; padding: 2px;
   line-height: 1; color: #ddd; transition: color 0.1s; display: inline-block;
 }
-.fb-star.active, .fb-star:hover ~ .fb-star { }
-.fb-star.active { color: #f5a623; }
+.fb-star.active, .fb-star.hover { color: #f5a623; }
 .fb-recommend { display: flex; gap: 8px; }
 .fb-rec-btn {
   flex: 1; border: 1.5px solid #ddd; background: #fff; border-radius: 6px;
@@ -281,6 +280,13 @@ function wireFeedbackModal(overlay) {
   // Star rating
   const stars = overlay.querySelectorAll('.fb-star');
   stars.forEach(star => {
+    star.addEventListener('mouseenter', () => {
+      const hovered = parseInt(star.dataset.rating, 10);
+      stars.forEach(s => s.classList.toggle('hover', parseInt(s.dataset.rating, 10) <= hovered));
+    });
+    star.addEventListener('mouseleave', () => {
+      stars.forEach(s => s.classList.remove('hover'));
+    });
     star.addEventListener('click', () => {
       selectedRating = parseInt(star.dataset.rating, 10);
       stars.forEach(s => {
@@ -317,6 +323,22 @@ function wireFeedbackModal(overlay) {
       const existing = JSON.parse(localStorage.getItem(FEEDBACK_KEY) || '[]');
       existing.push(entry);
       localStorage.setItem(FEEDBACK_KEY, JSON.stringify(existing));
+    } catch (_) {}
+
+    // Send via mailto so feedback reaches BIK
+    try {
+      const subject = encodeURIComponent(`BIK Beta Feedback — ${entry.type}`);
+      const body = encodeURIComponent(
+        `Type: ${entry.type}\nPage: ${entry.page}\nMessage: ${entry.message}\n` +
+        `Rating: ${entry.rating || '—'}\nTime saved: ${entry.timeSaved || '—'} min\n` +
+        `Would recommend: ${entry.recommend || '—'}\nSubmitted: ${new Date(entry.ts).toISOString()}`
+      );
+      const link = document.createElement('a');
+      link.href = `mailto:feedback@biksolutions.com.au?subject=${subject}&body=${body}`;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (_) {}
 
     document.getElementById('feedback-form').style.display = 'none';

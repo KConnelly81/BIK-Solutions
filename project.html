@@ -123,12 +123,6 @@
         <h2 class="proj-col-heading">Coming Soon</h2>
         <div class="proj-future-grid">
           <div class="proj-future-card">
-            <div class="proj-future-icon" aria-hidden="true">🧾</div>
-            <div class="proj-future-name">Progress Claims</div>
-            <div class="proj-future-desc">Progress claims with schedule of values and retention tracking</div>
-            <span class="proj-future-badge">Coming soon</span>
-          </div>
-          <div class="proj-future-card">
             <div class="proj-future-icon" aria-hidden="true">💳</div>
             <div class="proj-future-name">Invoices & Payments</div>
             <div class="proj-future-desc">Track invoices, payments received, and outstanding balances</div>
@@ -210,14 +204,29 @@ import { projectStore, PROJECT_STATUSES } from './js/toolkit/project-store.js';
 // ── Constants ──────────────────────────────────────────────────────
 
 const TOOL_META = {
-  'variation-notice': { name: 'Variation Notice', url: 'variation-generator.html', icon: '📋' },
-  'quote-builder':    { name: 'Quote Builder',    url: 'quote-builder.html',       icon: '💰' },
-  'scope-of-works':   { name: 'Scope of Works',   url: 'scope-of-works.html',      icon: '📝' },
-  'site-diary':       { name: 'Site Diary',        url: 'site-diary.html',          icon: '📅' },
-  'defect-report':    { name: 'Defect Report',     url: 'defect-report.html',       icon: '🔍' }
+  'variation-notice':    { name: 'Variation Notice',       url: 'variation-generator.html',  icon: '📋' },
+  'quote-builder':       { name: 'Quote Builder',          url: 'quote-builder.html',         icon: '💰' },
+  'scope-of-works':      { name: 'Scope of Works',         url: 'scope-of-works.html',        icon: '📝' },
+  'site-diary':          { name: 'Site Diary',             url: 'site-diary.html',            icon: '📅' },
+  'defect-report':       { name: 'Defect Report',          url: 'defect-report.html',         icon: '🔍' },
+  'progress-claim':      { name: 'Progress Claim',         url: 'progress-claim.html',        icon: '🧾' },
+  'toolbox-talk':        { name: 'Toolbox Talk',           url: 'toolbox-talk.html',          icon: '🦺' },
+  'payment-reminder':    { name: 'Payment Reminder',       url: 'payment-reminder.html',      icon: '💳' },
+  'practical-completion':{ name: 'Practical Completion',   url: 'practical-completion.html',  icon: '🏁' },
+  'handover-checklist':  { name: 'Handover Checklist',     url: 'handover-checklist.html',    icon: '✅' },
+  'itp':                 { name: 'Inspection & Test Plan', url: 'itp.html',                   icon: '🔬' },
+  'non-conformance-report':{ name: 'Non-Conformance Report', url: 'ncr.html',                 icon: '⚠️' },
+  'incident-report':     { name: 'Incident Report',        url: 'incident-report.html',       icon: '🚑' },
+  'eot-claim':           { name: 'EOT Claim',              url: 'eot-claim.html',             icon: '⏱️' },
+  'delay-notice':        { name: 'Delay Notice',           url: 'delay-notice.html',          icon: '📢' },
+  'inspection-checklist':{ name: 'Inspection Checklist',   url: 'inspection-checklist.html',  icon: '📋' }
 };
 
-const TOOL_ORDER = ['quote-builder','variation-notice','scope-of-works','site-diary','defect-report'];
+const TOOL_ORDER = [
+  'quote-builder','variation-notice','scope-of-works','site-diary','defect-report',
+  'progress-claim','payment-reminder','practical-completion','handover-checklist',
+  'toolbox-talk','itp','non-conformance-report','incident-report','eot-claim','delay-notice','inspection-checklist'
+];
 
 const APPROVAL_LABEL = {
   draft:    { label: 'Draft',    cls: 'approval--draft'    },
