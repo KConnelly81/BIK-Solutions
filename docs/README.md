@@ -28,6 +28,11 @@ It holds both the public-facing website and all internal product, business, and 
 | [pricing-strategy.md](pricing-strategy.md) | Pricing tiers, rationale, and revenue targets |
 | [marketing-strategy.md](marketing-strategy.md) | Go-to-market, channels, messaging |
 
+### Board & Investment
+| Document | Description |
+|---|---|
+| [strategy/BIK-Solutions-Strategic-Blueprint-v1.0.docx](strategy/BIK-Solutions-Strategic-Blueprint-v1.0.docx) | Integrated Strategic Blueprint & Investment Memorandum — Board, investor, strategic buyer, grant assessor and banking partner audiences. Executive memorandum, business case, strategic/product plan, GTM, commercial & financial model, competitor analysis, enterprise & acquisition strategy, five-year roadmap, risk register, board papers, appendices. |
+
 ### Design & UX
 | Document | Description |
 |---|---|
