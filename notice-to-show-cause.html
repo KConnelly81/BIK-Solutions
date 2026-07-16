@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Generate a formal Notice to Show Cause requiring the other party to explain a breach or default. Built for Australian builders. Seek legal advice before issuing." />
+  <meta name="robots" content="noindex" />
+  <title>Notice to Show Cause — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/toolkit-app.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <header class="app-header" role="banner">
+    <a href="dashboard.html" class="app-header-logo" aria-label="BIK Solutions — dashboard">
+      <div class="logo-mark" aria-hidden="true"><span>B</span></div>
+      <div class="app-title-group">
+        <span class="tool-name">Notice to Show Cause</span>
+        <a href="dashboard.html" class="tool-back">← Dashboard</a>
+      </div>
+    </a>
+    <div class="app-header-spacer"></div>
+    <div class="autosave-indicator" aria-live="polite" aria-label="Autosave status">
+      <div class="autosave-dot" id="autosave-dot" aria-hidden="true"></div>
+      <span id="autosave-text">Autosave on</span>
+    </div>
+    <div class="app-header-actions">
+      <button class="app-btn app-btn--ghost app-btn--ai" id="btn-ai-setup" type="button" title="Set up AI Professional Writer" aria-label="AI Writer setup">
+        <span aria-hidden="true" style="font-size:0.85rem;line-height:1">✦</span>
+        <span>AI Writer</span>
+      </button>
+      <button class="app-btn app-btn--ghost" id="btn-history" type="button" title="View recent documents" aria-label="Document history">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>History</span>
+      </button>
+      <button class="app-btn app-btn--ghost" id="btn-clear" type="button" title="Clear all fields" aria-label="Clear form">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+        <span>Clear</span>
+      </button>
+      <button class="app-btn app-btn--ghost" id="btn-copy" type="button" disabled title="Copy document text to clipboard" aria-label="Copy document text">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span>Copy</span>
+      </button>
+      <button class="app-btn app-btn--ghost" id="btn-print" type="button" disabled title="Save as PDF or print" aria-label="Save as PDF">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span>Save PDF</span>
+      </button>
+      <button class="app-btn app-btn--ghost" id="btn-email" type="button" disabled title="Open email client with pre-filled email" aria-label="Email document">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span>Email</span>
+      </button>
+      <button class="app-btn app-btn--coral" id="btn-generate" type="button">Generate document</button>
+    </div>
+  </header>
+
+  <div class="app-toolbar">
+    <div class="progress-wrap">
+      <span class="progress-label" id="progress-label" aria-live="polite" aria-atomic="true">0% of required fields complete</span>
+      <div class="progress-bar-track" aria-hidden="true">
+        <div class="progress-bar-fill" id="progress-fill" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+      </div>
+    </div>
+    <div class="tab-bar" role="group" aria-label="Switch panel">
+      <button class="tab-btn active" id="tab-form" type="button" aria-pressed="true">Form</button>
+      <button class="tab-btn" id="tab-preview" type="button" aria-pressed="false">Preview</button>
+    </div>
+  </div>
+
+  <div class="draft-banner" id="draft-banner" hidden role="alert" aria-live="polite">
+    <div class="draft-banner-text">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      You have a saved draft.
+      <span class="draft-banner-meta" id="draft-meta"></span>
+    </div>
+    <div class="draft-banner-actions">
+      <button class="draft-btn draft-btn--restore" id="btn-restore-draft" type="button">Restore draft</button>
+      <button class="draft-btn draft-btn--discard" id="btn-discard-draft" type="button">Discard</button>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <div class="form-panel" id="form-panel" role="main">
+      <div class="form-panel-inner">
+        <div class="privacy-notice" role="note">
+          <span class="privacy-notice-icon" aria-hidden="true">🔒</span>
+          <div>
+            <p>Your information stays on this device. Nothing you enter here is sent to a server. Drafts are saved in your browser's local storage only.</p>
+            <div class="draft-delete-wrap">
+              <button id="btn-delete-draft" type="button" style="display:none" aria-label="Delete saved draft from this device">Delete saved draft from this device</button>
+            </div>
+          </div>
+        </div>
+        <div id="form-container" aria-label="Notice to show cause form fields"></div>
+        <div style="margin-top:28px;">
+          <button class="btn btn--coral" id="btn-generate-bottom" type="button" style="width:100%;padding:14px;font-size:0.95rem;" onclick="document.getElementById('btn-generate').click()">
+            Generate notice to show cause
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-panel" id="preview-panel-wrap" aria-label="Document preview">
+      <div class="preview-panel-header">
+        <span class="preview-label">Document preview</span>
+        <div class="preview-actions">
+          <button class="app-btn app-btn--ghost-dark" id="btn-edit-toggle" type="button" disabled title="Click to make last-minute edits to the document before printing">Edit document</button>
+        </div>
+      </div>
+      <div class="preview-empty" id="preview-empty" aria-live="polite">
+        <div class="preview-empty-icon" aria-hidden="true">📄</div>
+        <p>Fill in the form and click <strong>Generate document</strong> to see your Notice to Show Cause here.</p>
+        <p style="font-size:0.78rem;color:#bbb;margin-top:8px;">Takes about 2 seconds.</p>
+      </div>
+      <div class="preview-loading" id="preview-loading" role="status" aria-label="Generating document…">
+        <div class="loading-spinner" aria-hidden="true"></div>
+      </div>
+      <div id="preview-target" aria-live="polite" aria-label="Generated document"></div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { init } from './js/tools/notice-to-show-cause/index.js';
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>
+
+<script type="module" src="./js/toolkit/beta-banner.js"></script>
+</body>
+</html>
