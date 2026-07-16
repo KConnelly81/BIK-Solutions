@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>7-Day Trial Guide — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .tg-nav { background: #1a1816; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .tg-nav-logo { display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:700;font-size:0.88rem; }
+    .tg-nav-logo-mark { width:30px;height:30px;background:#D85A30;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:0.9rem; }
+    .tg-nav-back { color:rgba(255,255,255,0.5);font-size:0.78rem;text-decoration:none; }
+    .tg-nav-back:hover { color:#fff; }
+
+    .tg-hero { background: #252320; color: #fff; padding: 56px 24px 48px; }
+    .tg-hero-inner { max-width: 720px; margin: 0 auto; }
+    .tg-eyebrow { font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#D85A30;margin-bottom:12px; }
+    .tg-hero h1 { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 900; margin-bottom: 12px; line-height: 1.15; }
+    .tg-hero p { color: rgba(255,255,255,0.65); font-size: 0.9rem; line-height: 1.7; max-width: 560px; }
+
+    .tg-body { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    .tg-intro { background: #f5f0e8; border-radius: 10px; padding: 24px 28px; margin-bottom: 40px; }
+    .tg-intro p { font-size: 0.88rem; color: #444; line-height: 1.7; margin: 0 0 10px; }
+    .tg-intro p:last-child { margin: 0; }
+
+    .day-grid { display: flex; flex-direction: column; gap: 16px; }
+
+    .day-card { border: 1px solid #e8e4de; border-radius: 10px; overflow: hidden; }
+    .day-header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 20px; background: #fafaf8;
+      cursor: pointer; user-select: none;
+    }
+    .day-badge {
+      background: #252320; color: #fff;
+      font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 4px 10px; border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .day-badge--today { background: #D85A30; }
+    .day-title { font-size: 0.9rem; font-weight: 700; color: #252320; flex: 1; }
+    .day-time { font-size: 0.75rem; color: #888; flex-shrink: 0; }
+
+    .day-body { padding: 20px 20px 20px 56px; border-top: 1px solid #e8e4de; }
+    .day-body p { font-size: 0.85rem; color: #555; line-height: 1.7; margin: 0 0 14px; }
+    .day-body ul { margin: 0 0 14px; padding-left: 18px; }
+    .day-body li { font-size: 0.84rem; color: #555; line-height: 1.7; margin-bottom: 6px; }
+    .day-body li strong { color: #252320; }
+    .day-tip { background: #f5f0e8; border-left: 3px solid #D85A30; padding: 10px 14px; border-radius: 3px; font-size: 0.8rem; color: #555; line-height: 1.6; }
+    .day-tip strong { color: #252320; }
+    .day-tool-link { display: inline-flex; align-items: center; gap: 6px; background: #252320; color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; margin-top: 8px; }
+    .day-tool-link:hover { background: #3a3530; }
+
+    .tg-divider { border: none; border-top: 1px solid #e8e4de; margin: 40px 0; }
+
+    .tg-checklist-header { font-size: 1rem; font-weight: 800; color: #252320; margin-bottom: 16px; }
+    .tg-checklist { list-style: none; margin: 0; padding: 0; }
+    .tg-checklist li {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid #f0ece6;
+      font-size: 0.85rem; color: #444; line-height: 1.6;
+    }
+    .tg-checklist li:last-child { border-bottom: none; }
+    .tg-check {
+      width: 18px; height: 18px; border: 2px solid #D85A30;
+      border-radius: 4px; flex-shrink: 0; margin-top: 1px;
+    }
+
+    .tg-cta { background: #252320; color: #fff; border-radius: 12px; padding: 32px 28px; text-align: center; margin-top: 48px; }
+    .tg-cta h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 10px; }
+    .tg-cta p { font-size: 0.85rem; color: rgba(255,255,255,0.65); margin-bottom: 20px; }
+    .tg-cta-btn { background: #D85A30; color: #fff; border: none; border-radius: 7px; padding: 12px 26px; font-size: 0.88rem; font-weight: 700; cursor: pointer; font-family: inherit; text-decoration: none; display: inline-block; }
+
+    @media (max-width: 600px) {
+      .day-body { padding-left: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="tg-nav">
+  <a href="dashboard.html" class="tg-nav-logo">
+    <div class="tg-nav-logo-mark">B</div>
+    BIK Business Toolkit
+  </a>
+  <a href="dashboard.html" class="tg-nav-back">← Dashboard</a>
+</nav>
+
+<header class="tg-hero">
+  <div class="tg-hero-inner">
+    <div class="tg-eyebrow">Founding Builder Program</div>
+    <h1>Your first 7 days with BIK</h1>
+    <p>A day-by-day plan for getting real value out of BIK during the Beta. Follow it at your own pace — the order matters less than doing all seven.</p>
+  </div>
+</header>
+
+<main class="tg-body">
+
+  <div class="tg-intro">
+    <p><strong>How to use this guide:</strong> Each day has a clear task that takes 5–15 minutes. Some tasks use BIK directly on a live job — others are about learning how the tool works. By the end of the week, you'll have used BIK on a real project and sent your first feedback.</p>
+    <p>You don't have to do one a day — work through them as your schedule allows. The goal is to get comfortable before the end of your first week.</p>
+  </div>
+
+  <div class="day-grid">
+
+    <!-- Day 1 -->
+    <div class="day-card">
+      <div class="day-header">
+        <div class="day-badge day-badge--today">Day 1</div>
+        <div class="day-title">Set up your profile and explore the dashboard</div>
+        <div class="day-time">10 min</div>
+      </div>
+      <div class="day-body">
+        <p>Your first job is to set up your Builder Profile — the business details that auto-fill into every document. Once this is done, you'll never retype your ABN or licence number again.</p>
+        <ul>
+          <li>Click <strong>Profile</strong> on the dashboard (top right).</li>
+          <li>Enter your business name, ABN, QBCC or state licence number, phone, email, and business address.</li>
+          <li>Add the name of the person who signs documents.</li>
+          <li>Click <strong>Save profile</strong>.</li>
+          <li>Explore the dashboard — note the tool cards, project list, and health indicators.</li>
+        </ul>
+        <div class="day-tip"><strong>Tip:</strong> Your profile is stored on this device only. Nothing is sent to a server. If you use BIK on a second device, set up the profile there too.</div>
+        <br>
+        <a href="dashboard.html" class="day-tool-link">→ Go to Dashboard</a>
+      </div>
+    </div>
+
+    <!-- Day 2 -->
+    <div class="day-card">
+      <div class="day-header">
+        <div class="day-badge">Day 2</div>
+        <div class="day-title">Create your first real project</div>
+        <div class="day-time">5 min</div>
+      </div>
+      <div class="day-body">
+        <p>Add one of your current or upcoming jobs as a project in BIK. You'll see how the health dashboard tracks activity for it.</p>
+        <ul>
+          <li>Click <strong>New Project</strong> on the dashboard.</li>
+          <li>Enter the project name (e.g. "Jones Renovation — Chapel Hill").</li>
+          <li>Add the client name, site address, and contract value if you have it.</li>
+          <li>Set status to <strong>Active</strong> and click <strong>Save project</strong>.</li>
+        </ul>
+        <div class="day-tip"><strong>Tip:</strong> Don't worry about filling in every field. A name and status is enough — you can add detail later. The project health indicator updates as you add documents to the project.</div>
+        <br>
+        <a href="dashboard.html" class="day-tool-link">→ Add a project</a>
+      </div>
+    </div>
+
+    <!-- Day 3 -->
+    <div class="day-card">
+      <div class="day-header">
+        <div class="day-badge">Day 3</div>
+        <div class="day-title">Generate a Variation Notice for a live job</div>
+        <div class="day-time">10 min</div>
+      </div>
+      <div class="day-body">
+        <p>If you have a scope change on any current job, use BIK to document it today. This is the highest-value task in the guide — a variation notice prevents a dispute before it starts.</p>
+        <ul>
+          <li>Open the <strong>Variation Notice</strong> tool from the dashboard.</li>
+          <li>Select the project you created on Day 2 (or type the project details).</li>
+          <li>Describe the scope change, cost impact, and time extension.</li>
+          <li>Click <strong>Generate document</strong> and review the output.</li>
+          <li>Use <strong>Save PDF</strong> to download it, or <strong>Email</strong> to send to the client.</li>
+        </ul>
+        <div class="day-tip"><strong>No live variation right now?</strong> Use the demo project (Smith Residence) as practice — it already has variation data loaded. Generate the document and see what it looks like.</div>
+        <br>
+        <a href="variation-generator.html" class="day-tool-link">→ Open Variation Notice</a>
+      </div>
+    </div>
+
+    <!-- Day 4 -->
+    <div class="day-card">
+      <div class="day-header">
+        <div class="day-badge">Day 4</div>
+        <div class="day-title">Write a Site Diary entry</div>
+        <div class="day-time">5 min</div>
+      </div>
+      <div class="day-body">
+        <p>The Site Diary is your daily record — it's your best protection in a dispute. Try writing one today's entry to get comfortable with the format.</p>
+        <ul>
+          <li>Open the <strong>Site Diary</strong> tool from the dashboard.</li>
+          <li>Select your project and today's date.</li>
+          <li>Note the weather, workforce, and works completed today (even brief notes are fine).</li>
+          <li>Record any instructions received, materials delivered, or delays.</li>
+          <li>Generate the document and save a PDF.</li>
+        </ul>
+        <div class="day-tip"><strong>Habit tip:</strong> The goal is to make site diary entries a 3-minute end-of-day habit. Brief, factual, and consistent. Courts treat contemporaneous records as more reliable than later recollections.</div>
+        <br>
+        <a href="site-diary.html" class="day-tool-link">→ Open Site Diary</a>
+      </div>
+    </div>
+
+    <!-- Day 5 -->
+    <div class="day-card">
+      <div class="day-header">
+        <div class="day-badge">Day 5</div>
+        <div class="day-title">Try the AI Writer</div>
+        <div class="day-time">10 min</div>
+      </div>
+      <div class="day-body">
+        <p>The AI Writer rewrites your rough notes into professional, clear language — without adding facts or changing your meaning. It's useful for defect descriptions, scope explanations, and formal notices.</p>
+        <ul>
+          <li>Open any tool (try Variation Notice or Defect Report).</li>
+          <li>Click <strong>AI Writer</strong> in the top bar and enter your Anthropic API key (see setup guide).</li>
+          <li>Fill in a field with rough notes — something like "cracked tile, third row from door".</li>
+          <li>Click the AI Writer button next to the field and choose a rewrite mode.</li>
+          <li>Review the output — AI rewrites, but never invents facts.</li>
+        </ul>
+        <div class="day-tip"><strong>Cost note:</strong> API usage is billed to your Anthropic account. At current rates, 100 rewrites costs approximately $0.30–$0.60. See the <a href="ai-usage-notice.html">AI Usage Notice</a> for details.</div>
+        <br>
+        <a href="support.html#ai-writer" class="day-tool-link">→ AI Writer setup guide</a>
+      </div>
+    </div>
+
+    <!-- Day 6 -->
+    <div class="day-card">
+      <div class="day-header">
+        <div class="day-badge">Day 6</div>
+        <div class="day-title">Explore a second tool relevant to your work</div>
+        <div class="day-time">10 min</div>
+      </div>
+      <div class="day-body">
+        <p>Pick one of the tools below that's most relevant to what you're working on right now, and generate a document using a current or recent job.</p>
+        <ul>
+          <li><strong>Quote Builder</strong> — for a new enquiry or tender. Try building a quote with line items.</li>
+          <li><strong>Progress Claim</strong> — if you're at a claim milestone. Note: verify your state's SOP legislation before serving.</li>
+          <li><strong>Defect Report</strong> — if you've just completed an inspection or handover.</li>
+          <li><strong>Toolbox Talk</strong> — if you have site workers. Record a safety briefing for your records.</li>
+          <li><strong>EOT Claim</strong> — if you're dealing with a delay. Issue a claim before the contract notice deadline.</li>
+        </ul>
+        <div class="day-tip"><strong>Why this matters:</strong> The more tools you use, the more you'll see how they connect — a variation leads to an EOT claim, a defect report leads to a handover checklist. Each tool links to the next.</div>
+        <br>
+        <a href="dashboard.html" class="day-tool-link">→ Browse all tools</a>
+      </div>
+    </div>
+
+    <!-- Day 7 -->
+    <div class="day-card">
+      <div class="day-header">
+        <div class="day-badge">Day 7</div>
+        <div class="day-title">Send your first piece of feedback</div>
+        <div class="day-time">5 min</div>
+      </div>
+      <div class="day-body">
+        <p>This is the most important task of the week for the Founding Builder Program. Your feedback directly shapes what gets built next.</p>
+        <ul>
+          <li>Look for the <strong>Beta</strong> button at the bottom right of any page.</li>
+          <li>Choose Bug Report, Feature Request, or General Feedback.</li>
+          <li>Tell us: what worked, what didn't, what you'd change, what you wish BIK did.</li>
+          <li>Include how much time you think BIK saved you this week (even a rough estimate).</li>
+          <li>Hit Submit — it takes about 30 seconds.</li>
+        </ul>
+        <div class="day-tip"><strong>What we're looking for:</strong> We want honest feedback — not praise. If something confused you, frustrated you, or didn't work as expected, that's the most valuable thing you can tell us. We read and respond to every submission.</div>
+      </div>
+    </div>
+
+  </div><!-- /.day-grid -->
+
+  <hr class="tg-divider" />
+
+  <!-- Week 1 checklist -->
+  <div>
+    <div class="tg-checklist-header">Week 1 checklist</div>
+    <ul class="tg-checklist">
+      <li><div class="tg-check"></div><span>Builder profile set up and saved</span></li>
+      <li><div class="tg-check"></div><span>At least one real project created</span></li>
+      <li><div class="tg-check"></div><span>Variation Notice generated for a live or demo job</span></li>
+      <li><div class="tg-check"></div><span>Site Diary entry generated</span></li>
+      <li><div class="tg-check"></div><span>AI Writer set up and tested</span></li>
+      <li><div class="tg-check"></div><span>Second tool explored with real data</span></li>
+      <li><div class="tg-check"></div><span>First feedback submitted via Beta button</span></li>
+    </ul>
+  </div>
+
+  <div class="tg-cta">
+    <h3>Ready to keep going?</h3>
+    <p>Check your project health dashboard — it will show you what needs attention next.</p>
+    <a href="dashboard.html" class="tg-cta-btn">Go to dashboard →</a>
+  </div>
+
+</main>
+
+<footer style="background:#f5f0e8;padding:28px 24px;text-align:center;border-top:1px solid #e8e4de">
+  <nav style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:10px">
+    <a href="dashboard.html"        style="font-size:0.78rem;color:#888">Dashboard</a>
+    <a href="founding-builder.html" style="font-size:0.78rem;color:#888">Founding Builder</a>
+    <a href="quick-start.html"      style="font-size:0.78rem;color:#888">Quick Start</a>
+    <a href="faq.html"              style="font-size:0.78rem;color:#888">FAQ</a>
+    <a href="support.html"          style="font-size:0.78rem;color:#888">Support</a>
+    <a href="release-notes.html"    style="font-size:0.78rem;color:#888">Release Notes</a>
+  </nav>
+  <p style="font-size:0.75rem;color:#aaa">&copy; 2026 BIK Solutions Pty Ltd &nbsp;·&nbsp; Beta v0.11 &nbsp;·&nbsp; All data stored on this device only</p>
+</footer>
+
+</body>
+</html>

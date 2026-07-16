@@ -43,6 +43,10 @@ export function emit(toolId, name, props = {}) {
     props: { ...props, ts: Date.now() }
   };
 
+  // Dispatch a DOM event so UI modules (contextual celebrations, etc.) can react
+  // without being coupled to ToolController.
+  document.dispatchEvent(new CustomEvent('bik:' + name, { detail: { toolId, ...props } }));
+
   if (DEBUG) {
     // eslint-disable-next-line no-console
     console.debug('[BIK Analytics]', event);
