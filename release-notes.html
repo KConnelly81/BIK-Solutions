@@ -82,6 +82,65 @@
 
     <div class="release">
       <div class="release-header">
+        <span class="release-version">Version 0.10</span>
+        <span class="release-badge">Beta</span>
+        <span class="release-date">16 July 2026 — AI Project Health Dashboard</span>
+      </div>
+
+      <p class="release-intro">
+        Sprint 4 replaces the static project list with an AI Project Health Dashboard — a proactive, rules-based monitoring system that watches every project and surfaces the next best action without the builder having to search for problems.
+      </p>
+
+      <div class="change-group">
+        <div class="change-group-title">New in this release</div>
+        <ul class="change-list">
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Project Health Dashboard</strong> — each project gets a health card showing its status, contract value, active alerts, and a suggested next action. Cards are colour-coded: green (healthy), amber (needs attention), red (critical).</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Health Engine</strong> — deterministic rules engine (<code>health-engine.js</code>) evaluates every project against its document records. Architecture is future-ready for AI recommendations — the rules engine output shape is the stable contract; swapping to a model endpoint requires no UI changes.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Running Contract Value</strong> — automatically calculates original contract (approved quote) + approved variations = current contract total, with GST estimate. Updates in real time as documents are approved.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Smart alerts with one-click actions</strong> — six alert categories: pending approval (overdue), approval awaiting, missing site diary, quote expiry, no quote on file, quote not yet sent. Every alert has a direct action button: Send Reminder, Create Site Diary, Review Quote, Create Quote, Open Document.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Pre-written follow-up emails</strong> — approval chasers (standard and urgent) are pre-written and pre-addressed. Builder clicks "Send follow-up" and the email client opens with reference, days outstanding, and professional language already composed.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Summary bar</strong> — active project count, total contract value across all projects, and total items needing attention at a glance.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Project detail page</strong> — dedicated <code>project.html</code> with full project timeline, documents by type, contract summary, smart actions, and coming-soon stubs for Client Portal, Digital Signatures, Progress Claims, Invoices, Site Photos, Voice Notes, and Attachments.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Hero personalisation</strong> — dashboard greeting updates based on project health state: "2 projects need your attention today" vs "All 4 projects looking healthy."</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="change-group">
+        <div class="change-group-title">Architecture notes</div>
+        <ul class="change-list">
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><code>js/toolkit/health-engine.js</code> — pure module, no DOM, no side effects. <code>HEALTH_ENGINE_SWAP_POINT</code> comment marks where <code>evaluateProject()</code> would be replaced with an AI API call.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><code>js/toolkit/project-store.js</code> — <code>PROJECT_STORAGE_POINT</code> marks the swap point for Supabase backend in v2.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><code>js/toolkit/document-history.js</code> — <code>DOCUMENT_HISTORY_STORAGE_POINT</code> marks the swap point for server-side document storage.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="rn-divider">
+
+    <div class="release">
+      <div class="release-header">
         <span class="release-version">Version 0.9</span>
         <span class="release-badge">Beta</span>
         <span class="release-date">15 July 2026 — First public beta</span>

@@ -42,29 +42,53 @@
     <!-- Hero -->
     <div class="dash-hero">
       <h1 class="dash-hero-title" id="hero-title">Good day, builder.</h1>
-      <p class="dash-hero-sub">Your professional document toolkit — built for Australian builders and tradies.</p>
+      <p class="dash-hero-sub" id="hero-sub">Your professional document toolkit — built for Australian builders and tradies.</p>
     </div>
 
-    <!-- Projects section -->
-    <section class="dash-section" id="projects-section" aria-labelledby="projects-heading" hidden>
+    <!-- ── Health Summary Bar ── -->
+    <div id="health-summary-bar" class="health-summary-bar" hidden>
+      <div class="hsb-stat" id="hsb-projects">
+        <span class="hsb-num" id="hsb-num-projects">0</span>
+        <span class="hsb-label">active projects</span>
+      </div>
+      <div class="hsb-divider"></div>
+      <div class="hsb-stat" id="hsb-contract">
+        <span class="hsb-num" id="hsb-num-contract">$0</span>
+        <span class="hsb-label">total contract value</span>
+      </div>
+      <div class="hsb-divider"></div>
+      <div class="hsb-stat hsb-stat--alert" id="hsb-alerts-wrap">
+        <span class="hsb-num" id="hsb-num-alerts">0</span>
+        <span class="hsb-label" id="hsb-label-alerts">items need attention</span>
+      </div>
+    </div>
+
+    <!-- ── Project Health Cards ── -->
+    <section id="health-section" aria-labelledby="health-heading" hidden>
       <div class="dash-section-header">
-        <h2 class="dash-section-title" id="projects-heading">Projects</h2>
-        <button class="dash-link" id="btn-view-archived" type="button" hidden>Show archived</button>
+        <h2 class="dash-section-title" id="health-heading">Project Health</h2>
+        <div class="health-filter" role="group" aria-label="Filter projects">
+          <button class="hf-btn hf-btn--active" data-filter="all"    type="button">All</button>
+          <button class="hf-btn" data-filter="attention" type="button">Needs attention</button>
+          <button class="hf-btn" data-filter="healthy"   type="button">Healthy</button>
+        </div>
       </div>
-      <div id="projects-grid" class="projects-grid">
+      <div id="health-grid" class="health-grid">
         <!-- Rendered by JS -->
       </div>
     </section>
 
-    <!-- Continue working — active project quick-launch -->
-    <section class="dash-section" id="continue-section" aria-labelledby="continue-heading" hidden>
-      <h2 class="dash-section-title" id="continue-heading">Continue working</h2>
-      <div id="continue-card" class="continue-card">
-        <!-- Rendered by JS -->
+    <!-- ── No projects state ── -->
+    <section id="empty-section" aria-label="Get started" hidden>
+      <div class="empty-start">
+        <div class="empty-start-icon" aria-hidden="true">🏗️</div>
+        <h2 class="empty-start-heading">Start your first project</h2>
+        <p class="empty-start-body">Create a project to connect your quotes, variations, and site diaries in one place. BIK will monitor activity and surface what needs attention.</p>
+        <button class="dash-btn dash-btn--coral" id="btn-new-project-empty" type="button">Create project</button>
       </div>
     </section>
 
-    <!-- Tools grid -->
+    <!-- ── Tools (always shown) ── -->
     <section class="dash-section" aria-labelledby="tools-heading">
       <h2 class="dash-section-title" id="tools-heading">Tools</h2>
       <div class="dash-tools-grid" id="tools-grid">
@@ -140,31 +164,6 @@
       </div>
     </section>
 
-    <!-- Pending Approvals -->
-    <section class="dash-section" id="pending-section" aria-labelledby="pending-heading" hidden>
-      <h2 class="dash-section-title" id="pending-heading">Awaiting Approval</h2>
-      <div id="pending-list" class="recent-docs-list"></div>
-    </section>
-
-    <!-- Draft Documents -->
-    <section class="dash-section" id="drafts-section" aria-labelledby="drafts-heading" hidden>
-      <h2 class="dash-section-title" id="drafts-heading">Draft Documents</h2>
-      <div id="drafts-list" class="recent-docs-list"></div>
-    </section>
-
-    <!-- Recent documents -->
-    <section class="dash-section" aria-labelledby="recent-heading">
-      <div class="dash-section-header">
-        <h2 class="dash-section-title" id="recent-heading">Recent documents</h2>
-        <button class="dash-link" id="btn-clear-history" type="button" style="display:none">Clear all</button>
-      </div>
-      <div id="recent-docs-list" class="recent-docs-list">
-        <div class="recent-empty" id="recent-empty">
-          <p>No documents yet. Open a tool and generate your first document.</p>
-        </div>
-      </div>
-    </section>
-
   </main>
 
   <!-- ====== PROFILE MODAL ====== -->
@@ -183,7 +182,7 @@
     </div>
   </div>
 
-  <!-- ====== PROJECT MODAL (inline, reused for create/edit) ====== -->
+  <!-- ====== PROJECT MODAL ====== -->
   <div class="modal-overlay" id="project-overlay" hidden aria-modal="true" role="dialog" aria-label="Project">
     <div class="modal-box modal-box--wide">
       <div class="modal-header">
@@ -218,16 +217,11 @@
 <script type="module">
 import { documentHistory } from './js/toolkit/document-history.js';
 import { projectStore, PROJECT_STATUSES } from './js/toolkit/project-store.js';
+import { evaluateAll, aggregateMetrics } from './js/toolkit/health-engine.js';
 
 // ── Constants ──────────────────────────────────────────────────────
 
-const TOOL_META = {
-  'variation-notice': { name: 'Variation Notice', url: 'variation-generator.html', icon: '📋' },
-  'quote-builder':    { name: 'Quote Builder',    url: 'quote-builder.html',       icon: '💰' },
-  'scope-of-works':   { name: 'Scope of Works',   url: 'scope-of-works.html',      icon: '📝' },
-  'site-diary':       { name: 'Site Diary',        url: 'site-diary.html',          icon: '📅' },
-  'defect-report':    { name: 'Defect Report',     url: 'defect-report.html',       icon: '🔍' }
-};
+const PROFILE_KEY = 'bik-builder-profile';
 
 const PROFILE_FIELDS = [
   { id: 'builderName',         label: 'Business / trading name',   type: 'text',     placeholder: 'e.g. Smith Building Pty Ltd' },
@@ -240,26 +234,32 @@ const PROFILE_FIELDS = [
 ];
 
 const PROJECT_FORM_FIELDS = [
-  { id: 'name',          label: 'Project name',               type: 'text',     required: true, placeholder: 'e.g. Smith Residence Renovation', grid: 'full' },
-  { id: 'clientName',    label: 'Client name',                type: 'text',     placeholder: 'John & Jane Smith' },
-  { id: 'clientEmail',   label: 'Client email',               type: 'email',    placeholder: 'client@email.com' },
-  { id: 'clientPhone',   label: 'Client phone',               type: 'tel',      placeholder: '0400 000 000' },
-  { id: 'contractRef',   label: 'Contract / job reference',   type: 'text',     placeholder: 'e.g. JOB-2026-014' },
-  { id: 'siteAddress',   label: 'Site address',               type: 'textarea', placeholder: '123 Example St, Brisbane QLD 4000', grid: 'full' },
-  { id: 'status',        label: 'Status',                     type: 'select',   options: PROJECT_STATUSES },
-  { id: 'contractValue', label: 'Contract value ($ excl. GST)', type: 'number', placeholder: '0.00', min: 0, step: 0.01 },
-  { id: 'notes',         label: 'Notes',                      type: 'textarea', placeholder: 'Any internal notes', grid: 'full' }
+  { id: 'name',          label: 'Project name',                 type: 'text',     required: true, placeholder: 'e.g. Smith Residence Renovation', grid: 'full' },
+  { id: 'clientName',    label: 'Client name',                  type: 'text',     placeholder: 'John & Jane Smith' },
+  { id: 'clientEmail',   label: 'Client email',                 type: 'email',    placeholder: 'client@email.com' },
+  { id: 'clientPhone',   label: 'Client phone',                 type: 'tel',      placeholder: '0400 000 000' },
+  { id: 'contractRef',   label: 'Contract / job reference',     type: 'text',     placeholder: 'e.g. JOB-2026-014' },
+  { id: 'siteAddress',   label: 'Site address',                 type: 'textarea', placeholder: '123 Example St, Brisbane QLD 4000', grid: 'full' },
+  { id: 'status',        label: 'Status',                       type: 'select',   options: PROJECT_STATUSES },
+  { id: 'contractValue', label: 'Contract value ($ excl. GST)', type: 'number',   placeholder: '0.00', min: 0, step: 0.01 },
+  { id: 'notes',         label: 'Notes',                        type: 'textarea', placeholder: 'Any internal notes', grid: 'full' }
 ];
 
-const PROFILE_KEY = 'bik-builder-profile';
+const STATUS_COLOURS = Object.fromEntries(PROJECT_STATUSES.map(s => [s.value, s.colour]));
+const STATUS_LABELS  = Object.fromEntries(PROJECT_STATUSES.map(s => [s.value, s.label]));
 
 // ── Utilities ──────────────────────────────────────────────────────
 
 function esc(str) {
-  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatAUD(n) {
+  return '$' + Number(n || 0).toLocaleString('en-AU', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 function formatRelative(ts) {
+  if (!ts) return '—';
   const diff = Date.now() - new Date(ts).getTime();
   const m = Math.floor(diff / 60000);
   if (m < 1)  return 'just now';
@@ -271,200 +271,176 @@ function formatRelative(ts) {
   return new Date(ts).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
 }
 
-function statusBadge(status) {
-  const cfg = PROJECT_STATUSES.find(s => s.value === status) || PROJECT_STATUSES[0];
-  return `<span class="project-status-inline" style="background:${cfg.colour}">${cfg.label}</span>`;
-}
-
 function loadProfile() {
   try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}'); } catch { return {}; }
 }
 
-function saveProfile(data) {
-  localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
-}
+// ── Hero ──────────────────────────────────────────────────────────
 
-// ── Hero greeting ──────────────────────────────────────────────────
-
-function renderHero() {
+function renderHero(metrics) {
   const profile = loadProfile();
-  const name = profile.builderName;
-  const hero = document.getElementById('hero-title');
-  if (name) hero.textContent = `Good day, ${name}.`;
+  const name    = profile.builderName;
+  document.getElementById('hero-title').textContent = name ? `Good day, ${name}.` : 'Good day, builder.';
+  if (metrics && metrics.totalProjects > 0) {
+    const sub = metrics.needsAttention > 0
+      ? `${metrics.needsAttention} project${metrics.needsAttention !== 1 ? 's' : ''} need your attention today.`
+      : `All ${metrics.totalProjects} project${metrics.totalProjects !== 1 ? 's' : ''} looking healthy.`;
+    document.getElementById('hero-sub').textContent = sub;
+  }
 }
 
-// ── Projects section ───────────────────────────────────────────────
+// ── Summary bar ───────────────────────────────────────────────────
 
-function renderProjects() {
-  const projects = projectStore.list();
-  const section  = document.getElementById('projects-section');
-  const grid     = document.getElementById('projects-grid');
+function renderSummaryBar(metrics) {
+  const bar = document.getElementById('health-summary-bar');
+  if (!metrics || metrics.totalProjects === 0) { bar.hidden = true; return; }
 
-  if (projects.length === 0) {
+  bar.hidden = false;
+  document.getElementById('hsb-num-projects').textContent = metrics.totalProjects;
+  document.getElementById('hsb-num-contract').textContent = formatAUD(metrics.totalContractValue);
+  document.getElementById('hsb-num-alerts').textContent   = metrics.totalAlerts;
+  document.getElementById('hsb-label-alerts').textContent =
+    metrics.totalAlerts === 1 ? 'item needs attention' : 'items need attention';
+
+  const alertWrap = document.getElementById('hsb-alerts-wrap');
+  alertWrap.classList.toggle('hsb-stat--alert', metrics.totalAlerts > 0);
+  alertWrap.classList.toggle('hsb-stat--ok',    metrics.totalAlerts === 0);
+}
+
+// ── Health grid ───────────────────────────────────────────────────
+
+let _allReports  = [];
+let _activeFilter = 'all';
+
+function renderHealthGrid(reports) {
+  _allReports = reports;
+  applyFilter(_activeFilter);
+}
+
+function applyFilter(filter) {
+  _activeFilter = filter;
+  document.querySelectorAll('.hf-btn').forEach(b => {
+    b.classList.toggle('hf-btn--active', b.dataset.filter === filter);
+  });
+
+  let visible = _allReports;
+  if (filter === 'attention') visible = _allReports.filter(r => r.status !== 'healthy');
+  if (filter === 'healthy')   visible = _allReports.filter(r => r.status === 'healthy');
+
+  const grid    = document.getElementById('health-grid');
+  const section = document.getElementById('health-section');
+  const empty   = document.getElementById('empty-section');
+
+  if (_allReports.length === 0) {
     section.hidden = true;
+    empty.hidden   = false;
     return;
   }
 
   section.hidden = false;
-  // Show max 6 non-archived; archived hidden unless toggled
-  const visible = projects.filter(p => p.status !== 'archived').slice(0, 6);
-  const archived = projects.filter(p => p.status === 'archived');
-  const archivedBtn = document.getElementById('btn-view-archived');
-  archivedBtn.hidden = archived.length === 0;
+  empty.hidden   = true;
 
-  grid.innerHTML = visible.map(p => {
-    const docs     = documentHistory.listByProject(p.id, 100);
-    const lastDoc  = docs[0];
-    const lastActivity = lastDoc ? formatRelative(lastDoc.updatedAt) : formatRelative(p.updatedAt);
-    const colour   = PROJECT_STATUSES.find(s => s.value === p.status)?.colour || '#888';
-    const docCount = docs.length;
-    const client   = p.clientName ? `<div class="pcard-client">${esc(p.clientName)}</div>` : '';
-    const addr     = p.siteAddress ? `<div class="pcard-addr">${esc(p.siteAddress.split('\n')[0])}</div>` : '';
-    const pendingCount = docs.filter(d => d.approval?.status === 'sent').length;
-    const pendingBadge = pendingCount > 0 ? `<span class="pcard-pending-badge">${pendingCount} awaiting approval</span>` : '';
-    return `
-      <a href="project.html?id=${esc(p.id)}" class="project-card" aria-label="${esc(p.name)}">
-        <div class="pcard-top">
-          <div class="pcard-title-row">
-            <span class="pcard-dot" style="background:${colour}" title="${esc(PROJECT_STATUSES.find(s=>s.value===p.status)?.label||p.status)}"></span>
-            <span class="pcard-name">${esc(p.name)}</span>
+  if (visible.length === 0) {
+    grid.innerHTML = `<div class="health-filter-empty">No projects match this filter.</div>`;
+    return;
+  }
+
+  grid.innerHTML = visible.map(r => renderHealthCard(r)).join('');
+}
+
+function renderHealthCard(r) {
+  const p = r.project;
+  const statusColour = STATUS_COLOURS[p.status] || '#888';
+  const statusLabel  = STATUS_LABELS[p.status]  || p.status;
+
+  const healthColour = { healthy: '#2b9e3f', attention: '#e67e22', critical: '#c0392b' }[r.status];
+  const healthIcon   = { healthy: '✓', attention: '!', critical: '!!' }[r.status];
+  const healthLabel  = { healthy: 'Healthy', attention: 'Needs attention', critical: 'Attention required' }[r.status];
+
+  // Contract value
+  const hasContract = r.contractSummary.currentTotal > 0;
+  const contractHtml = hasContract
+    ? `<div class="hcard-contract">${formatAUD(r.contractSummary.currentTotal)} <span class="hcard-contract-label">excl. GST</span></div>`
+    : '';
+
+  // Alerts — show max 3
+  const shownAlerts = r.alerts.slice(0, 3);
+  const moreCount   = r.alerts.length - 3;
+  const alertsHtml = shownAlerts.map(a => renderAlertRow(a)).join('');
+  const moreHtml   = moreCount > 0
+    ? `<a href="project.html?id=${esc(p.id)}" class="hcard-more-link">+ ${moreCount} more — view project</a>`
+    : '';
+
+  // No alerts state
+  const noAlertsHtml = r.alerts.length === 0
+    ? `<div class="hcard-no-alerts">
+         <span class="hcard-no-alerts-icon" aria-hidden="true">✓</span>
+         All clear — no outstanding actions
+       </div>`
+    : '';
+
+  return `
+    <div class="health-card health-card--${r.status}" data-status="${r.status}" data-project-id="${esc(p.id)}">
+
+      <div class="hcard-header">
+        <div class="hcard-header-left">
+          <div class="hcard-status-row">
+            <span class="hcard-status-dot" style="background:${statusColour}" title="${statusLabel}"></span>
+            <span class="hcard-status-text">${statusLabel}</span>
+            <span class="hcard-health-badge hcard-health-badge--${r.status}">
+              <span class="hcard-health-icon" aria-hidden="true">${healthIcon}</span>
+              ${healthLabel}
+            </span>
           </div>
-          <button class="pcard-edit-btn" type="button" data-project-id="${esc(p.id)}" title="Edit project" aria-label="Edit ${esc(p.name)}">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <h3 class="hcard-name">
+            <a href="project.html?id=${esc(p.id)}" class="hcard-name-link">${esc(p.name)}</a>
+          </h3>
+          ${p.clientName ? `<div class="hcard-client">${esc(p.clientName)}</div>` : ''}
+        </div>
+        <div class="hcard-header-right">
+          ${contractHtml}
+          <div class="hcard-meta">${r.metrics.docCount} doc${r.metrics.docCount !== 1 ? 's' : ''} · ${formatRelative(r.metrics.lastActivityAt)}</div>
+          <button class="hcard-edit-btn" type="button" data-project-id="${esc(p.id)}" aria-label="Edit ${esc(p.name)}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
         </div>
-        ${client}${addr}
-        <div class="pcard-stats">
-          <span class="pcard-stat">${docCount} document${docCount !== 1 ? 's' : ''}</span>
-          <span class="pcard-stat-sep">·</span>
-          <span class="pcard-stat">${lastActivity}</span>
-        </div>
-        ${pendingBadge}
-        <div class="pcard-tools">
-          ${Object.entries(TOOL_META).slice(0,4).map(([toolId, meta]) =>
-            `<a href="${meta.url}?project=${esc(p.id)}" class="pcard-tool-btn" title="Open ${meta.name}" aria-label="${meta.name}" onclick="event.stopPropagation()">
-              <span aria-hidden="true">${meta.icon}</span>
-            </a>`
-          ).join('')}
-          <a href="${TOOL_META['defect-report'].url}?project=${esc(p.id)}" class="pcard-tool-btn" title="Open Defect Report" aria-label="Defect Report" onclick="event.stopPropagation()">
-            <span aria-hidden="true">🔍</span>
-          </a>
-        </div>
-      </a>`;
-  }).join('') + `
-    <button class="project-card project-card--new" type="button" id="btn-new-project-card" aria-label="Create a new project">
-      <div class="pcard-new-icon" aria-hidden="true">+</div>
-      <div class="pcard-new-label">New Project</div>
-    </button>`;
+      </div>
 
-  grid.querySelectorAll('.pcard-edit-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      openProjectModal(btn.dataset.projectId);
-    });
-  });
+      <div class="hcard-alerts">
+        ${noAlertsHtml}
+        ${alertsHtml}
+        ${moreHtml}
+      </div>
 
-  document.getElementById('btn-new-project-card')?.addEventListener('click', () => openProjectModal(null));
+      <div class="hcard-footer">
+        <div class="hcard-next-action">
+          ${r.suggestedNextAction ? `
+            <span class="hcard-next-label">Next:</span>
+            <a href="${esc(r.suggestedNextAction.href)}" class="hcard-next-btn">${esc(r.suggestedNextAction.label)}</a>
+          ` : ''}
+        </div>
+        <a href="project.html?id=${esc(p.id)}" class="hcard-view-link">View project →</a>
+      </div>
+
+    </div>`;
 }
 
-// ── Continue Working ───────────────────────────────────────────────
+function renderAlertRow(alert) {
+  const severityIcon = { critical: '⚠️', warning: '●', info: '○' }[alert.severity] || '●';
+  const actionsHtml = alert.actions.map(a =>
+    `<a href="${esc(a.href)}" class="halert-action halert-action--${a.isPrimary ? 'primary' : 'ghost'}"
+        ${a.href.startsWith('mailto:') ? 'target="_blank"' : ''}>${esc(a.label)}</a>`
+  ).join('');
 
-function renderContinue() {
-  const recent = projectStore.getMostRecent();
-  const section = document.getElementById('continue-section');
-  const card    = document.getElementById('continue-card');
-
-  if (!recent) { section.hidden = true; return; }
-
-  const docs    = documentHistory.listByProject(recent.id, 5);
-  const lastDoc = docs[0];
-  const colour  = PROJECT_STATUSES.find(s => s.value === recent.status)?.colour || '#888';
-  const client  = recent.clientName ? ` · ${esc(recent.clientName)}` : '';
-  const addr    = recent.siteAddress ? `<div class="cont-addr">${esc(recent.siteAddress.split('\n')[0])}</div>` : '';
-
-  section.hidden = false;
-  card.innerHTML = `
-    <div class="cont-header">
-      <div>
-        <div class="cont-name">${esc(recent.name)}</div>
-        <div class="cont-meta">
-          <span class="project-status-inline" style="background:${colour}">${PROJECT_STATUSES.find(s=>s.value===recent.status)?.label||recent.status}</span>
-          ${client}
-        </div>
-        ${addr}
+  return `
+    <div class="halert-row halert-row--${alert.severity}">
+      <span class="halert-icon" aria-hidden="true">${severityIcon}</span>
+      <div class="halert-body">
+        <div class="halert-headline">${esc(alert.headline)}</div>
+        <div class="halert-detail">${esc(alert.detail)}</div>
       </div>
-      ${lastDoc ? `<div class="cont-last">Last activity ${formatRelative(lastDoc.updatedAt)}</div>` : ''}
-    </div>
-    <div class="cont-tools">
-      ${Object.entries(TOOL_META).map(([toolId, meta]) =>
-        `<a href="${meta.url}?project=${esc(recent.id)}" class="cont-tool-btn">
-          <span class="cont-tool-icon" aria-hidden="true">${meta.icon}</span>
-          <span class="cont-tool-name">${meta.name}</span>
-          <span class="cont-tool-arrow" aria-hidden="true">→</span>
-        </a>`
-      ).join('')}
-    </div>
-    ${docs.length > 0 ? `
-    <div class="cont-recent-docs">
-      <div class="cont-recent-label">Recent documents</div>
-      ${docs.map(rec => {
-        const meta = TOOL_META[rec.toolId];
-        if (!meta) return '';
-        return `<a href="${meta.url}?resume=${esc(rec.id)}" class="cont-doc-row">
-          <span class="cont-doc-icon" aria-hidden="true">${meta.icon}</span>
-          <span class="cont-doc-title">${esc(rec.title)}</span>
-          <span class="cont-doc-date">${formatRelative(rec.updatedAt)}</span>
-          <span class="cont-doc-arrow" aria-hidden="true">→</span>
-        </a>`;
-      }).join('')}
-    </div>` : ''}`;
-}
-
-// ── Recent Documents ───────────────────────────────────────────────
-
-function renderRecentDocs() {
-  const list     = document.getElementById('recent-docs-list');
-  const empty    = document.getElementById('recent-empty');
-  const clearBtn = document.getElementById('btn-clear-history');
-
-  const allRecords = [];
-  Object.keys(TOOL_META).forEach(toolId => {
-    documentHistory.list(toolId, 5).forEach(r => allRecords.push(r));
-  });
-  allRecords.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-  const recent = allRecords.slice(0, 12);
-
-  if (recent.length === 0) {
-    empty.hidden  = false;
-    clearBtn.style.display = 'none';
-    return;
-  }
-
-  empty.hidden = true;
-  clearBtn.style.display = '';
-  list.querySelectorAll('.recent-doc-item').forEach(el => el.remove());
-
-  recent.forEach(rec => {
-    const meta = TOOL_META[rec.toolId];
-    if (!meta) return;
-    const project    = rec.projectId ? projectStore.get(rec.projectId) : null;
-    const projectTag = project ? `<span class="rdi-project">📁 ${esc(project.name)}</span> · ` : '';
-    const approval   = rec.approval?.status;
-    const approvalTag = approval && approval !== 'draft'
-      ? `<span class="rdi-approval rdi-approval--${approval}">${approval}</span>`
-      : '';
-    const item = document.createElement('a');
-    item.className = 'recent-doc-item';
-    item.href = `${meta.url}?resume=${rec.id}`;
-    item.innerHTML = `
-      <div class="rdi-left">
-        <div class="rdi-title">${esc(rec.title || 'Untitled')} ${approvalTag}</div>
-        <div class="rdi-meta">${projectTag}<span class="rdi-tool">${esc(meta.name)}</span> · ${formatRelative(rec.updatedAt)}</div>
-      </div>
-      <div class="rdi-arrow" aria-hidden="true">→</div>`;
-    list.appendChild(item);
-  });
+      <div class="halert-actions">${actionsHtml}</div>
+    </div>`;
 }
 
 // ── Project Modal ──────────────────────────────────────────────────
@@ -474,9 +450,7 @@ let _editingProjectId = null;
 function openProjectModal(projectId) {
   _editingProjectId = projectId;
   const project = projectId ? projectStore.get(projectId) : null;
-  const title   = project ? 'Edit Project' : 'New Project';
-
-  document.getElementById('project-modal-title').textContent = title;
+  document.getElementById('project-modal-title').textContent = project ? 'Edit Project' : 'New Project';
 
   const container = document.getElementById('project-modal-fields');
   container.innerHTML = `<div class="project-form-grid">` +
@@ -510,8 +484,7 @@ function openProjectModal(projectId) {
   deleteBtn.hidden = !project;
   deleteBtn.dataset.id = projectId || '';
 
-  const overlay = document.getElementById('project-overlay');
-  overlay.hidden = false;
+  document.getElementById('project-overlay').hidden = false;
   document.getElementById('pm-name')?.focus();
 }
 
@@ -523,116 +496,23 @@ function closeProjectModal() {
 function saveProject() {
   const name = document.getElementById('pm-name')?.value.trim();
   if (!name) { alert('Project name is required.'); return; }
-
   const data = {};
   PROJECT_FORM_FIELDS.forEach(f => {
     const el = document.getElementById(`pm-${f.id}`);
     if (!el) return;
-    data[f.id] = f.type === 'number'
-      ? (parseFloat(el.value) || null)
-      : el.value.trim();
+    data[f.id] = f.type === 'number' ? (parseFloat(el.value) || null) : el.value.trim();
   });
-
-  if (_editingProjectId) {
-    projectStore.update(_editingProjectId, data);
-  } else {
-    projectStore.create(data);
-  }
-
+  if (_editingProjectId) projectStore.update(_editingProjectId, data);
+  else projectStore.create(data);
   closeProjectModal();
   renderAll();
-}
-
-// ── Pending Approvals ──────────────────────────────────────────────
-
-function renderPendingApprovals() {
-  const section = document.getElementById('pending-section');
-  const list    = document.getElementById('pending-list');
-
-  const allRecords = documentHistory.list(null, 200);
-  const pending = allRecords.filter(r => r.approval?.status === 'sent');
-
-  if (pending.length === 0) {
-    section.hidden = true;
-    return;
-  }
-
-  section.hidden = false;
-  list.querySelectorAll('.recent-doc-item').forEach(el => el.remove());
-
-  pending.slice(0, 10).forEach(rec => {
-    const meta    = TOOL_META[rec.toolId];
-    if (!meta) return;
-    const project = rec.projectId ? projectStore.get(rec.projectId) : null;
-    const projTag = project ? `<span class="rdi-project">📁 ${esc(project.name)}</span> · ` : '';
-    const sentTo  = rec.approval?.sentTo ? ` · Sent to ${esc(rec.approval.sentTo)}` : '';
-    const item = document.createElement('a');
-    item.className = 'recent-doc-item';
-    item.href = `${meta.url}?resume=${rec.id}`;
-    item.innerHTML = `
-      <div class="rdi-left">
-        <div class="rdi-title">${esc(rec.title || 'Untitled')} <span class="rdi-approval rdi-approval--sent">Awaiting approval</span></div>
-        <div class="rdi-meta">${projTag}<span class="rdi-tool">${esc(meta.name)}</span>${sentTo} · ${formatRelative(rec.approval?.sentAt || rec.updatedAt)}</div>
-      </div>
-      <div class="rdi-arrow" aria-hidden="true">→</div>`;
-    list.appendChild(item);
-  });
-}
-
-// ── Draft Documents ────────────────────────────────────────────────
-
-const DRAFT_KEYS = {
-  'variation-notice': { key: 'bik-variation-draft', url: 'variation-generator.html', name: 'Variation Notice', icon: '📋' },
-  'quote-builder':    { key: 'bik-quote-draft',     url: 'quote-builder.html',       name: 'Quote Builder',    icon: '💰' },
-  'scope-of-works':   { key: 'bik-scope-draft',     url: 'scope-of-works.html',      name: 'Scope of Works',   icon: '📝' },
-  'site-diary':       { key: 'bik-diary-draft',      url: 'site-diary.html',          name: 'Site Diary',       icon: '📅' },
-  'defect-report':    { key: 'bik-defect-draft',     url: 'defect-report.html',       name: 'Defect Report',    icon: '🔍' }
-};
-
-function renderDrafts() {
-  const section = document.getElementById('drafts-section');
-  const list    = document.getElementById('drafts-list');
-
-  const drafts = [];
-  for (const [toolId, cfg] of Object.entries(DRAFT_KEYS)) {
-    try {
-      const raw = localStorage.getItem(cfg.key);
-      if (!raw) continue;
-      const data = JSON.parse(raw);
-      // Only show if draft has at least one non-empty field
-      const hasContent = Object.values(data).some(v => v && String(v).trim().length > 0);
-      if (hasContent) drafts.push({ toolId, cfg, data });
-    } catch { /* skip corrupt draft */ }
-  }
-
-  if (drafts.length === 0) {
-    section.hidden = true;
-    return;
-  }
-
-  section.hidden = false;
-  list.querySelectorAll('.recent-doc-item').forEach(el => el.remove());
-
-  drafts.forEach(({ toolId, cfg }) => {
-    const item = document.createElement('a');
-    item.className = 'recent-doc-item';
-    item.href = cfg.url;
-    item.innerHTML = `
-      <div class="rdi-left">
-        <div class="rdi-title"><span aria-hidden="true">${cfg.icon}</span> ${cfg.name} <span class="rdi-approval rdi-approval--draft">Draft</span></div>
-        <div class="rdi-meta">Unsaved draft — click to continue</div>
-      </div>
-      <div class="rdi-arrow" aria-hidden="true">→</div>`;
-    list.appendChild(item);
-  });
 }
 
 // ── Profile Modal ──────────────────────────────────────────────────
 
 function renderProfileModal() {
   const profile = loadProfile();
-  const container = document.getElementById('profile-fields');
-  container.innerHTML = PROFILE_FIELDS.map(f => {
+  document.getElementById('profile-fields').innerHTML = PROFILE_FIELDS.map(f => {
     const val = esc(profile[f.id] || '');
     if (f.type === 'textarea') {
       return `<div class="profile-field">
@@ -647,25 +527,25 @@ function renderProfileModal() {
   }).join('');
 }
 
-// ── Init ───────────────────────────────────────────────────────────
+// ── Main render ────────────────────────────────────────────────────
 
 function renderAll() {
-  renderHero();
-  renderProjects();
-  renderContinue();
-  renderPendingApprovals();
-  renderDrafts();
-  renderRecentDocs();
+  const projects = projectStore.list();
+  const reports  = evaluateAll(projects, id => documentHistory.listByProject(id, 200));
+  const metrics  = aggregateMetrics(reports);
+
+  renderHero(metrics);
+  renderSummaryBar(metrics);
+  renderHealthGrid(reports);
 }
 
 renderAll();
 
 // ── Event wiring ───────────────────────────────────────────────────
 
-// New project buttons
 document.getElementById('btn-new-project').addEventListener('click', () => openProjectModal(null));
+document.getElementById('btn-new-project-empty')?.addEventListener('click', () => openProjectModal(null));
 
-// Project modal
 document.getElementById('btn-project-close').addEventListener('click', closeProjectModal);
 document.getElementById('btn-project-cancel').addEventListener('click', closeProjectModal);
 document.getElementById('project-overlay').addEventListener('click', e => {
@@ -682,32 +562,32 @@ document.getElementById('btn-project-delete').addEventListener('click', e => {
   renderAll();
 });
 
-// Profile modal
 const profileOverlay = document.getElementById('profile-overlay');
 document.getElementById('btn-profile').addEventListener('click', () => {
   renderProfileModal();
   profileOverlay.hidden = false;
   profileOverlay.querySelector('input')?.focus();
 });
-function closeProfile() { profileOverlay.hidden = true; }
-document.getElementById('btn-profile-close').addEventListener('click', closeProfile);
-document.getElementById('btn-profile-cancel').addEventListener('click', closeProfile);
-profileOverlay.addEventListener('click', e => { if (e.target === profileOverlay) closeProfile(); });
+document.getElementById('btn-profile-close').addEventListener('click', () => { profileOverlay.hidden = true; });
+document.getElementById('btn-profile-cancel').addEventListener('click', () => { profileOverlay.hidden = true; });
+profileOverlay.addEventListener('click', e => { if (e.target === profileOverlay) profileOverlay.hidden = true; });
 document.getElementById('btn-profile-save').addEventListener('click', () => {
   const profile = {};
-  PROFILE_FIELDS.forEach(f => {
-    profile[f.id] = document.getElementById(`pf-${f.id}`)?.value?.trim() || '';
-  });
-  saveProfile(profile);
-  closeProfile();
-  renderHero();
+  PROFILE_FIELDS.forEach(f => { profile[f.id] = document.getElementById(`pf-${f.id}`)?.value?.trim() || ''; });
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  profileOverlay.hidden = true;
+  renderAll();
 });
 
-// Clear history
-document.getElementById('btn-clear-history').addEventListener('click', () => {
-  if (!confirm('Delete all saved documents? This cannot be undone.')) return;
-  Object.keys(TOOL_META).forEach(toolId => documentHistory.clear(toolId));
-  renderRecentDocs();
+// Filter buttons
+document.querySelectorAll('.hf-btn').forEach(btn => {
+  btn.addEventListener('click', () => applyFilter(btn.dataset.filter));
+});
+
+// Edit project buttons (delegated — grid is re-rendered)
+document.getElementById('health-grid').addEventListener('click', e => {
+  const editBtn = e.target.closest('.hcard-edit-btn');
+  if (editBtn) openProjectModal(editBtn.dataset.projectId);
 });
 </script>
 

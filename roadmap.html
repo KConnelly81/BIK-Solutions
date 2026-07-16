@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BIK Business Toolkit product roadmap — what we're building next for Australian builders and tradies." />
+  <title>Product Roadmap — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .rm-hero { background: var(--charcoal, #252320); color: #fff; padding: 56px 0 40px; }
+    .rm-hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: 8px; }
+    .rm-hero-meta { color: #9c9893; font-size: 0.82rem; }
+    .rm-body { max-width: 860px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    .rm-intro { font-size: 0.92rem; line-height: 1.7; color: #555; margin-bottom: 44px; max-width: 680px; }
+
+    .rm-phase { margin-bottom: 52px; }
+    .rm-phase-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px; padding-bottom: 14px;
+      border-bottom: 2px solid #e8e4de;
+    }
+    .rm-phase-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #D85A30; color: #fff;
+      font-size: 0.8rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .rm-phase-num--soon  { background: #2c7dd4; }
+    .rm-phase-num--later { background: #888; }
+
+    .rm-phase-title {
+      font-size: 1.05rem; font-weight: 800;
+      color: #252320; letter-spacing: -0.01em;
+    }
+    .rm-phase-sub { font-size: 0.8rem; color: #999; margin-top: 1px; }
+    .rm-phase-badge {
+      margin-left: auto;
+      font-size: 0.65rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 3px 9px; border-radius: 4px;
+    }
+    .rm-phase-badge--now   { background: #e8f5eb; color: #1e7a30; }
+    .rm-phase-badge--soon  { background: #e8f0fb; color: #1a5fa8; }
+    .rm-phase-badge--later { background: #f0ede8; color: #888;    }
+
+    .rm-tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .rm-tool-card {
+      background: #fff;
+      border: 1px solid #e0ddd9;
+      border-radius: 10px;
+      padding: 18px;
+    }
+    .rm-tool-card--active { border-left: 3px solid #D85A30; }
+    .rm-tool-card--soon   { border-left: 3px solid #2c7dd4; opacity: 0.85; }
+    .rm-tool-card--later  { border-left: 3px solid #ccc; opacity: 0.7; }
+
+    .rm-tool-icon { font-size: 1.3rem; margin-bottom: 8px; }
+    .rm-tool-name {
+      font-size: 0.88rem; font-weight: 700;
+      color: #252320; margin-bottom: 4px;
+    }
+    .rm-tool-desc {
+      font-size: 0.76rem; color: #888; line-height: 1.45;
+      margin-bottom: 10px;
+    }
+    .rm-tool-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+    .rm-tool-tag {
+      font-size: 0.63rem; font-weight: 600;
+      background: #f0ede8; color: #777;
+      padding: 2px 6px; border-radius: 3px;
+    }
+    .rm-tool-tag--live { background: #e8f5eb; color: #1e7a30; }
+    .rm-tool-tag--ai   { background: #f0e8fb; color: #6a22a8; }
+
+    .rm-value-section { margin-bottom: 52px; }
+    .rm-value-heading {
+      font-size: 0.75rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: #999; margin-bottom: 16px;
+    }
+    .rm-value-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .rm-value-card {
+      background: #fff;
+      border: 1px solid #e0ddd9;
+      border-radius: 10px;
+      padding: 18px;
+      text-align: center;
+    }
+    .rm-value-icon { font-size: 1.5rem; margin-bottom: 8px; }
+    .rm-value-name {
+      font-size: 0.83rem; font-weight: 700;
+      color: #252320; margin-bottom: 4px;
+    }
+    .rm-value-desc { font-size: 0.74rem; color: #999; line-height: 1.4; }
+
+    .rm-mission {
+      background: #252320; color: #fff;
+      border-radius: 12px; padding: 28px 32px;
+      margin-top: 44px;
+    }
+    .rm-mission-heading {
+      font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.4); margin-bottom: 10px;
+    }
+    .rm-mission-text {
+      font-size: 0.95rem; line-height: 1.65; color: rgba(255,255,255,0.85);
+    }
+    .rm-mission-text strong { color: #fff; }
+
+    @media (max-width: 600px) {
+      .rm-tools-grid { grid-template-columns: 1fr; }
+      .rm-value-grid  { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="site-nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="index.html" class="logo" aria-label="BIK Solutions - home">
+        <div class="logo-mark" aria-hidden="true"><span>B</span></div>
+        <div class="logo-text">
+          <span class="logo-name">IK SOLUTIONS</span>
+          <span class="logo-tagline">Beyond Industry Knowledge</span>
+        </div>
+      </a>
+      <ul class="nav-links" role="list">
+        <li><a href="services.html">Services</a></li>
+        <li><a href="builders.html">Builders / Deconstruction</a></li>
+        <li><a href="about.html">About</a></li>
+        <li>
+          <a href="toolkit.html" aria-haspopup="true">Business Toolkit <span class="nav-dropdown-arrow">&#9660;</span></a>
+          <ul class="nav-dropdown" role="list">
+            <li><a href="toolkit.html">Toolkit Overview</a></li>
+            <li><a href="ai-documents.html">AI Documents</a></li>
+            <li><a href="dashboard.html">Open Toolkit</a></li>
+            <li><a href="roadmap.html">Roadmap</a></li>
+          </ul>
+        </li>
+        <li><a href="resources.html">Resources</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <a href="dashboard.html" class="btn btn--coral nav-cta">Open Toolkit</a>
+      <button class="nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="nav-drawer">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <section class="rm-hero">
+    <div class="container">
+      <h1>Product Roadmap</h1>
+      <p class="rm-hero-meta">BIK Business Toolkit &nbsp;·&nbsp; Updated July 2026</p>
+    </div>
+  </section>
+
+  <div class="rm-body">
+
+    <p class="rm-intro">
+      BIK Business Toolkit is being built to replace folders, spreadsheets, and generic software for Australian builders and tradies. Every feature decision is filtered against one question: does this reduce duplicate work, save time, reduce disputes, or protect cash flow? If not, we don't build it.
+    </p>
+
+    <!-- Phase 1: Live now -->
+    <div class="rm-phase">
+      <div class="rm-phase-header">
+        <div class="rm-phase-num">1</div>
+        <div>
+          <div class="rm-phase-title">Document Workspace</div>
+          <div class="rm-phase-sub">5 professional tools + project management + health dashboard</div>
+        </div>
+        <span class="rm-phase-badge rm-phase-badge--now">Live — v0.10 Beta</span>
+      </div>
+      <div class="rm-tools-grid">
+
+        <div class="rm-tool-card rm-tool-card--active">
+          <div class="rm-tool-icon">📋</div>
+          <div class="rm-tool-name">Variation Notice</div>
+          <div class="rm-tool-desc">Scope changes, cost impacts, time extensions. Auto-numbered, GST calculated, approval workflow.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--live">Live</span>
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Approval workflow</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--active">
+          <div class="rm-tool-icon">💰</div>
+          <div class="rm-tool-name">Quote Builder</div>
+          <div class="rm-tool-desc">Professional quotes with line items, GST, inclusions, exclusions, and acceptance signature.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--live">Live</span>
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">GST calc</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--active">
+          <div class="rm-tool-icon">📝</div>
+          <div class="rm-tool-name">Scope of Works</div>
+          <div class="rm-tool-desc">Define exactly what is and isn't included. AI Writer expands rough notes into contract-quality language.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--live">Live</span>
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--active">
+          <div class="rm-tool-icon">📅</div>
+          <div class="rm-tool-name">Site Diary</div>
+          <div class="rm-tool-desc">Daily records of weather, workforce, works, incidents, and sub-contractor activities.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--live">Live</span>
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Daily records</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--active">
+          <div class="rm-tool-icon">🔍</div>
+          <div class="rm-tool-name">Defect Report</div>
+          <div class="rm-tool-desc">Structured defect identification with severity, location, trade responsible, and rectification instructions.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--live">Live</span>
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--active">
+          <div class="rm-tool-icon">🏗️</div>
+          <div class="rm-tool-name">Project Workspace</div>
+          <div class="rm-tool-desc">Projects connect all documents. Auto-populate client, address, and contract reference across every tool.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--live">Live</span>
+            <span class="rm-tool-tag">Auto-fill</span>
+            <span class="rm-tool-tag">Timeline</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--active">
+          <div class="rm-tool-icon">📊</div>
+          <div class="rm-tool-name">Project Health Dashboard</div>
+          <div class="rm-tool-desc">Monitors all projects. Running contract value, pending approvals, missing diaries, and suggested next actions.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--live">Live</span>
+            <span class="rm-tool-tag">Rules engine</span>
+            <span class="rm-tool-tag">AI-ready</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Phase 2: Next 15 tools -->
+    <div class="rm-phase">
+      <div class="rm-phase-header">
+        <div class="rm-phase-num rm-phase-num--soon">2</div>
+        <div>
+          <div class="rm-phase-title">15 New Tools</div>
+          <div class="rm-phase-sub">Covering the full lifecycle of a construction project</div>
+        </div>
+        <span class="rm-phase-badge rm-phase-badge--soon">On the roadmap</span>
+      </div>
+      <div class="rm-tools-grid">
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">🧾</div>
+          <div class="rm-tool-name">Progress Claim</div>
+          <div class="rm-tool-desc">BCIPA-compliant progress claims with schedule of values, retention, and supporting documentation.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">BCIPA</span>
+            <span class="rm-tool-tag">Retention calc</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">⚠️</div>
+          <div class="rm-tool-name">SWMS</div>
+          <div class="rm-tool-desc">Safe Work Method Statements for high-risk construction work. WHS Act compliant, activity-specific hazard library.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">WHS Act</span>
+            <span class="rm-tool-tag">Hazard library</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">🎯</div>
+          <div class="rm-tool-name">Toolbox Talk</div>
+          <div class="rm-tool-desc">Weekly safety briefings with attendance register, topic selection, and sign-off page.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Attendance register</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">📬</div>
+          <div class="rm-tool-name">Payment Reminder</div>
+          <div class="rm-tool-desc">Professional overdue invoice reminders. Escalating tone based on days outstanding. BCIPA reference where applicable.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Escalation levels</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">🔒</div>
+          <div class="rm-tool-name">Practical Completion Notice</div>
+          <div class="rm-tool-desc">Formal notice of practical completion with defects liability period, outstanding items, and handover details.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Defects period</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">📮</div>
+          <div class="rm-tool-name">Notice to Show Cause</div>
+          <div class="rm-tool-desc">Formal notice requiring the other party to explain non-performance before termination or further action.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Legal notice</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">🚫</div>
+          <div class="rm-tool-name">Contract Termination Notice</div>
+          <div class="rm-tool-desc">Notice of contract termination with grounds, effective date, outstanding entitlements, and document handover requirements.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Legal notice</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">📋</div>
+          <div class="rm-tool-name">Subcontractor Agreement</div>
+          <div class="rm-tool-desc">Plain-English subcontractor contract with scope, schedule, payment terms, insurance requirements, and special conditions.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Contract</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">🏠</div>
+          <div class="rm-tool-name">Handover Checklist</div>
+          <div class="rm-tool-desc">Structured handover documentation including keys, manuals, warranties, final inspections, and defects list.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Checklist</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">📐</div>
+          <div class="rm-tool-name">Instruction to Proceed</div>
+          <div class="rm-tool-desc">Formal instruction to a subcontractor or supplier to commence work or supply, with scope and price reference.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">💧</div>
+          <div class="rm-tool-name">Non-Conformance Report</div>
+          <div class="rm-tool-desc">Document materials, workmanship, or design that do not conform to specification. Required under ISO 9001 quality systems.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Quality</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">🚑</div>
+          <div class="rm-tool-name">Incident Report</div>
+          <div class="rm-tool-desc">WHS-compliant incident and near-miss reporting with witness details, corrective actions, and regulator notification checklist.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">WHS Act</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">🕐</div>
+          <div class="rm-tool-name">Extension of Time Claim</div>
+          <div class="rm-tool-desc">Formal EOT claim with cause, days claimed, programme impact, and supporting evidence reference.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Contract admin</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">🏗️</div>
+          <div class="rm-tool-name">Delay Notice</div>
+          <div class="rm-tool-desc">Formal notice of project delay with cause, parties notified, estimated programme impact, and preservation of contractual rights.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Dispute prevention</span>
+          </div>
+        </div>
+
+        <div class="rm-tool-card rm-tool-card--soon">
+          <div class="rm-tool-icon">✅</div>
+          <div class="rm-tool-name">Inspection Checklist</div>
+          <div class="rm-tool-desc">Stage-based inspection checklists for footings, framing, lock-up, fix-out, and practical completion. Configurable by build type.</div>
+          <div class="rm-tool-tags">
+            <span class="rm-tool-tag rm-tool-tag--ai">AI Writer</span>
+            <span class="rm-tool-tag">Stage-based</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Phase 3: Platform -->
+    <div class="rm-phase">
+      <div class="rm-phase-header">
+        <div class="rm-phase-num rm-phase-num--later">3</div>
+        <div>
+          <div class="rm-phase-title">Platform Features</div>
+          <div class="rm-phase-sub">Cloud sync, integrations, and team access</div>
+        </div>
+        <span class="rm-phase-badge rm-phase-badge--later">Later</span>
+      </div>
+      <div class="rm-value-grid">
+        <div class="rm-value-card">
+          <div class="rm-value-icon">☁️</div>
+          <div class="rm-value-name">Cloud Sync</div>
+          <div class="rm-value-desc">Access your projects and documents from any device. Automatic backup.</div>
+        </div>
+        <div class="rm-value-card">
+          <div class="rm-value-icon">🌐</div>
+          <div class="rm-value-name">Client Portal</div>
+          <div class="rm-value-desc">Clients review and digitally sign documents online. No printing.</div>
+        </div>
+        <div class="rm-value-card">
+          <div class="rm-value-icon">✍️</div>
+          <div class="rm-value-name">Digital Signatures</div>
+          <div class="rm-value-desc">Legally binding eSignatures on all documents with audit trail.</div>
+        </div>
+        <div class="rm-value-card">
+          <div class="rm-value-icon">🔗</div>
+          <div class="rm-value-name">Xero Integration</div>
+          <div class="rm-value-desc">Push approved quotes and progress claims directly to Xero.</div>
+        </div>
+        <div class="rm-value-card">
+          <div class="rm-value-icon">👥</div>
+          <div class="rm-value-name">Team Access</div>
+          <div class="rm-value-desc">Multiple users, role-based permissions, one account.</div>
+        </div>
+        <div class="rm-value-card">
+          <div class="rm-value-icon">📷</div>
+          <div class="rm-value-name">Site Photos</div>
+          <div class="rm-value-desc">Attach and organise photos directly to documents and site diary entries.</div>
+        </div>
+        <div class="rm-value-card">
+          <div class="rm-value-icon">🎙️</div>
+          <div class="rm-value-name">Voice Notes</div>
+          <div class="rm-value-desc">Record voice memos on site. Transcribed and attached automatically.</div>
+        </div>
+        <div class="rm-value-card">
+          <div class="rm-value-icon">🤖</div>
+          <div class="rm-value-name">AI Recommendations</div>
+          <div class="rm-value-desc">Health Engine upgraded from deterministic rules to model-based project intelligence.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rm-mission">
+      <div class="rm-mission-heading">Product Mission</div>
+      <p class="rm-mission-text">
+        <strong>Every feature must reduce work, save time, reduce disputes, or protect cash flow.</strong>
+        BIK is not a document library. It is an intelligent office administrator for builders who do not have one.
+        Workflow over feature count. Connection over isolation. Proactive over reactive.
+      </p>
+    </div>
+
+  </div>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-inner">
+      <div class="footer-top">
+        <a href="index.html" class="logo footer-logo" aria-label="BIK Solutions - home">
+          <div class="logo-mark" aria-hidden="true"><span>B</span></div>
+          <div class="logo-text">
+            <span class="logo-name">IK SOLUTIONS PTY LTD</span>
+            <span class="logo-tagline">Beyond Industry Knowledge</span>
+          </div>
+        </a>
+        <nav class="footer-links" aria-label="Footer navigation">
+          <a href="privacy-policy.html">Privacy Policy</a>
+          <a href="terms-of-use.html">Terms of Use</a>
+          <a href="ai-usage-notice.html">AI Usage Notice</a>
+          <a href="support.html">Support</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 BIK Solutions Pty Ltd. All rights reserved. ABN to be confirmed.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
