@@ -1,6 +1,8 @@
 /**
  * Progress Claim — Tool Configuration
- * BCIPA-compliant progress claim for construction work completed to date.
+ * Structured draft progress claim for Australian construction payment claims.
+ * Not a compliant or certified payment claim system. Users must verify the
+ * applicable state/territory legislation before issuing any payment claim.
  */
 
 import { calcGST, calcTotal, formatAUD, formatDateLong, todayISO } from '../../toolkit/calculator.js';
@@ -294,7 +296,7 @@ export const SCHEMA = [
     width: 'full',
     required: false,
     rows: 3,
-    placeholder: 'e.g. BCIPA reference, Security of Payment Act reference, any special claim conditions'
+    placeholder: 'e.g. BIF Act 2017 (Qld), Security of Payment Act (NSW/Vic/SA), any special claim conditions'
   },
 
   // ── Approval ─────────────────────────────────────────────────
@@ -429,8 +431,17 @@ export function generateDocument(data) {
   <div class="doc-divider"></div>
 
   <div class="doc-section">
-    <h2 class="doc-section-heading">Legislative Notice</h2>
-    <p>This payment claim is made under the <strong>Building and Construction Industry Payments Act 2004 (Qld)</strong> / Security of Payment Act as applicable in your state or territory. The respondent must respond to this claim within the time prescribed under the relevant Act. Failure to provide a payment schedule may result in the claimed amount becoming a debt due and payable.</p>
+    <h2 class="doc-section-heading">Payment Claim — Jurisdiction Notice</h2>
+    <p>Security of payment legislation varies by state and territory. The legislation applicable to this claim depends on the location of the work and the contract. The claimant is responsible for confirming the applicable Act before issuing this claim.</p>
+    <table class="doc-ref-table" style="margin-top:8px;">
+      <tr><td>Queensland</td><td>Building Industry Fairness (Security of Payment) Act 2017 (BIF Act)</td></tr>
+      <tr><td>New South Wales</td><td>Building and Construction Industry Security of Payment Act 1999</td></tr>
+      <tr><td>Victoria</td><td>Building and Construction Industry Security of Payment Act 2002</td></tr>
+      <tr><td>South Australia</td><td>Building and Construction Industry Security of Payment Act 2009</td></tr>
+      <tr><td>Western Australia</td><td>Construction Contracts Act 2004</td></tr>
+      <tr><td>Tasmania / NT / ACT</td><td>State-specific security of payment legislation applies</td></tr>
+    </table>
+    <p style="margin-top:8px;font-size:0.85em;color:#555;">In Queensland, subcontractor claims to a head contractor may require a supporting statement under s.77 of the BIF Act 2017. Verify whether a supporting statement is required before issuing this claim. The respondent must respond within the time prescribed under the applicable Act. Failure to provide a payment schedule may result in the claimed amount becoming a debt due and payable — verify the applicable response period with the relevant Act or a construction lawyer.</p>
   </div>
 
   <div class="doc-section">

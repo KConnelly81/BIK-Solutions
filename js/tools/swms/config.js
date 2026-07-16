@@ -1,6 +1,9 @@
 /**
  * SWMS — Safe Work Method Statement
- * WHS Act compliant SWMS for high-risk construction work.
+ * Structured draft SWMS for high-risk construction work.
+ * This tool produces a starting point only. It must be reviewed, completed,
+ * and approved by a competent person before use on site. It does not
+ * guarantee or assert compliance with any WHS legislation.
  */
 
 import { formatDateLong, todayISO } from '../../toolkit/calculator.js';
@@ -450,7 +453,7 @@ export function generateDocument(data) {
   </div>
 
   <div class="doc-disclaimer">
-    <strong>Important:</strong> This SWMS was generated from information supplied by the user. It must be reviewed for accuracy and completeness by a competent person before use. It does not constitute legal advice and does not guarantee compliance with any specific work health and safety legislation. The principal contractor and each employer remain responsible for ensuring all WHS obligations are met. This document must be kept on site and updated whenever work conditions change.
+    <strong>Important — WHS obligations:</strong> This document is a structured draft prepared from information supplied by the user. It must be reviewed by a competent person with knowledge of the specific worksite before any work commences. It does not constitute legal advice. It does not assert or guarantee compliance with the Work Health and Safety Act 2011, the WHS Regulation, or any other applicable WHS legislation. Compliance requires site-specific hazard identification, genuine worker consultation, appropriate control measures, implementation, and ongoing monitoring — none of which can be provided by a document-generation tool. The PCBU (person conducting a business or undertaking) and each employer remain responsible for all WHS obligations. This document must be kept on site and reviewed whenever conditions change.
   </div>
 
   <div class="doc-footer">
