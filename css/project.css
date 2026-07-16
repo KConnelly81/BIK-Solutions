@@ -87,6 +87,168 @@
   margin: 0 2px;
 }
 
+/* ── Contract summary strip ── */
+.proj-contract-strip {
+  background: #fff;
+  border: 1px solid #e0ddd9;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+}
+.pcs-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.pcs-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #666;
+}
+.pcs-note {
+  font-size: 0.7rem;
+  color: #bbb;
+}
+.pcs-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0ede9;
+}
+.pcs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.pcs-row--pending { opacity: 0.55; }
+.pcs-label {
+  font-size: 0.8rem;
+  color: #555;
+  flex: 1;
+}
+.pcs-label--link {
+  text-decoration: none;
+  color: var(--coral);
+}
+.pcs-label--link:hover { text-decoration: underline; }
+.pcs-amount {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #333;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pcs-amount--var     { color: #2b9e3f; }
+.pcs-amount--pending { color: #bbb; }
+.pcs-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.pcs-total-label {
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: #333;
+}
+.pcs-total-amount {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  font-variant-numeric: tabular-nums;
+}
+.pcs-gst-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.72rem;
+  color: #aaa;
+}
+.pcs-incl-label { margin-left: auto; }
+
+/* ── Smart Actions panel ── */
+.proj-actions {
+  background: #fff;
+  border: 1px solid #e8ddd5;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.psa-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #888;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid #f5f0ea;
+}
+.psa-list {
+  display: flex;
+  flex-direction: column;
+}
+.psa-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #f8f5f1;
+}
+.psa-item:last-child { border-bottom: none; }
+.psa-item--urgent { background: #fffaf6; }
+.psa-icon {
+  font-size: 1rem;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.psa-body { flex: 1; min-width: 0; }
+.psa-label {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+}
+.psa-item--urgent .psa-label { color: #b35200; }
+.psa-detail {
+  font-size: 0.73rem;
+  color: #aaa;
+}
+.psa-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.psa-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  background: var(--coral);
+  color: #fff;
+  transition: opacity 0.15s;
+}
+.psa-btn:hover { opacity: 0.85; }
+.psa-btn--ghost {
+  background: #f0ece6;
+  color: #555;
+}
+.psa-btn--ghost:hover { background: #e8e2d9; opacity: 1; }
+.psa-btn--urgent {
+  background: #c05a0f;
+}
+
 /* ── Tool launch row ── */
 .proj-tools-row {
   background: #fff;

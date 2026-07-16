@@ -65,12 +65,22 @@
         </div>
       </div>
 
+      <!-- Contract Summary strip -->
+      <div id="proj-contract" class="proj-contract-strip" hidden>
+        <!-- Rendered by JS -->
+      </div>
+
       <!-- Tool launch row -->
       <div class="proj-tools-row" id="proj-tools-row">
         <div class="proj-tools-label">Open in tool</div>
         <div class="proj-tools-grid" id="proj-tools-grid">
           <!-- Rendered by JS -->
         </div>
+      </div>
+
+      <!-- Smart Actions -->
+      <div id="proj-actions" class="proj-actions" hidden>
+        <!-- Rendered by JS -->
       </div>
 
       <!-- Two-col layout: timeline + documents -->
@@ -262,6 +272,225 @@ function approvalChip(status) {
 
 function getProjectId() {
   return new URLSearchParams(location.search).get('id');
+}
+
+// ── Format currency ────────────────────────────────────────────────
+
+function formatAUD(n) {
+  return '$' + Number(n || 0).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ── Contract summary ───────────────────────────────────────────────
+
+function buildContractSummary(docs) {
+  const approvedQuotes = docs
+    .filter(d => d.toolId === 'quote-builder' && d.approval?.status === 'approved');
+
+  const approvedVariations = docs.filter(d =>
+    d.toolId === 'variation-notice' && d.approval?.status === 'approved'
+  );
+
+  if (approvedQuotes.length === 0 && approvedVariations.length === 0) return null;
+
+  const baseQuote  = approvedQuotes[0] || null;
+  const baseAmount = baseQuote ? (Number(baseQuote.extraData?.subtotal) || 0) : 0;
+
+  let variationTotal = 0;
+  approvedVariations.forEach(v => {
+    variationTotal += parseFloat(v.formData?.additionalCost) || 0;
+  });
+
+  const currentTotal  = baseAmount + variationTotal;
+  const gstEstimate   = currentTotal * 0.1;
+  const totalInclGST  = currentTotal * 1.1;
+
+  const pendingVariations = docs.filter(d =>
+    d.toolId === 'variation-notice' &&
+    ['draft', 'sent'].includes(d.approval?.status || 'draft')
+  );
+  const pendingAmount = pendingVariations.reduce((s, v) =>
+    s + (parseFloat(v.formData?.additionalCost) || 0), 0);
+
+  return { baseQuote, baseAmount, approvedVariations, variationTotal, currentTotal, gstEstimate, totalInclGST, pendingVariations, pendingAmount };
+}
+
+function renderContractSummary(summary) {
+  const el = document.getElementById('proj-contract');
+  if (!summary) { el.hidden = true; return; }
+
+  const rows = [];
+
+  if (summary.baseQuote) {
+    rows.push(`
+      <div class="pcs-row">
+        <a href="quote-builder.html?resume=${esc(summary.baseQuote.id)}" class="pcs-label pcs-label--link">
+          ${summary.baseQuote.reference} — Original contract
+        </a>
+        <span class="pcs-amount">${formatAUD(summary.baseAmount)}</span>
+      </div>`);
+  }
+
+  if (summary.approvedVariations.length > 0) {
+    summary.approvedVariations.forEach(v => {
+      const amt = parseFloat(v.formData?.additionalCost) || 0;
+      rows.push(`
+        <div class="pcs-row">
+          <a href="variation-generator.html?resume=${esc(v.id)}" class="pcs-label pcs-label--link">
+            ${esc(v.reference)} — Approved variation
+          </a>
+          <span class="pcs-amount pcs-amount--var">+ ${formatAUD(amt)}</span>
+        </div>`);
+    });
+  }
+
+  if (summary.pendingVariations.length > 0) {
+    rows.push(`
+      <div class="pcs-row pcs-row--pending">
+        <span class="pcs-label">
+          ${summary.pendingVariations.length} pending variation${summary.pendingVariations.length !== 1 ? 's' : ''} (not yet approved)
+        </span>
+        <span class="pcs-amount pcs-amount--pending">+ ${formatAUD(summary.pendingAmount)}</span>
+      </div>`);
+  }
+
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="pcs-header">
+      <span class="pcs-heading">Contract summary</span>
+      <span class="pcs-note">Excl. GST · Approved documents only</span>
+    </div>
+    <div class="pcs-rows">${rows.join('')}</div>
+    <div class="pcs-total-row">
+      <span class="pcs-total-label">Current contract total</span>
+      <span class="pcs-total-amount">${formatAUD(summary.currentTotal)}</span>
+    </div>
+    <div class="pcs-gst-row">
+      <span class="pcs-gst-label">+ GST est. (10%)</span>
+      <span class="pcs-gst-amount">${formatAUD(summary.gstEstimate)}</span>
+      <span class="pcs-incl-label">= ${formatAUD(summary.totalInclGST)} incl. GST</span>
+    </div>`;
+}
+
+// ── Smart actions ──────────────────────────────────────────────────
+
+function buildSmartActions(project, docs) {
+  const actions = [];
+  const now = Date.now();
+
+  // Pending approvals — days since sent
+  docs.forEach(doc => {
+    const a = doc.approval;
+    if (!a || a.status !== 'sent' || !a.sentAt) return;
+    const meta = TOOL_META[doc.toolId];
+    if (!meta) return;
+    const daysSent = Math.floor((now - new Date(a.sentAt).getTime()) / 86400000);
+    if (daysSent < 2) return;
+
+    const urgent  = daysSent >= 5;
+    const subject = `Follow up: ${doc.reference} — ${project.name}`;
+    const body    = buildChaserEmail(project, doc, a, daysSent);
+    const mailto  = `mailto:${encodeURIComponent(a.sentTo || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    actions.push({
+      urgent,
+      icon:        urgent ? '⚠️' : '📤',
+      label:       `${doc.reference} sent ${daysSent} days ago — awaiting client response`,
+      detail:      a.sentTo ? `Sent to ${esc(a.sentTo)}` : 'No response yet',
+      actionLabel: urgent ? 'Send urgent follow-up' : 'Send follow-up',
+      actionHref:  mailto,
+      docHref:     `${meta.url}?resume=${doc.id}`
+    });
+  });
+
+  // Quote expiry
+  docs.filter(d => d.toolId === 'quote-builder').forEach(doc => {
+    const validUntil = doc.formData?.validUntil;
+    const status     = doc.approval?.status || 'draft';
+    if (!validUntil || status === 'approved' || status === 'archived') return;
+    if (new Date(validUntil) < new Date()) {
+      actions.push({
+        urgent:      false,
+        icon:        '⏰',
+        label:       `${doc.reference} may have expired`,
+        detail:      `Valid until ${formatDate(validUntil)}`,
+        actionLabel: 'Review quote',
+        actionHref:  `quote-builder.html?resume=${doc.id}`,
+        docHref:     null
+      });
+    }
+  });
+
+  // No site diary this week (only if project is active and has prior diaries)
+  if (project.status === 'active') {
+    const diaries  = docs.filter(d => d.toolId === 'site-diary');
+    const thisWeek = diaries.filter(d => (now - new Date(d.createdAt).getTime()) < 7 * 86400000);
+    if (diaries.length > 0 && thisWeek.length === 0) {
+      actions.push({
+        urgent:      false,
+        icon:        '📅',
+        label:       'No site diary entry this week',
+        detail:      `Last entry: ${formatRelative(diaries[0].createdAt)}`,
+        actionLabel: 'Add diary entry',
+        actionHref:  `site-diary.html?project=${project.id}`,
+        docHref:     null
+      });
+    }
+
+    // Active project, no quote at all
+    const quotes = docs.filter(d => d.toolId === 'quote-builder');
+    if (quotes.length === 0) {
+      actions.push({
+        urgent:      false,
+        icon:        '💡',
+        label:       'No quote on file for this project',
+        detail:      'Lock in scope and price before work begins',
+        actionLabel: 'Create quote',
+        actionHref:  `quote-builder.html?project=${project.id}`,
+        docHref:     null
+      });
+    }
+  }
+
+  return actions;
+}
+
+function buildChaserEmail(project, doc, approval, daysSent) {
+  const greeting = approval.sentTo ? `Dear ${approval.sentTo},` : 'Dear Client,';
+  return `${greeting}
+
+I am following up on ${doc.reference} sent ${daysSent} day${daysSent !== 1 ? 's' : ''} ago in relation to ${project.name}.
+
+Could you please review and respond at your earliest convenience so we can proceed with the works without delay.
+
+Please don't hesitate to contact me if you have any questions.
+
+Kind regards`;
+}
+
+function renderSmartActions(actions) {
+  const el = document.getElementById('proj-actions');
+  if (actions.length === 0) { el.hidden = true; return; }
+
+  el.hidden = false;
+  el.innerHTML = `
+    <div class="psa-header">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Your office
+    </div>
+    <div class="psa-list">
+      ${actions.map(a => `
+        <div class="psa-item${a.urgent ? ' psa-item--urgent' : ''}">
+          <div class="psa-icon" aria-hidden="true">${a.icon}</div>
+          <div class="psa-body">
+            <div class="psa-label">${a.label}</div>
+            <div class="psa-detail">${a.detail}</div>
+          </div>
+          <div class="psa-actions">
+            ${a.docHref ? `<a href="${a.docHref}" class="psa-btn psa-btn--ghost">Open</a>` : ''}
+            <a href="${a.actionHref}" class="psa-btn${a.urgent ? ' psa-btn--urgent' : ''}" ${a.actionHref.startsWith('mailto:') ? 'target="_blank"' : ''}>${a.actionLabel}</a>
+          </div>
+        </div>`).join('')}
+    </div>`;
 }
 
 // ── Build timeline events ──────────────────────────────────────────
@@ -546,7 +775,9 @@ function init() {
   const docs = documentHistory.listByProject(_projectId, 200);
 
   renderHeader(project);
+  renderContractSummary(buildContractSummary(docs));
   renderToolRow(_projectId);
+  renderSmartActions(buildSmartActions(project, docs));
   renderTimeline(buildTimeline(project, docs));
   renderDocuments(docs);
 }
