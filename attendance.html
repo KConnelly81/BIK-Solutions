@@ -142,6 +142,26 @@
     .void-section { margin-top:16px; }
     .void-section .att-section-label { color:#bbb; }
 
+    /* GPS badge */
+    .gps-badge { display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;font-weight:600;padding:2px 7px;border-radius:20px;cursor:pointer;user-select:none;border:1px solid transparent;transition:background 0.12s; }
+    .gps-badge:hover { opacity:0.8; }
+    .gps-badge.on-site    { background:#e8f5e9;border-color:#c3e6cb;color:#2e7d32; }
+    .gps-badge.nearby     { background:#fff9e6;border-color:#ffe082;color:#856404; }
+    .gps-badge.outside    { background:#fff3e0;border-color:#ffcc80;color:#e65100; }
+    .gps-badge.none       { background:#f5f0e8;border-color:#e8e4de;color:#aaa; }
+
+    /* GPS detail modal */
+    #gps-modal .modal { max-width:400px;text-align:left; }
+    .gps-detail-section { margin-bottom:16px; }
+    .gps-detail-title { font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:8px; }
+    .gps-detail-row { display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0ece6;font-size:0.82rem; }
+    .gps-detail-row:last-child { border-bottom:none; }
+    .gps-detail-label { color:#888; }
+    .gps-detail-val { font-weight:600;color:#252320;text-align:right; }
+    .gps-detail-val.ok     { color:#2e7d32; }
+    .gps-detail-val.warn   { color:#e65100; }
+    .gps-detail-val.muted  { color:#aaa;font-weight:400; }
+
     @media (max-width:600px) {
       .att-stats { grid-template-columns:1fr 1fr; }
       .att-header { padding:12px 16px; }
@@ -407,6 +427,25 @@
   </div>
 </div>
 
+<!-- GPS detail modal -->
+<div class="modal-overlay" id="gps-modal">
+  <div class="modal">
+    <h3>Location Details</h3>
+    <p style="font-size:0.78rem;color:#888;margin-bottom:16px;line-height:1.6">Location is advisory only and is not verified attendance evidence on its own.</p>
+    <div class="gps-detail-section">
+      <div class="gps-detail-title">Check-In</div>
+      <div id="gps-checkin-rows"></div>
+    </div>
+    <div class="gps-detail-section">
+      <div class="gps-detail-title">Check-Out</div>
+      <div id="gps-checkout-rows"></div>
+    </div>
+    <div style="text-align:right">
+      <button class="modal-close" id="btn-close-gps">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Void confirmation modal -->
 <div class="modal-overlay" id="void-modal">
   <div class="modal" style="max-width:360px">
@@ -463,9 +502,19 @@
   });
 
   let selectedProjectId = null;
+  let selectedProjectCoords = { lat: null, lng: null }; // for GPS distance
+
+  function getProjectCoords(pid) {
+    if (!pid) return { lat: null, lng: null };
+    const proj = projects.find(p => p.id === pid);
+    const lat = parseFloat(proj?.siteLatitude);
+    const lng = parseFloat(proj?.siteLongitude);
+    return (!isNaN(lat) && !isNaN(lng)) ? { lat, lng } : { lat: null, lng: null };
+  }
 
   sel.addEventListener('change', () => {
     selectedProjectId = sel.value || null;
+    selectedProjectCoords = getProjectCoords(selectedProjectId);
     $('btn-show-qr').disabled = !selectedProjectId;
     $('btn-rollcall').disabled = !selectedProjectId;
     render();
@@ -551,6 +600,9 @@
       const historyBtn = hasCorrected ? `<button class="act-btn" onclick="openAudit('${r.id}')">📋 History</button>` : '';
       const voidBtn    = !isVoided ? `<button class="act-btn danger" onclick="openVoid('${r.id}')">✕ Void</button>` : '';
 
+      // GPS badge
+      const gpsBadge = buildGpsBadgeHtml(r);
+
       return `<div class="att-card ${status === 'warn' ? 'checkout-required' : ''} ${isVoided ? 'voided' : ''}">
         <div class="att-card-top">
           <div class="att-card-avatar ${avatarClass}">${esc(initials)}</div>
@@ -566,8 +618,9 @@
             </div>
             <div class="att-time">${timeInfo}</div>
           </div>
-          <div class="att-card-right">
+          <div class="att-card-right" style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <span class="att-badge ${badgeClass}">${badgeLabel}</span>
+            ${gpsBadge}
           </div>
         </div>
         <div class="att-card-actions">
@@ -575,6 +628,19 @@
         </div>
       </div>`;
     }).join('');
+  }
+
+  // ── GPS badge helpers ──
+  function buildGpsBadgeHtml(r) {
+    const { lat, lng } = selectedProjectCoords;
+    const badge = attendanceStore.gpsBadge(r, lat, lng);
+    const hasGps = r.gpsCheckIn && r.gpsCheckIn.status === 'captured';
+    if (!hasGps) {
+      return `<span class="gps-badge none" onclick="openGps('${r.id}')">⚪ No location</span>`;
+    }
+    const cls = badge.label === 'On Site' ? 'on-site' : badge.label === 'Nearby' ? 'nearby' : badge.label === 'Outside Expected Area' ? 'outside' : 'none';
+    const distText = (badge.dist != null && lat != null) ? ` · ${badge.dist < 1000 ? badge.dist + 'm' : (badge.dist/1000).toFixed(1) + 'km'}` : '';
+    return `<span class="gps-badge ${cls}" onclick="openGps('${r.id}')">${badge.icon} ${badge.label}${distText}</span>`;
   }
 
   // ── Quick check-out ──
@@ -653,6 +719,45 @@
 
   $('btn-close-audit').addEventListener('click', () => $('audit-modal').classList.remove('open'));
   $('audit-modal').addEventListener('click', e => { if (e.target === $('audit-modal')) $('audit-modal').classList.remove('open'); });
+
+  // ── GPS detail modal ──
+  $('btn-close-gps').addEventListener('click', () => $('gps-modal').classList.remove('open'));
+  $('gps-modal').addEventListener('click', e => { if (e.target === $('gps-modal')) $('gps-modal').classList.remove('open'); });
+
+  window.openGps = function(id) {
+    const r = attendanceStore.get(id);
+    if (!r) return;
+    const { lat, lng } = selectedProjectCoords;
+    const hasCoords = lat != null && lng != null;
+
+    function gpsRows(capture, label) {
+      if (!capture || capture.status === 'not_requested') {
+        return `<div class="gps-detail-row"><span class="gps-detail-label">Location</span><span class="gps-detail-val muted">Not requested</span></div>`;
+      }
+      if (capture.status === 'denied' || capture.status === 'unavailable') {
+        return `<div class="gps-detail-row"><span class="gps-detail-label">Location</span><span class="gps-detail-val muted">Not shared</span></div>`;
+      }
+      const acc = capture.accuracy != null ? `±${Math.round(capture.accuracy)}m` : '—';
+      const ts  = capture.timestamp ? new Date(capture.timestamp).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' }) : '—';
+      let rows = `
+        <div class="gps-detail-row"><span class="gps-detail-label">Time captured</span><span class="gps-detail-val">${ts}</span></div>
+        <div class="gps-detail-row"><span class="gps-detail-label">GPS accuracy</span><span class="gps-detail-val">${acc}</span></div>`;
+      if (hasCoords && capture.latitude != null) {
+        const dist = Math.round(attendanceStore.distanceMetres(capture.latitude, capture.longitude, lat, lng));
+        const distLabel = dist < 1000 ? dist + 'm' : (dist / 1000).toFixed(1) + 'km';
+        const distClass = dist <= 100 ? 'ok' : dist <= 300 ? '' : 'warn';
+        const zone = dist <= 100 ? 'On Site' : dist <= 300 ? 'Nearby' : 'Outside Expected Area';
+        rows += `<div class="gps-detail-row"><span class="gps-detail-label">Distance from site</span><span class="gps-detail-val ${distClass}">${distLabel} — ${zone}</span></div>`;
+      } else if (!hasCoords) {
+        rows += `<div class="gps-detail-row"><span class="gps-detail-label">Distance from site</span><span class="gps-detail-val muted">Add site coordinates to project to calculate</span></div>`;
+      }
+      return rows;
+    }
+
+    $('gps-checkin-rows').innerHTML  = gpsRows(r.gpsCheckIn,  'Check-In');
+    $('gps-checkout-rows').innerHTML = gpsRows(r.gpsCheckOut, 'Check-Out');
+    $('gps-modal').classList.add('open');
+  };
 
   // ── Void modal ──
   let voidingId = null;

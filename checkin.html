@@ -67,16 +67,19 @@
     .time-display .td-time { font-size:2rem;font-weight:800;color:var(--charcoal);letter-spacing:-0.02em;font-variant-numeric:tabular-nums; }
     .time-display .td-date { font-size:0.78rem;color:var(--muted);margin-top:2px; }
 
-    /* ── Optional section ── */
-    .optional-section { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px; }
-    .optional-toggle { display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;font-size:0.84rem;font-weight:600;color:var(--charcoal);user-select:none; }
-    .optional-toggle-icon { color:var(--coral);font-size:1.1rem;transition:transform 0.2s; }
-    .optional-toggle.open .optional-toggle-icon { transform:rotate(45deg); }
-    .optional-body { padding:0 16px 16px;display:none; }
-    .optional-body.open { display:block; }
-    .gps-btn { width:100%;padding:14px;border:1.5px solid var(--border);border-radius:var(--radius);background:#fff;font-size:0.88rem;font-weight:600;color:var(--charcoal);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color 0.15s; }
-    .gps-btn.captured { border-color:var(--green);color:var(--green); }
-    .gps-status { font-size:0.76rem;color:var(--muted);margin-top:6px;text-align:center; }
+    /* ── GPS section ── */
+    .gps-section { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px; }
+    .gps-check-row { display:flex;align-items:flex-start;gap:12px;cursor:pointer; }
+    .gps-check-row input[type=checkbox] { width:20px;height:20px;flex-shrink:0;margin-top:1px;accent-color:var(--coral);cursor:pointer; }
+    .gps-check-label { font-size:0.88rem;font-weight:600;color:var(--charcoal);line-height:1.3; }
+    .gps-check-sub { font-size:0.75rem;color:var(--muted);margin-top:3px;line-height:1.4; }
+    .gps-feedback { margin-top:12px;display:none; }
+    .gps-feedback.visible { display:block; }
+    .gps-feedback-msg { display:flex;align-items:center;gap:8px;font-size:0.84rem;font-weight:600;padding:10px 12px;border-radius:8px;background:#f8f5f0; }
+    .gps-feedback-msg.capturing { color:#555; }
+    .gps-feedback-msg.captured  { color:var(--green);background:#f0f9f0; }
+    .gps-feedback-msg.failed    { color:var(--muted);background:#f8f5f0; }
+    .gps-accuracy { font-size:0.72rem;color:var(--muted);margin-top:4px;margin-left:2px; }
 
     /* ── Privacy notice ── */
     .privacy-notice { background:#f8f5f0;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;font-size:0.76rem;color:#555;line-height:1.6; }
@@ -242,16 +245,20 @@
     </div>
 
     <!-- Optional: GPS -->
-    <div class="optional-section">
-      <div class="optional-toggle" id="opt-gps-toggle">
-        <span>📍 Share my location <span style="font-size:0.72rem;font-weight:400;color:#888;">— optional</span></span>
-        <span class="optional-toggle-icon">+</span>
-      </div>
-      <div class="optional-body" id="opt-gps-body">
-        <button type="button" class="gps-btn" id="gps-btn">
-          📍 Tap to share GPS location
-        </button>
-        <div class="gps-status" id="gps-status"></div>
+    <div class="gps-section">
+      <label class="gps-check-row">
+        <input type="checkbox" id="gps-checkbox" />
+        <div>
+          <div class="gps-check-label">📍 Share my current location <span style="font-size:0.72rem;font-weight:400;color:#888;">— optional</span></div>
+          <div class="gps-check-sub">Sharing your location helps the site operator confirm where this check-in occurred.</div>
+        </div>
+      </label>
+      <div class="gps-feedback" id="gps-feedback">
+        <div class="gps-feedback-msg capturing" id="gps-msg">
+          <span id="gps-msg-icon">📍</span>
+          <span id="gps-msg-text">Getting your location…</span>
+        </div>
+        <div class="gps-accuracy" id="gps-accuracy"></div>
       </div>
     </div>
 
@@ -393,29 +400,54 @@
   }
   updateFieldRequirements();
 
-  // ── GPS toggle ──
-  $('opt-gps-toggle').addEventListener('click', () => {
-    const open = $('opt-gps-body').classList.toggle('open');
-    $('opt-gps-toggle').classList.toggle('open', open);
-  });
+  // ── GPS capture ──
+  let gpsCheckIn = null;
 
-  let capturedGPS = null;
-  $('gps-btn').addEventListener('click', () => {
-    const btn = $('gps-btn');
-    const status = $('gps-status');
-    btn.textContent = '⏳ Getting location…';
+  function setGpsMsg(state, text, accuracy) {
+    const msg = $('gps-msg');
+    const icon = $('gps-msg-icon');
+    const msgText = $('gps-msg-text');
+    const accEl = $('gps-accuracy');
+    msg.className = `gps-feedback-msg ${state}`;
+    msgText.textContent = text;
+    if (state === 'capturing') { icon.textContent = '📍'; }
+    if (state === 'captured')  { icon.textContent = '✓';  }
+    if (state === 'failed')    { icon.textContent = '📍'; }
+    accEl.textContent = accuracy || '';
+  }
+
+  $('gps-checkbox').addEventListener('change', e => {
+    const feedback = $('gps-feedback');
+    if (!e.target.checked) {
+      feedback.classList.remove('visible');
+      gpsCheckIn = { status: 'not_requested', latitude: null, longitude: null, accuracy: null, timestamp: null };
+      return;
+    }
+    feedback.classList.add('visible');
+    setGpsMsg('capturing', 'Getting your location…', '');
+    if (!navigator.geolocation) {
+      setGpsMsg('failed', 'Location not available on this device', '');
+      gpsCheckIn = { status: 'unavailable', latitude: null, longitude: null, accuracy: null, timestamp: new Date().toISOString() };
+      return;
+    }
     navigator.geolocation.getCurrentPosition(
       pos => {
-        capturedGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
-        btn.className = 'gps-btn captured';
-        btn.textContent = '✓ Location shared';
-        status.textContent = `±${Math.round(pos.coords.accuracy)}m accuracy`;
+        const ts = new Date().toISOString();
+        gpsCheckIn = {
+          latitude:  pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy:  pos.coords.accuracy,
+          timestamp: ts,
+          status:    'captured',
+        };
+        setGpsMsg('captured', 'Location captured', `±${Math.round(pos.coords.accuracy)}m accuracy`);
       },
-      () => {
-        btn.textContent = '📍 Tap to share GPS location';
-        status.textContent = 'Location unavailable — you can still sign in without it.';
+      err => {
+        const denied = err.code === 1; // PERMISSION_DENIED
+        gpsCheckIn = { status: denied ? 'denied' : 'unavailable', latitude: null, longitude: null, accuracy: null, timestamp: new Date().toISOString() };
+        setGpsMsg('failed', 'Location not shared — you can still sign in', '');
       },
-      { timeout: 8000, enableHighAccuracy: true }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   });
 
@@ -501,7 +533,7 @@
       trade:        $('f-trade').value.trim(),
       mobile,
       type:         selectedType,
-      gps:          capturedGPS,
+      gpsCheckIn:   gpsCheckIn || { status: 'not_requested', latitude: null, longitude: null, accuracy: null, timestamp: null },
       checkedInBy:  'self',
     });
 
@@ -525,7 +557,9 @@
 
     $('btn-checkin-another').onclick = () => {
       duplicateRecord = null;
-      capturedGPS = null;
+      gpsCheckIn = null;
+      $('gps-checkbox').checked = false;
+      $('gps-feedback').classList.remove('visible');
       $('f-name').value    = '';
       $('f-company').value = '';
       $('f-trade').value   = '';

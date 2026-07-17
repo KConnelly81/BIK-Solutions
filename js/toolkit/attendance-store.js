@@ -1,11 +1,11 @@
 /**
- * AttendanceStore — Site Attendance & Workforce Register  v2
+ * AttendanceStore — Site Attendance & Workforce Register  v3
  *
  * localStorage keys:
  *   bik-attendance          — AttendanceRecord[]
- *   bik-attendance-schema-v — number (current: 2)
+ *   bik-attendance-schema-v — number (current: 3)
  *
- * Record shape (v2):
+ * Record shape (v3):
  * {
  *   id:           string      — 'att-<timestamp>-<random>'
  *   projectId:    string      — internal UUID or token fallback
@@ -23,24 +23,29 @@
  *   hoursOnSite:  number|null — (timeOut - timeIn - breakMinutes) in hours, min 0
  *   status:       string      — 'active'|'checked-out'|'checkout-required'|'voided'
  *   voidReason:   string|null
- *   gps:          {lat,lng,accuracy}|null
+ *   gpsCheckIn:   GpsCapture|null
+ *   gpsCheckOut:  GpsCapture|null
  *   notes:        string
  *   checkedInBy:  string      — 'self'|'builder'
  *   auditLog:     AuditEntry[]
  *   _demo:        boolean|undefined
  * }
  *
+ * GpsCapture:
+ * { latitude, longitude, accuracy, timestamp, status }
+ * status: 'captured' | 'denied' | 'unavailable' | 'not_requested'
+ *
  * AuditEntry:
  * { id, recordId, timestamp, changedBy, source, reason, changes:[{field,from,to}] }
  *
- * Migration from v1 → v2:
- *   Adds breakMinutes:0, status derived from timeOut, auditLog:[], voidReason:null.
- *   Non-destructive — no existing field is overwritten.
+ * Migration v1→v2: adds breakMinutes:0, status, auditLog:[], voidReason:null.
+ * Migration v2→v3: converts gps:{lat,lng,accuracy} → gpsCheckIn:{latitude,longitude,accuracy,timestamp,status},
+ *                  adds gpsCheckOut:null.
  */
 
 const STORE_KEY    = 'bik-attendance';
 const SCHEMA_KEY   = 'bik-attendance-schema-v';
-const SCHEMA_V     = 2;
+const SCHEMA_V     = 3;
 
 // ── Private helpers ──────────────────────────────────────────────────────────
 
@@ -56,14 +61,44 @@ function _schemaVersion() {
 }
 
 function _migrate(records) {
-  if (_schemaVersion() >= SCHEMA_V) return records;
-  const migrated = records.map(r => ({
-    breakMinutes: 0,
-    status:       r.timeOut ? 'checked-out' : 'active',
-    auditLog:     [],
-    voidReason:   null,
-    ...r,                  // existing fields win over defaults
-  }));
+  const v = _schemaVersion();
+  if (v >= SCHEMA_V) return records;
+
+  let migrated = records;
+
+  // v1 → v2: add breakMinutes, status, auditLog, voidReason
+  if (v < 2) {
+    migrated = migrated.map(r => ({
+      breakMinutes: 0,
+      status:       r.timeOut ? 'checked-out' : 'active',
+      auditLog:     [],
+      voidReason:   null,
+      ...r,
+    }));
+  }
+
+  // v2 → v3: promote gps:{lat,lng,accuracy} → gpsCheckIn, add gpsCheckOut
+  if (v < 3) {
+    migrated = migrated.map(r => {
+      const base = { ...r };
+      // Convert legacy gps field if present
+      if (r.gps && !r.gpsCheckIn) {
+        base.gpsCheckIn = {
+          latitude:  r.gps.lat  || r.gps.latitude  || null,
+          longitude: r.gps.lng  || r.gps.longitude || null,
+          accuracy:  r.gps.accuracy || null,
+          timestamp: r.timeIn,
+          status:    'captured',
+        };
+        delete base.gps;
+      } else if (!r.gpsCheckIn) {
+        base.gpsCheckIn = null;
+      }
+      if (!('gpsCheckOut' in r)) base.gpsCheckOut = null;
+      return base;
+    });
+  }
+
   _save(migrated);
   localStorage.setItem(SCHEMA_KEY, String(SCHEMA_V));
   return migrated;
@@ -100,6 +135,37 @@ function _normaliseMobile(m) {
   return m.trim(); // preserve international / unknown formats
 }
 
+/** Straight-line distance between two GPS coordinates in metres (Haversine). */
+function _distanceMetres(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/** Build GPS badge descriptor for a capture against an optional project location.
+ *  Returns { icon, label, dist } where dist is metres or null. */
+function _gpsBadge(capture, projLat, projLng) {
+  if (!capture || capture.status === 'not_requested') {
+    return { icon: '⚪', label: 'No location shared', dist: null };
+  }
+  if (capture.status === 'denied' || capture.status === 'unavailable') {
+    return { icon: '⚪', label: 'Location not shared', dist: null };
+  }
+  // captured
+  if (capture.latitude != null && projLat != null && projLng != null) {
+    const dist = Math.round(_distanceMetres(capture.latitude, capture.longitude, projLat, projLng));
+    if (dist <= 100)      return { icon: '🟢', label: 'On Site',              dist };
+    if (dist <= 300)      return { icon: '🟡', label: 'Nearby',               dist };
+    return                       { icon: '🟠', label: 'Outside Expected Area', dist };
+  }
+  // captured but no project coords to compare
+  return { icon: '🔵', label: 'Location shared', dist: null };
+}
+
 // ── Public store ─────────────────────────────────────────────────────────────
 
 export const attendanceStore = {
@@ -108,6 +174,10 @@ export const attendanceStore = {
   checkIn(data) {
     const records = _load();
     const now = new Date().toISOString();
+    // Accept gpsCheckIn directly, or legacy gps field for backward compat
+    const gpsCheckIn = data.gpsCheckIn || (data.gps
+      ? { latitude: data.gps.lat || data.gps.latitude, longitude: data.gps.lng || data.gps.longitude, accuracy: data.gps.accuracy, timestamp: data.timeIn || now, status: 'captured' }
+      : null);
     const record = {
       id:           _id(),
       projectId:    data.projectId    || '',
@@ -124,7 +194,8 @@ export const attendanceStore = {
       breakMinutes: 0,
       hoursOnSite:  null,
       status:       'active',
-      gps:          data.gps          || null,
+      gpsCheckIn,
+      gpsCheckOut:  null,
       notes:        (data.notes       || '').trim(),
       checkedInBy:  data.checkedInBy  || 'self',
       auditLog:     [],
@@ -135,7 +206,7 @@ export const attendanceStore = {
   },
 
   /** Check out a worker by id. Returns false if record not found or checkout would be before check-in. */
-  checkOut(id, { timeOut, notes, breakMinutes } = {}) {
+  checkOut(id, { timeOut, notes, breakMinutes, gpsCheckOut } = {}) {
     const records = _load();
     const idx = records.findIndex(r => r.id === id);
     if (idx === -1) return false;
@@ -150,6 +221,7 @@ export const attendanceStore = {
       hoursOnSite:  _hours(rec.timeIn, out, brk),
       status:       'checked-out',
       notes:        notes !== undefined ? notes : rec.notes,
+      gpsCheckOut:  gpsCheckOut !== undefined ? gpsCheckOut : (rec.gpsCheckOut || null),
     };
     _save(records);
     return true;
@@ -352,7 +424,9 @@ export const attendanceStore = {
 
     const fmt = iso => iso ? new Date(iso).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '';
     const csv = v => `"${String(v == null ? '' : v).replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
-    const header = 'Name,Company,Trade,Type,Mobile,Check-In,Check-Out,Break (min),Recorded Site Hours,Status,Notes,Record Corrected';
+    const gpsStatus = g => g ? g.status || '' : 'not_requested';
+    const gpsAcc    = g => (g && g.status === 'captured' && g.accuracy != null) ? Math.round(g.accuracy) + 'm' : '';
+    const header = 'Name,Company,Trade,Type,Mobile,Check-In,Check-Out,Break (min),Recorded Site Hours,Status,Check-In GPS,Check-In Accuracy,Check-Out GPS,Check-Out Accuracy,Notes,Record Corrected';
     const lines = rows.map(r => [
       r.name, r.company, r.trade, r.type, r.mobile,
       fmt(r.timeIn),
@@ -360,6 +434,10 @@ export const attendanceStore = {
       r.breakMinutes || 0,
       r.hoursOnSite != null ? r.hoursOnSite.toFixed(2) : '',
       r.status || '',
+      gpsStatus(r.gpsCheckIn),
+      gpsAcc(r.gpsCheckIn),
+      gpsStatus(r.gpsCheckOut),
+      gpsAcc(r.gpsCheckOut),
       r.notes || '',
       (r.auditLog && r.auditLog.length) ? 'Yes' : 'No',
     ].map(csv).join(','));
@@ -383,7 +461,7 @@ export const attendanceStore = {
       name: '', company: '', trade: '', mobile: '', type: 'subcontractor',
       timeIn: new Date(now.getTime() - offset).toISOString(),
       timeOut: null, breakMinutes: 0, hoursOnSite: null,
-      status: 'active', gps: null, notes: '', checkedInBy: 'self',
+      status: 'active', gpsCheckIn: null, gpsCheckOut: null, notes: '', checkedInBy: 'self',
       auditLog: [], _demo: true, ...overrides,
     });
 
@@ -432,6 +510,19 @@ export const attendanceStore = {
   clearDemo() {
     _save(_load().filter(r => !r._demo));
   },
+
+  /** Return a GPS badge descriptor for a record's check-in, given optional project coordinates.
+   *  @param {object} record - attendance record
+   *  @param {number|null} projLat - project latitude
+   *  @param {number|null} projLng - project longitude
+   *  @returns {{ icon: string, label: string, dist: number|null }}
+   */
+  gpsBadge(record, projLat = null, projLng = null) {
+    return _gpsBadge(record.gpsCheckIn, projLat, projLng);
+  },
+
+  /** Calculate distance in metres between two lat/lng pairs. */
+  distanceMetres: _distanceMetres,
 
   _today,
   _normaliseMobile,
