@@ -227,6 +227,7 @@ import { documentHistory } from './js/toolkit/document-history.js';
 import { projectStore, PROJECT_STATUSES } from './js/toolkit/project-store.js';
 import { attendanceStore } from './js/toolkit/attendance-store.js';
 import { renderQR }        from './js/toolkit/qr-generator.js';
+import { checkinTokens }   from './js/toolkit/checkin-token.js';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -822,7 +823,9 @@ function init() {
 // ── Attendance section ──────────────────────────────────────────────────────
 
 function renderAttendanceStrip(project) {
-  const today   = attendanceStore.todayForProject(project.id);
+  const token   = checkinTokens.forProject(project.id);
+  const today   = attendanceStore.forProjectOrToken(project.id, token)
+                    .filter(r => r.date === attendanceStore._today());
   const onSite  = today.filter(r => !r.timeOut);
   const strip   = document.getElementById('att-today-strip');
   const esc     = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -845,10 +848,9 @@ function renderAttendanceStrip(project) {
 
   // QR button
   document.getElementById('att-qr-btn').addEventListener('click', () => {
-    const name = encodeURIComponent(project.name || '');
-    const addr = encodeURIComponent(project.siteAddress || '');
-    const base = location.origin + location.pathname.replace('project.html', 'checkin.html');
-    const url  = `${base}?p=${project.id}&n=${name}&a=${addr}`;
+    const token = checkinTokens.getOrCreate(project);
+    const base  = location.origin + location.pathname.replace('project.html', 'checkin.html');
+    const url   = `${base}?t=${token}`;
     document.getElementById('att-qr-url').textContent = url;
     renderQR(url, document.getElementById('att-qr-canvas'), { scale: 5, padding: 3 });
     document.getElementById('att-qr-overlay').style.display = 'flex';

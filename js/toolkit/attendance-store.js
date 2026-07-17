@@ -60,9 +60,10 @@ export const attendanceStore = {
     const records = _load();
     const now = new Date().toISOString();
     const record = {
-      id:          _id(),
-      projectId:   data.projectId   || '',
-      projectName: data.projectName || '',
+      id:           _id(),
+      projectId:    data.projectId    || '',
+      checkinToken: data.checkinToken || '',   // public token used for this check-in
+      projectName:  data.projectName  || '',
       date:        data.date        || _today(),
       name:        (data.name       || '').trim(),
       company:     (data.company    || '').trim(),
@@ -107,6 +108,18 @@ export const attendanceStore = {
   /** All records for a project (all dates). */
   forProject(projectId) {
     return _load().filter(r => r.projectId === projectId);
+  },
+
+  /**
+   * All records for a project, matching by internal ID or by check-in token.
+   * Needed because workers checking in on their own devices may produce records
+   * where projectId === checkinToken (no internal ID was available at check-in time).
+   */
+  forProjectOrToken(projectId, token) {
+    return _load().filter(r =>
+      r.projectId === projectId ||
+      (token && (r.checkinToken === token || r.projectId === token))
+    );
   },
 
   /** Records currently on site for a project (checked in, not checked out). */
@@ -165,9 +178,9 @@ export const attendanceStore = {
   },
 
   /** All unique workers who have ever attended a project (workforce register). */
-  workforceRegister(projectId) {
+  workforceRegister(projectId, token) {
     const seen = new Map();
-    for (const r of attendanceStore.forProject(projectId)) {
+    for (const r of (token ? attendanceStore.forProjectOrToken(projectId, token) : attendanceStore.forProject(projectId))) {
       const key = r.name.toLowerCase() + '|' + r.company.toLowerCase();
       if (!seen.has(key)) {
         seen.set(key, { name: r.name, company: r.company, trade: r.trade, type: r.type, mobile: r.mobile, firstSeen: r.date, lastSeen: r.date, visits: 0, totalHours: 0 });

@@ -416,6 +416,7 @@
 
 <script type="module">
   import { attendanceStore } from './js/toolkit/attendance-store.js';
+  import { checkinTokens }   from './js/toolkit/checkin-token.js';
 
   // ── Clock ──
   function updateClock() {
@@ -438,30 +439,38 @@
     document.getElementById(id)?.classList.add('active');
   }
 
-  // ── Parse URL params ──
+  // ── Resolve token → minimal project info ──
+  // The URL carries ?t=<32-char-hex> — never an internal project ID.
+  // checkinTokens.lookup() returns { projectId, name, address } on the builder's device,
+  // or null on a worker's own phone (token not in their localStorage).
   const params = new URLSearchParams(location.search);
-  const projectId = params.get('p');
+  const token   = params.get('t');
 
-  // ── Load project from localStorage ──
-  let project = null;
-  if (projectId) {
-    try {
-      const projects = JSON.parse(localStorage.getItem('bik-projects') || '[]');
-      project = projects.find(p => p.id === projectId) || null;
-    } catch {}
+  let resolvedProjectId = null;   // internal UUID when available, otherwise the token itself
+  let projectName       = '';
+  let projectAddress    = '';
+
+  if (token) {
+    const info = checkinTokens.lookup(token);
+    if (info) {
+      // Builder's device — or worker on same device — full lookup succeeded
+      resolvedProjectId = info.projectId;
+      projectName       = info.name    || 'Site Project';
+      projectAddress    = info.address || '';
+    } else {
+      // Worker's own phone: token not in localStorage — use token as projectId fallback
+      resolvedProjectId = token;
+      projectName       = 'Site Project';
+      projectAddress    = '';
+    }
   }
 
-  if (!project && projectId) {
-    // Allow check-in with project name from URL (for shared QR codes without localStorage access)
-    project = { id: projectId, name: params.get('n') || 'Site Project', siteAddress: params.get('a') || '' };
-  }
-
-  if (!project) {
+  if (!token) {
     show('screen-notfound');
   } else {
     document.getElementById('project-band').style.display = 'flex';
-    document.getElementById('project-name-display').textContent = project.name || project.projectName || 'Site Project';
-    document.getElementById('project-addr-display').textContent = project.siteAddress || '';
+    document.getElementById('project-name-display').textContent = projectName;
+    document.getElementById('project-addr-display').textContent = projectAddress;
     show('screen-form');
   }
 
@@ -518,8 +527,9 @@
     errEl.style.display = 'none';
 
     const id = attendanceStore.checkIn({
-      projectId:   project.id,
-      projectName: project.name || project.projectName || '',
+      projectId:    resolvedProjectId,
+      checkinToken: token,
+      projectName,
       name,
       company:     document.getElementById('f-company').value.trim(),
       trade:       document.getElementById('f-trade').value.trim(),
@@ -533,8 +543,8 @@
     const timeStr = new Date(rec.timeIn).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
 
     document.getElementById('s-name').textContent = name;
-    document.getElementById('s-sub').textContent = `You're checked in at ${project.name || 'the site'}.`;
-    document.getElementById('s-project').textContent = project.name || '';
+    document.getElementById('s-sub').textContent = `You're checked in at ${projectName}.`;
+    document.getElementById('s-project').textContent = projectName;
     document.getElementById('s-timein').textContent = timeStr;
     document.getElementById('s-trade').textContent = rec.trade || '—';
     document.getElementById('s-type').textContent = { subcontractor:'Subcontractor', employee:'Employee', 'labour-hire':'Labour Hire', visitor:'Visitor', inspector:'Inspector', supplier:'Supplier' }[rec.type] || rec.type;

@@ -211,6 +211,7 @@
 <script type="module">
   import { attendanceStore } from './js/toolkit/attendance-store.js';
   import { renderQR }        from './js/toolkit/qr-generator.js';
+  import { checkinTokens }   from './js/toolkit/checkin-token.js';
 
   // ── Helpers ──
   const $ = id => document.getElementById(id);
@@ -257,9 +258,10 @@
 
   // ── Render today tab ──
   function render() {
-    const pid  = selectedProjectId;
-    const date = $('date-select').value || todayStr;
-    const all  = pid ? attendanceStore.forProjectDate(pid, date) : [];
+    const pid   = selectedProjectId;
+    const date  = $('date-select').value || todayStr;
+    const token = pid ? checkinTokens.forProject(pid) : null;
+    const all   = pid ? attendanceStore.forProjectOrToken(pid, token).filter(r => r.date === date) : [];
     const onSite     = all.filter(r => !r.timeOut);
     const checkedOut = all.filter(r =>  r.timeOut);
     const totalHrs   = all.reduce((s, r) => s + (r.hoursOnSite || 0), 0);
@@ -326,7 +328,7 @@
       $('register-table-wrap').style.display = 'none';
       return;
     }
-    const workers = attendanceStore.workforceRegister(selectedProjectId);
+    const workers = attendanceStore.workforceRegister(selectedProjectId, checkinTokens.forProject(selectedProjectId));
     if (!workers.length) {
       $('register-empty').style.display = 'block';
       $('register-empty').textContent = 'No workers on record for this project yet.';
@@ -352,9 +354,8 @@
   $('btn-show-qr').addEventListener('click', () => {
     if (!selectedProjectId) return;
     const proj = projects.find(p => p.id === selectedProjectId);
-    const name = encodeURIComponent(proj?.name || proj?.projectName || '');
-    const addr = encodeURIComponent(proj?.siteAddress || '');
-    const url  = `${location.origin}${location.pathname.replace('attendance.html','checkin.html')}?p=${selectedProjectId}&n=${name}&a=${addr}`;
+    const token = checkinTokens.getOrCreate(proj);
+    const url   = `${location.origin}${location.pathname.replace('attendance.html','checkin.html')}?t=${token}`;
     $('qr-url-display').textContent = url;
     renderQR(url, $('qr-canvas'), { scale: 5, padding: 3 });
     $('qr-modal').classList.add('open');
@@ -382,7 +383,7 @@
 
   $('btn-export-register').addEventListener('click', () => {
     if (!selectedProjectId) { alert('Select a project first.'); return; }
-    const workers = attendanceStore.workforceRegister(selectedProjectId);
+    const workers = attendanceStore.workforceRegister(selectedProjectId, checkinTokens.forProject(selectedProjectId));
     const header = 'Name,Company,Trade,Type,Mobile,First Visit,Last Visit,Visits,Total Hours';
     const lines  = workers.map(w => [
       w.name, w.company, w.trade, TYPE_LABELS[w.type]||w.type, w.mobile,
@@ -396,7 +397,8 @@
   $('btn-print-daily').addEventListener('click', () => {
     if (!selectedProjectId) { alert('Select a project first.'); return; }
     const date  = $('date-select').value || todayStr;
-    const all   = attendanceStore.forProjectDate(selectedProjectId, date);
+    const tok   = checkinTokens.forProject(selectedProjectId);
+    const all   = attendanceStore.forProjectOrToken(selectedProjectId, tok).filter(r => r.date === date);
     const proj  = projects.find(p => p.id === selectedProjectId);
     const html  = buildPrintReport(proj, date, all);
     const w     = window.open('', '_blank');
