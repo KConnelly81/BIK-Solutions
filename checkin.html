@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Site Check-In — BIK Business Toolkit</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --charcoal: #252320;
+      --coral: #D85A30;
+      --coral-dark: #b84a24;
+      --paper: #F2EDE5;
+      --border: #e2d9cc;
+      --text: #252320;
+      --muted: #666;
+      --radius: 10px;
+      --green: #2e7d32;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--paper);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HEADER ── */
+    .ci-header {
+      background: var(--charcoal);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .ci-logo-mark {
+      width: 34px; height: 34px;
+      background: var(--coral);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 1.05rem; color: #fff;
+      flex-shrink: 0;
+    }
+    .ci-header-text { flex: 1; }
+    .ci-header-title { font-size: 0.85rem; font-weight: 700; color: #fff; }
+    .ci-header-sub { font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+    /* ── PROJECT BAND ── */
+    .ci-project-band {
+      background: var(--coral);
+      padding: 14px 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .ci-project-icon { font-size: 1.1rem; }
+    .ci-project-name { font-size: 0.92rem; font-weight: 700; color: #fff; }
+    .ci-project-addr { font-size: 0.72rem; color: rgba(255,255,255,0.75); margin-top: 2px; }
+
+    /* ── SCREENS ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── FORM ── */
+    .ci-form { padding: 20px; max-width: 480px; margin: 0 auto; }
+
+    .ci-step-label {
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--coral);
+      margin-bottom: 6px;
+    }
+    .ci-step-title {
+      font-size: 1.1rem; font-weight: 800; color: var(--charcoal);
+      margin-bottom: 20px; line-height: 1.2;
+    }
+
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block; font-size: 0.78rem; font-weight: 700;
+      color: var(--charcoal); margin-bottom: 6px;
+    }
+    .field label .req { color: var(--coral); }
+    .field input, .field select {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 1rem; /* large for mobile */
+      font-family: inherit;
+      background: #fff;
+      color: var(--text);
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus, .field select:focus { border-color: var(--coral); }
+    .field input::placeholder { color: #aaa; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .type-btn {
+      padding: 12px 8px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: #fff;
+      font-size: 0.8rem; font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: center;
+      font-family: inherit;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .type-btn.selected {
+      border-color: var(--coral);
+      background: #fff8f5;
+      color: var(--coral);
+    }
+    .type-btn .type-icon { font-size: 1.1rem; }
+
+    /* ── OPTIONAL SECTION ── */
+    .optional-section {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .optional-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px;
+      cursor: pointer;
+      font-size: 0.84rem; font-weight: 600; color: var(--charcoal);
+      user-select: none;
+    }
+    .optional-toggle-icon { color: var(--coral); font-size: 1.1rem; transition: transform 0.2s; }
+    .optional-toggle.open .optional-toggle-icon { transform: rotate(45deg); }
+    .optional-body { padding: 0 16px 16px; display: none; }
+    .optional-body.open { display: block; }
+
+    /* GPS status */
+    .gps-btn {
+      width: 100%; padding: 14px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: #fff;
+      font-size: 0.88rem; font-weight: 600;
+      color: var(--charcoal);
+      cursor: pointer; font-family: inherit;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: border-color 0.15s;
+    }
+    .gps-btn.captured { border-color: var(--green); color: var(--green); }
+    .gps-status { font-size: 0.76rem; color: var(--muted); margin-top: 6px; text-align: center; }
+
+    /* ── BUTTONS ── */
+    .btn-primary {
+      width: 100%;
+      background: var(--coral);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 18px;
+      font-size: 1.05rem; font-weight: 800;
+      cursor: pointer; font-family: inherit;
+      letter-spacing: 0.01em;
+      transition: background 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .btn-primary:hover { background: var(--coral-dark); }
+    .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+
+    .btn-secondary {
+      width: 100%;
+      background: transparent;
+      color: var(--charcoal);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      margin-top: 10px;
+    }
+
+    /* ── TIME DISPLAY ── */
+    .time-display {
+      text-align: center;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .time-display .td-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .time-display .td-time { font-size: 2rem; font-weight: 800; color: var(--charcoal); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .time-display .td-date { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── SUCCESS SCREEN ── */
+    .success-screen {
+      padding: 40px 20px;
+      max-width: 480px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .success-icon {
+      width: 72px; height: 72px;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 2rem;
+    }
+    .success-name { font-size: 1.4rem; font-weight: 900; color: var(--charcoal); margin-bottom: 6px; }
+    .success-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 32px; line-height: 1.5; }
+    .success-detail {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .sd-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.84rem; }
+    .sd-row:last-child { border-bottom: none; }
+    .sd-label { color: var(--muted); }
+    .sd-value { font-weight: 600; color: var(--charcoal); }
+    .checkout-prompt {
+      background: var(--paper);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+    .checkout-prompt strong { color: var(--charcoal); }
+
+    /* ── ERROR ── */
+    .ci-error {
+      background: #fff5f5;
+      border: 1.5px solid #fbb;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      font-size: 0.84rem;
+      color: #c00;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* ── PROJECT NOT FOUND ── */
+    .not-found {
+      padding: 60px 20px;
+      text-align: center;
+      max-width: 360px;
+      margin: 0 auto;
+    }
+    .not-found h2 { font-size: 1.1rem; color: var(--charcoal); margin-bottom: 8px; }
+    .not-found p { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
+  </style>
+</head>
+<body>
+
+<header class="ci-header">
+  <div class="ci-logo-mark">B</div>
+  <div class="ci-header-text">
+    <div class="ci-header-title">BIK Site Check-In</div>
+    <div class="ci-header-sub" id="ci-time-header"></div>
+  </div>
+</header>
+
+<!-- Screens -->
+<div id="screen-loading" class="screen active" style="padding:60px 20px;text-align:center;color:#888;font-size:0.9rem;">Loading…</div>
+
+<div id="screen-notfound" class="screen">
+  <div class="not-found">
+    <div style="font-size:2.5rem;margin-bottom:16px;">⚠️</div>
+    <h2>Project not found</h2>
+    <p>This QR code may be outdated. Please ask the site supervisor for an updated check-in link.</p>
+  </div>
+</div>
+
+<div id="screen-form" class="screen">
+  <div class="ci-project-band" id="project-band" style="display:none">
+    <div class="ci-project-icon">🏗️</div>
+    <div>
+      <div class="ci-project-name" id="project-name-display"></div>
+      <div class="ci-project-addr" id="project-addr-display"></div>
+    </div>
+  </div>
+
+  <form class="ci-form" id="checkin-form" novalidate>
+
+    <div class="ci-step-label">Site attendance</div>
+    <div class="ci-step-title">Check in</div>
+
+    <!-- Time display -->
+    <div class="time-display">
+      <div class="td-label">Time In</div>
+      <div class="td-time" id="live-time">--:--</div>
+      <div class="td-date" id="live-date"></div>
+    </div>
+
+    <!-- Worker type -->
+    <div class="field">
+      <label>I am a <span class="req">*</span></label>
+      <div class="type-grid">
+        <button type="button" class="type-btn selected" data-type="subcontractor"><span class="type-icon">🔨</span> Subcontractor</button>
+        <button type="button" class="type-btn" data-type="employee"><span class="type-icon">👷</span> Employee</button>
+        <button type="button" class="type-btn" data-type="labour-hire"><span class="type-icon">🤝</span> Labour Hire</button>
+        <button type="button" class="type-btn" data-type="visitor"><span class="type-icon">👤</span> Visitor</button>
+        <button type="button" class="type-btn" data-type="inspector"><span class="type-icon">📋</span> Inspector</button>
+        <button type="button" class="type-btn" data-type="supplier"><span class="type-icon">🚚</span> Supplier</button>
+      </div>
+    </div>
+
+    <!-- Name + Company -->
+    <div class="field-row">
+      <div class="field" style="margin-bottom:0">
+        <label>Full name <span class="req">*</span></label>
+        <input type="text" id="f-name" autocomplete="name" placeholder="John Smith" inputmode="text" />
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Company</label>
+        <input type="text" id="f-company" autocomplete="organization" placeholder="JS Plumbing" />
+      </div>
+    </div>
+    <div style="margin-bottom:16px"></div>
+
+    <!-- Trade + Mobile -->
+    <div class="field-row">
+      <div class="field" style="margin-bottom:0">
+        <label>Trade / Role</label>
+        <input type="text" id="f-trade" placeholder="Plumber" inputmode="text" list="trade-list" />
+        <datalist id="trade-list">
+          <option value="Carpenter">
+          <option value="Concreter">
+          <option value="Electrician">
+          <option value="Engineer">
+          <option value="Excavator">
+          <option value="Inspector">
+          <option value="Labourer">
+          <option value="Painter">
+          <option value="Plasterer">
+          <option value="Plumber">
+          <option value="Roofer">
+          <option value="Site Manager">
+          <option value="Steel Fixer">
+          <option value="Tiler">
+        </datalist>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Mobile</label>
+        <input type="tel" id="f-mobile" autocomplete="tel" placeholder="0400 000 000" inputmode="tel" />
+      </div>
+    </div>
+    <div style="margin-bottom:16px"></div>
+
+    <!-- Optional: GPS -->
+    <div class="optional-section">
+      <div class="optional-toggle" id="opt-gps-toggle">
+        <span>📍 Record location <span style="font-size:0.72rem;font-weight:400;color:#888;">(optional)</span></span>
+        <span class="optional-toggle-icon">+</span>
+      </div>
+      <div class="optional-body" id="opt-gps-body">
+        <button type="button" class="gps-btn" id="gps-btn">
+          <span>📍</span> Tap to record GPS location
+        </button>
+        <div class="gps-status" id="gps-status"></div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="ci-error" id="ci-error"></div>
+
+    <!-- Submit -->
+    <button type="submit" class="btn-primary" id="btn-submit">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Check In Now
+    </button>
+
+  </form>
+</div>
+
+<!-- Success -->
+<div id="screen-success" class="screen">
+  <div class="success-screen">
+    <div class="success-icon">✓</div>
+    <div class="success-name" id="s-name"></div>
+    <div class="success-sub" id="s-sub"></div>
+    <div class="success-detail">
+      <div class="sd-row"><span class="sd-label">Project</span><span class="sd-value" id="s-project"></span></div>
+      <div class="sd-row"><span class="sd-label">Time in</span><span class="sd-value" id="s-timein"></span></div>
+      <div class="sd-row"><span class="sd-label">Trade</span><span class="sd-value" id="s-trade"></span></div>
+      <div class="sd-row"><span class="sd-label">Type</span><span class="sd-value" id="s-type"></span></div>
+    </div>
+    <div class="checkout-prompt">
+      <strong>Remember to check out when you leave.</strong><br>
+      Your ID for check-out: <strong id="s-attid" style="font-family:monospace;color:#D85A30"></strong>
+    </div>
+    <button class="btn-primary" id="btn-checkout-now" style="margin-bottom:10px">
+      Check out now →
+    </button>
+    <button class="btn-secondary" id="btn-checkin-another">
+      Another person checking in
+    </button>
+  </div>
+</div>
+
+<script type="module">
+  import { attendanceStore } from './js/toolkit/attendance-store.js';
+
+  // ── Clock ──
+  function updateClock() {
+    const now = new Date();
+    const t = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+    const d = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    const el = document.getElementById('live-time');
+    const de = document.getElementById('live-date');
+    const he = document.getElementById('ci-time-header');
+    if (el) el.textContent = t;
+    if (de) de.textContent = d;
+    if (he) he.textContent = d;
+  }
+  updateClock();
+  setInterval(updateClock, 5000);
+
+  // ── Show screen ──
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id)?.classList.add('active');
+  }
+
+  // ── Parse URL params ──
+  const params = new URLSearchParams(location.search);
+  const projectId = params.get('p');
+
+  // ── Load project from localStorage ──
+  let project = null;
+  if (projectId) {
+    try {
+      const projects = JSON.parse(localStorage.getItem('bik-projects') || '[]');
+      project = projects.find(p => p.id === projectId) || null;
+    } catch {}
+  }
+
+  if (!project && projectId) {
+    // Allow check-in with project name from URL (for shared QR codes without localStorage access)
+    project = { id: projectId, name: params.get('n') || 'Site Project', siteAddress: params.get('a') || '' };
+  }
+
+  if (!project) {
+    show('screen-notfound');
+  } else {
+    document.getElementById('project-band').style.display = 'flex';
+    document.getElementById('project-name-display').textContent = project.name || project.projectName || 'Site Project';
+    document.getElementById('project-addr-display').textContent = project.siteAddress || '';
+    show('screen-form');
+  }
+
+  // ── Worker type selector ──
+  let selectedType = 'subcontractor';
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedType = btn.dataset.type;
+    });
+  });
+
+  // ── Optional GPS toggle ──
+  const gpsToggle = document.getElementById('opt-gps-toggle');
+  const gpsBody = document.getElementById('opt-gps-body');
+  gpsToggle.addEventListener('click', () => {
+    const open = gpsBody.classList.toggle('open');
+    gpsToggle.classList.toggle('open', open);
+  });
+
+  // ── GPS capture ──
+  let capturedGPS = null;
+  document.getElementById('gps-btn').addEventListener('click', () => {
+    const btn = document.getElementById('gps-btn');
+    const status = document.getElementById('gps-status');
+    btn.textContent = '⏳ Getting location…';
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        capturedGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
+        btn.className = 'gps-btn captured';
+        btn.textContent = '✓ Location captured';
+        status.textContent = `±${Math.round(pos.coords.accuracy)}m accuracy`;
+      },
+      err => {
+        btn.textContent = '📍 Tap to record GPS location';
+        status.textContent = 'Location unavailable — that\'s OK';
+      },
+      { timeout: 8000, enableHighAccuracy: true }
+    );
+  });
+
+  // ── Form submit ──
+  document.getElementById('checkin-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('f-name').value.trim();
+    const errEl = document.getElementById('ci-error');
+    if (!name) {
+      errEl.textContent = 'Please enter your full name.';
+      errEl.style.display = 'block';
+      document.getElementById('f-name').focus();
+      return;
+    }
+    errEl.style.display = 'none';
+
+    const id = attendanceStore.checkIn({
+      projectId:   project.id,
+      projectName: project.name || project.projectName || '',
+      name,
+      company:     document.getElementById('f-company').value.trim(),
+      trade:       document.getElementById('f-trade').value.trim(),
+      mobile:      document.getElementById('f-mobile').value.trim(),
+      type:        selectedType,
+      gps:         capturedGPS,
+      checkedInBy: 'self',
+    });
+
+    const rec = attendanceStore.get(id);
+    const timeStr = new Date(rec.timeIn).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+
+    document.getElementById('s-name').textContent = name;
+    document.getElementById('s-sub').textContent = `You're checked in at ${project.name || 'the site'}.`;
+    document.getElementById('s-project').textContent = project.name || '';
+    document.getElementById('s-timein').textContent = timeStr;
+    document.getElementById('s-trade').textContent = rec.trade || '—';
+    document.getElementById('s-type').textContent = { subcontractor:'Subcontractor', employee:'Employee', 'labour-hire':'Labour Hire', visitor:'Visitor', inspector:'Inspector', supplier:'Supplier' }[rec.type] || rec.type;
+    document.getElementById('s-attid').textContent = id.split('-').slice(-2).join('-');
+
+    document.getElementById('btn-checkout-now').onclick = () => {
+      location.href = `checkout.html?id=${encodeURIComponent(id)}`;
+    };
+
+    document.getElementById('btn-checkin-another').onclick = () => {
+      document.getElementById('f-name').value = '';
+      document.getElementById('f-company').value = '';
+      document.getElementById('f-trade').value = '';
+      document.getElementById('f-mobile').value = '';
+      capturedGPS = null;
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelector('[data-type="subcontractor"]').classList.add('selected');
+      selectedType = 'subcontractor';
+      show('screen-form');
+    };
+
+    show('screen-success');
+  });
+</script>
+
+</body>
+</html>

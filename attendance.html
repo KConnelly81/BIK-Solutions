@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Site Attendance — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* ── Layout ── */
+    .att-shell { display:flex; flex-direction:column; min-height:100vh; background:#f5f0e8; }
+    .att-header { background:#252320; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .att-header-left { display:flex; align-items:center; gap:12px; }
+    .att-logo-mark { width:32px;height:32px;background:#D85A30;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;color:#fff;flex-shrink:0; }
+    .att-header-title { font-size:0.9rem;font-weight:700;color:#fff; }
+    .att-header-back { font-size:0.72rem;color:rgba(255,255,255,0.45);text-decoration:none; }
+    .att-header-back:hover { color:#fff; }
+
+    /* Project selector */
+    .att-project-bar { background:#1a1816; padding:10px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .att-project-label { font-size:0.72rem;color:rgba(255,255,255,0.4);white-space:nowrap; }
+    .att-project-select { background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:7px 12px;border-radius:6px;font-size:0.82rem;font-family:inherit;outline:none;flex:1;max-width:360px; }
+    .att-date-input { background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:7px 12px;border-radius:6px;font-size:0.82rem;font-family:inherit;outline:none; }
+    .att-project-bar .spacer { flex:1; }
+    .qr-btn { background:#D85A30;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px; }
+
+    /* ── Tab bar ── */
+    .att-tabs { background:#fff;border-bottom:1px solid #e8e4de;padding:0 20px;display:flex;gap:0; }
+    .att-tab { padding:13px 18px;font-size:0.82rem;font-weight:600;color:#888;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;white-space:nowrap; }
+    .att-tab.active { color:#D85A30;border-bottom-color:#D85A30; }
+
+    /* ── Body ── */
+    .att-body { padding:20px;flex:1; }
+    .att-tab-content { display:none; }
+    .att-tab-content.active { display:block; }
+
+    /* ── Stats row ── */
+    .att-stats { display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px; }
+    .att-stat { background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:14px 16px; }
+    .att-stat-val { font-size:1.6rem;font-weight:900;color:#252320;font-variant-numeric:tabular-nums;line-height:1; }
+    .att-stat-label { font-size:0.72rem;color:#888;margin-top:4px; }
+    .att-stat.highlight .att-stat-val { color:#D85A30; }
+
+    /* ── Cards / table ── */
+    .att-section-label { font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:10px;margin-top:20px; }
+    .att-section-label:first-child { margin-top:0; }
+    .att-card-list { display:flex;flex-direction:column;gap:8px; }
+    .att-card { background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:14px; }
+    .att-card-avatar { width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#fff;flex-shrink:0; }
+    .att-card-avatar.on-site { background:#2e7d32; }
+    .att-card-avatar.left { background:#888; }
+    .att-card-avatar.visitor { background:#1565c0; }
+    .att-card-body { flex:1;min-width:0; }
+    .att-card-name { font-size:0.88rem;font-weight:700;color:#252320;margin-bottom:2px; }
+    .att-card-meta { font-size:0.75rem;color:#888;display:flex;gap:8px;flex-wrap:wrap; }
+    .att-card-meta span { white-space:nowrap; }
+    .att-card-right { text-align:right;flex-shrink:0; }
+    .att-badge { display:inline-block;padding:3px 8px;border-radius:4px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em; }
+    .att-badge.on-site { background:#e8f5e9;color:#2e7d32; }
+    .att-badge.left { background:#f0ece6;color:#888; }
+    .att-badge.visitor { background:#e3f2fd;color:#1565c0; }
+    .att-time { font-size:0.78rem;color:#888;margin-top:3px;font-variant-numeric:tabular-nums; }
+    .att-hours { font-size:0.82rem;font-weight:700;color:#252320; }
+    .checkout-btn { background:#f5f0e8;border:1px solid #e8e4de;border-radius:6px;padding:6px 10px;font-size:0.75rem;font-weight:600;color:#252320;cursor:pointer;font-family:inherit;white-space:nowrap; }
+    .checkout-btn:hover { background:#e8e4de; }
+    .empty-state { text-align:center;padding:40px 20px;color:#888;font-size:0.85rem;line-height:1.7; }
+
+    /* ── QR Modal ── */
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff;border-radius:12px;padding:28px;max-width:360px;width:100%;text-align:center; }
+    .modal h3 { font-size:1rem;font-weight:800;color:#252320;margin-bottom:6px; }
+    .modal p { font-size:0.82rem;color:#666;margin-bottom:20px;line-height:1.6; }
+    .modal canvas { border:1px solid #e8e4de;border-radius:8px;margin-bottom:16px; }
+    .modal-url { font-size:0.7rem;color:#888;word-break:break-all;margin-bottom:16px;font-family:monospace; }
+    .modal-close { background:#252320;color:#fff;border:none;border-radius:7px;padding:10px 20px;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit; }
+    .modal-copy { background:#f5f0e8;border:1px solid #e8e4de;color:#252320;border-radius:7px;padding:10px 20px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit;margin-right:8px; }
+
+    /* ── Reports ── */
+    .report-actions { display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px; }
+    .report-btn { background:#fff;border:1px solid #e8e4de;border-radius:7px;padding:10px 16px;font-size:0.82rem;font-weight:600;color:#252320;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px; }
+    .report-btn:hover { background:#f5f0e8; }
+
+    /* ── Register table ── */
+    .reg-table { width:100%;border-collapse:collapse;font-size:0.8rem;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e8e4de; }
+    .reg-table th { background:#f5f0e8;padding:10px 14px;text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#888;border-bottom:1px solid #e8e4de; }
+    .reg-table td { padding:10px 14px;border-bottom:1px solid #f0ece6;color:#444;vertical-align:top; }
+    .reg-table tr:last-child td { border-bottom:none; }
+    .reg-table td strong { color:#252320; }
+
+    @media (max-width:600px) {
+      .att-stats { grid-template-columns:1fr 1fr; }
+      .att-header { padding:12px 16px; }
+      .att-body { padding:16px; }
+      .reg-table { display:block;overflow-x:auto; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="att-shell">
+
+  <div class="att-header">
+    <div class="att-header-left">
+      <div class="att-logo-mark">B</div>
+      <div>
+        <div class="att-header-title">Site Attendance</div>
+        <a href="dashboard.html" class="att-header-back">← Dashboard</a>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="qr-btn" id="btn-show-qr" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3m0 4h4V14h-4m-3 7h3"/></svg>
+        Show QR Code
+      </button>
+    </div>
+  </div>
+
+  <div class="att-project-bar">
+    <span class="att-project-label">Project</span>
+    <select class="att-project-select" id="project-select">
+      <option value="">Select a project…</option>
+    </select>
+    <span class="att-project-label">Date</span>
+    <input type="date" class="att-date-input" id="date-select" />
+  </div>
+
+  <div class="att-tabs">
+    <div class="att-tab active" data-tab="today">Today</div>
+    <div class="att-tab" data-tab="register">Workforce Register</div>
+    <div class="att-tab" data-tab="reports">Reports</div>
+  </div>
+
+  <div class="att-body">
+
+    <!-- TODAY TAB -->
+    <div id="tab-today" class="att-tab-content active">
+
+      <div class="att-stats" id="stats-row">
+        <div class="att-stat highlight"><div class="att-stat-val" id="stat-onsite">0</div><div class="att-stat-label">On site now</div></div>
+        <div class="att-stat"><div class="att-stat-val" id="stat-left">0</div><div class="att-stat-label">Checked out</div></div>
+        <div class="att-stat"><div class="att-stat-val" id="stat-total">0</div><div class="att-stat-label">Total today</div></div>
+        <div class="att-stat"><div class="att-stat-val" id="stat-hours">0.0</div><div class="att-stat-label">Labour hours</div></div>
+      </div>
+
+      <div id="on-site-section">
+        <div class="att-section-label">On site now</div>
+        <div class="att-card-list" id="on-site-list"></div>
+      </div>
+
+      <div id="checked-out-section" style="margin-top:4px">
+        <div class="att-section-label">Checked out today</div>
+        <div class="att-card-list" id="checked-out-list"></div>
+      </div>
+
+    </div>
+
+    <!-- WORKFORCE REGISTER TAB -->
+    <div id="tab-register" class="att-tab-content">
+      <div class="empty-state" id="register-empty">Select a project to view the workforce register.</div>
+      <div id="register-table-wrap" style="display:none;overflow-x:auto">
+        <table class="reg-table" id="register-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Company</th><th>Trade</th><th>Type</th>
+              <th>Mobile</th><th>First Visit</th><th>Last Visit</th>
+              <th>Visits</th><th>Total Hrs</th>
+            </tr>
+          </thead>
+          <tbody id="register-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REPORTS TAB -->
+    <div id="tab-reports" class="att-tab-content">
+      <div class="report-actions">
+        <button class="report-btn" id="btn-export-daily">
+          📄 Daily Attendance CSV
+        </button>
+        <button class="report-btn" id="btn-export-register">
+          👷 Workforce Register CSV
+        </button>
+        <button class="report-btn" id="btn-print-daily">
+          🖨️ Print Daily Report
+        </button>
+      </div>
+      <div id="report-preview" style="background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:20px;overflow-x:auto;font-size:0.82rem;color:#444;line-height:1.7;min-height:120px">
+        <span style="color:#aaa">Select a project and date, then choose a report above.</span>
+      </div>
+    </div>
+
+  </div><!-- /.att-body -->
+
+</div><!-- /.att-shell -->
+
+<!-- QR Modal -->
+<div class="modal-overlay" id="qr-modal">
+  <div class="modal">
+    <h3>Site Check-In QR Code</h3>
+    <p>Workers scan this with their phone to check in. No app required.</p>
+    <canvas id="qr-canvas"></canvas>
+    <div class="modal-url" id="qr-url-display"></div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="modal-copy" id="btn-copy-url">Copy link</button>
+      <button class="modal-close" id="btn-close-qr">Close</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { attendanceStore } from './js/toolkit/attendance-store.js';
+  import { renderQR }        from './js/toolkit/qr-generator.js';
+
+  // ── Helpers ──
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const fmt = (iso, opts) => iso ? new Date(iso).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', ...opts }) : '—';
+  const fmtDate = s => s ? new Date(s + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '';
+
+  const TYPE_LABELS = { subcontractor:'Subcontractor', employee:'Employee', 'labour-hire':'Labour Hire', visitor:'Visitor', inspector:'Inspector', supplier:'Supplier', other:'Other' };
+
+  // ── Today date default ──
+  const todayStr = attendanceStore._today();
+  $('date-select').value = todayStr;
+
+  // ── Load projects ──
+  let projects = [];
+  try { projects = JSON.parse(localStorage.getItem('bik-projects') || '[]'); } catch {}
+  const sel = $('project-select');
+  projects.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name || p.projectName || p.id;
+    sel.appendChild(opt);
+  });
+
+  let selectedProjectId = null;
+
+  sel.addEventListener('change', () => {
+    selectedProjectId = sel.value || null;
+    $('btn-show-qr').disabled = !selectedProjectId;
+    render();
+  });
+  $('date-select').addEventListener('change', render);
+
+  // ── Tabs ──
+  document.querySelectorAll('.att-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.att-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.att-tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      $('tab-' + tab.dataset.tab).classList.add('active');
+      if (tab.dataset.tab === 'register') renderRegister();
+    });
+  });
+
+  // ── Render today tab ──
+  function render() {
+    const pid  = selectedProjectId;
+    const date = $('date-select').value || todayStr;
+    const all  = pid ? attendanceStore.forProjectDate(pid, date) : [];
+    const onSite     = all.filter(r => !r.timeOut);
+    const checkedOut = all.filter(r =>  r.timeOut);
+    const totalHrs   = all.reduce((s, r) => s + (r.hoursOnSite || 0), 0);
+
+    $('stat-onsite').textContent = onSite.length;
+    $('stat-left').textContent   = checkedOut.length;
+    $('stat-total').textContent  = all.length;
+    $('stat-hours').textContent  = totalHrs.toFixed(1);
+
+    $('on-site-list').innerHTML   = renderCards(onSite, 'on-site');
+    $('checked-out-list').innerHTML = renderCards(checkedOut, 'left');
+
+    if (!pid) {
+      $('on-site-list').innerHTML = '<div class="empty-state">Select a project to view attendance.</div>';
+      $('checked-out-list').innerHTML = '';
+    } else if (!all.length) {
+      $('on-site-list').innerHTML = '<div class="empty-state">No attendance records for this date.<br>Share the QR code for workers to check in.</div>';
+      $('checked-out-list').innerHTML = '';
+    }
+  }
+
+  function renderCards(records, status) {
+    if (!records.length) return '';
+    return records.map(r => {
+      const initials = r.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+      const avatarClass = r.type === 'visitor' || r.type === 'inspector' ? 'visitor' : status;
+      const badgeClass  = r.type === 'visitor' || r.type === 'inspector' ? 'visitor' : status;
+      const badgeLabel  = status === 'on-site' ? 'On site' : 'Left';
+      const timeInfo    = status === 'on-site'
+        ? `In: ${fmt(r.timeIn)}`
+        : `In: ${fmt(r.timeIn)} · Out: ${fmt(r.timeOut)} · ${r.hoursOnSite != null ? r.hoursOnSite.toFixed(1)+'h' : ''}`;
+      const coBtn = status === 'on-site'
+        ? `<button class="checkout-btn" onclick="doCheckout('${r.id}')">Check out</button>`
+        : `<span class="att-hours">${r.hoursOnSite != null ? r.hoursOnSite.toFixed(1)+' hrs' : ''}</span>`;
+      return `<div class="att-card">
+        <div class="att-card-avatar ${avatarClass}">${esc(initials)}</div>
+        <div class="att-card-body">
+          <div class="att-card-name">${esc(r.name)}</div>
+          <div class="att-card-meta">
+            ${r.company ? `<span>${esc(r.company)}</span>` : ''}
+            ${r.trade   ? `<span>${esc(r.trade)}</span>`   : ''}
+            <span>${esc(TYPE_LABELS[r.type] || r.type)}</span>
+          </div>
+          <div class="att-time">${timeInfo}</div>
+        </div>
+        <div class="att-card-right">
+          <div><span class="att-badge ${badgeClass}">${badgeLabel}</span></div>
+          <div style="margin-top:6px">${coBtn}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Quick check-out from dashboard card
+  window.doCheckout = function(id) {
+    attendanceStore.checkOut(id);
+    render();
+  };
+
+  // ── Workforce register ──
+  function renderRegister() {
+    if (!selectedProjectId) {
+      $('register-empty').style.display = 'block';
+      $('register-table-wrap').style.display = 'none';
+      return;
+    }
+    const workers = attendanceStore.workforceRegister(selectedProjectId);
+    if (!workers.length) {
+      $('register-empty').style.display = 'block';
+      $('register-empty').textContent = 'No workers on record for this project yet.';
+      $('register-table-wrap').style.display = 'none';
+      return;
+    }
+    $('register-empty').style.display = 'none';
+    $('register-table-wrap').style.display = 'block';
+    $('register-body').innerHTML = workers.map(w => `<tr>
+      <td><strong>${esc(w.name)}</strong></td>
+      <td>${esc(w.company)}</td>
+      <td>${esc(w.trade)}</td>
+      <td>${esc(TYPE_LABELS[w.type] || w.type)}</td>
+      <td>${esc(w.mobile)}</td>
+      <td>${fmtDate(w.firstSeen)}</td>
+      <td>${fmtDate(w.lastSeen)}</td>
+      <td>${w.visits}</td>
+      <td>${w.totalHours.toFixed(1)}</td>
+    </tr>`).join('');
+  }
+
+  // ── QR Code modal ──
+  $('btn-show-qr').addEventListener('click', () => {
+    if (!selectedProjectId) return;
+    const proj = projects.find(p => p.id === selectedProjectId);
+    const name = encodeURIComponent(proj?.name || proj?.projectName || '');
+    const addr = encodeURIComponent(proj?.siteAddress || '');
+    const url  = `${location.origin}${location.pathname.replace('attendance.html','checkin.html')}?p=${selectedProjectId}&n=${name}&a=${addr}`;
+    $('qr-url-display').textContent = url;
+    renderQR(url, $('qr-canvas'), { scale: 5, padding: 3 });
+    $('qr-modal').classList.add('open');
+  });
+
+  $('btn-close-qr').addEventListener('click', () => $('qr-modal').classList.remove('open'));
+  $('qr-modal').addEventListener('click', e => { if (e.target === $('qr-modal')) $('qr-modal').classList.remove('open'); });
+
+  $('btn-copy-url').addEventListener('click', () => {
+    navigator.clipboard.writeText($('qr-url-display').textContent).then(() => {
+      $('btn-copy-url').textContent = 'Copied!';
+      setTimeout(() => $('btn-copy-url').textContent = 'Copy link', 2000);
+    });
+  });
+
+  // ── Reports ──
+  $('btn-export-daily').addEventListener('click', () => {
+    if (!selectedProjectId) { alert('Select a project first.'); return; }
+    const date = $('date-select').value || todayStr;
+    const csv  = attendanceStore.exportCSV(selectedProjectId, date);
+    const proj = projects.find(p => p.id === selectedProjectId);
+    const name = (proj?.name || proj?.projectName || 'project').replace(/\s+/g,'-');
+    _download(csv, `attendance-${name}-${date}.csv`, 'text/csv');
+  });
+
+  $('btn-export-register').addEventListener('click', () => {
+    if (!selectedProjectId) { alert('Select a project first.'); return; }
+    const workers = attendanceStore.workforceRegister(selectedProjectId);
+    const header = 'Name,Company,Trade,Type,Mobile,First Visit,Last Visit,Visits,Total Hours';
+    const lines  = workers.map(w => [
+      w.name, w.company, w.trade, TYPE_LABELS[w.type]||w.type, w.mobile,
+      fmtDate(w.firstSeen), fmtDate(w.lastSeen), w.visits, w.totalHours.toFixed(2)
+    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+    const proj = projects.find(p => p.id === selectedProjectId);
+    const name = (proj?.name || 'project').replace(/\s+/g,'-');
+    _download([header,...lines].join('\n'), `workforce-register-${name}.csv`, 'text/csv');
+  });
+
+  $('btn-print-daily').addEventListener('click', () => {
+    if (!selectedProjectId) { alert('Select a project first.'); return; }
+    const date  = $('date-select').value || todayStr;
+    const all   = attendanceStore.forProjectDate(selectedProjectId, date);
+    const proj  = projects.find(p => p.id === selectedProjectId);
+    const html  = buildPrintReport(proj, date, all);
+    const w     = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+    w.print();
+  });
+
+  function buildPrintReport(proj, date, records) {
+    const projName = proj?.name || proj?.projectName || 'Project';
+    const onSite   = records.filter(r => !r.timeOut);
+    const left     = records.filter(r =>  r.timeOut);
+    const totalHrs = records.reduce((s,r) => s + (r.hoursOnSite||0), 0);
+    const rows     = records.map(r => `<tr>
+      <td>${esc(r.name)}</td>
+      <td>${esc(r.company)}</td>
+      <td>${esc(r.trade)}</td>
+      <td>${esc(TYPE_LABELS[r.type]||r.type)}</td>
+      <td>${fmt(r.timeIn)}</td>
+      <td>${r.timeOut ? fmt(r.timeOut) : '<em>On site</em>'}</td>
+      <td>${r.hoursOnSite != null ? r.hoursOnSite.toFixed(2) : '—'}</td>
+      <td>${esc(r.notes||'')}</td>
+    </tr>`).join('');
+    return `<!DOCTYPE html><html><head><title>Attendance Report</title><style>
+      body{font-family:Arial,sans-serif;font-size:11px;padding:20px;color:#222}
+      h1{font-size:16px;margin:0 0 4px}h2{font-size:11px;font-weight:normal;color:#666;margin:0 0 16px}
+      table{width:100%;border-collapse:collapse;margin-top:12px}
+      th{background:#f0f0f0;padding:6px 8px;text-align:left;font-size:10px;text-transform:uppercase;border-bottom:1px solid #ccc}
+      td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:top}
+      .stats{display:flex;gap:20px;margin-bottom:16px}
+      .stat{border:1px solid #ddd;padding:8px 12px;border-radius:4px;text-align:center}
+      .stat-val{font-size:18px;font-weight:bold;color:#252320}
+      .stat-label{font-size:9px;color:#888;text-transform:uppercase;margin-top:2px}
+      @media print{body{padding:0}}
+    </style></head><body>
+      <h1>Daily Attendance Report — ${esc(projName)}</h1>
+      <h2>${new Date(date+'T00:00:00').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h2>
+      <div class="stats">
+        <div class="stat"><div class="stat-val">${records.length}</div><div class="stat-label">Total</div></div>
+        <div class="stat"><div class="stat-val">${onSite.length}</div><div class="stat-label">On site</div></div>
+        <div class="stat"><div class="stat-val">${left.length}</div><div class="stat-label">Left</div></div>
+        <div class="stat"><div class="stat-val">${totalHrs.toFixed(1)}</div><div class="stat-label">Labour hrs</div></div>
+      </div>
+      <table><thead><tr><th>Name</th><th>Company</th><th>Trade</th><th>Type</th><th>In</th><th>Out</th><th>Hours</th><th>Notes</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="8" style="color:#888;text-align:center;padding:20px">No records</td></tr>'}</tbody></table>
+      <p style="margin-top:20px;font-size:9px;color:#aaa">Generated by BIK Business Toolkit · ${new Date().toLocaleString('en-AU')}</p>
+    </body></html>`;
+  }
+
+  function _download(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+  }
+
+  // Initial render
+  render();
+</script>
+
+<script type="module" src="./js/toolkit/beta-banner.js"></script>
+</body>
+</html>

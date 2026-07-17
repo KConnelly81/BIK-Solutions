@@ -118,6 +118,31 @@
 
       </div>
 
+      <!-- ── ATTENDANCE SECTION ── -->
+      <section class="proj-future-section" id="attendance-section" style="margin-bottom:32px">
+        <h2 class="proj-col-heading">Site Attendance</h2>
+        <div id="att-today-strip" style="margin-bottom:12px"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <a id="att-open-link" href="attendance.html" class="dash-btn dash-btn--ghost-dark" style="font-size:0.78rem;text-decoration:none">
+            👷 Open Attendance Dashboard
+          </a>
+          <button id="att-qr-btn" class="dash-btn dash-btn--ghost-dark" style="font-size:0.78rem">
+            📱 Show QR Code
+          </button>
+        </div>
+      </section>
+
+      <!-- QR mini-modal -->
+      <div id="att-qr-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;padding:20px">
+        <div style="background:#fff;border-radius:12px;padding:28px;max-width:340px;width:100%;text-align:center">
+          <div style="font-size:1rem;font-weight:800;color:#252320;margin-bottom:6px">Site Check-In QR Code</div>
+          <p style="font-size:0.8rem;color:#666;margin-bottom:16px;line-height:1.6">Workers scan to check in. No app required.</p>
+          <canvas id="att-qr-canvas" style="border:1px solid #e8e4de;border-radius:8px;margin-bottom:12px"></canvas>
+          <div style="font-size:0.68rem;color:#888;word-break:break-all;margin-bottom:16px;font-family:monospace" id="att-qr-url"></div>
+          <button onclick="document.getElementById('att-qr-overlay').style.display='none'" style="background:#252320;color:#fff;border:none;border-radius:7px;padding:10px 20px;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">Close</button>
+        </div>
+      </div>
+
       <!-- Future-ready section (coming soon stubs) -->
       <section class="proj-future-section">
         <h2 class="proj-col-heading">Coming Soon</h2>
@@ -200,6 +225,8 @@
 <script type="module">
 import { documentHistory } from './js/toolkit/document-history.js';
 import { projectStore, PROJECT_STATUSES } from './js/toolkit/project-store.js';
+import { attendanceStore } from './js/toolkit/attendance-store.js';
+import { renderQR }        from './js/toolkit/qr-generator.js';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -789,6 +816,43 @@ function init() {
   renderSmartActions(buildSmartActions(project, docs));
   renderTimeline(buildTimeline(project, docs));
   renderDocuments(docs);
+  renderAttendanceStrip(project);
+}
+
+// ── Attendance section ──────────────────────────────────────────────────────
+
+function renderAttendanceStrip(project) {
+  const today   = attendanceStore.todayForProject(project.id);
+  const onSite  = today.filter(r => !r.timeOut);
+  const strip   = document.getElementById('att-today-strip');
+  const esc     = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  if (!today.length) {
+    strip.innerHTML = `<div style="background:#fafaf8;border:1px solid #e8e4de;border-radius:8px;padding:14px 16px;font-size:0.82rem;color:#888">
+      No attendance recorded today. Share the QR code for workers to check in.
+    </div>`;
+  } else {
+    strip.innerHTML = `<div style="background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:14px 16px;margin-bottom:10px">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:10px">Today — ${today.length} worker${today.length!==1?'s':''} · ${onSite.length} on site</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${today.map(r => `<span style="background:${r.timeOut?'#f0ece6':'#e8f5e9'};color:${r.timeOut?'#666':'#2e7d32'};border-radius:20px;padding:4px 10px;font-size:0.75rem;font-weight:600">${esc(r.name)}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // Attendance dashboard link
+  document.getElementById('att-open-link').href = `attendance.html?p=${project.id}`;
+
+  // QR button
+  document.getElementById('att-qr-btn').addEventListener('click', () => {
+    const name = encodeURIComponent(project.name || '');
+    const addr = encodeURIComponent(project.siteAddress || '');
+    const base = location.origin + location.pathname.replace('project.html', 'checkin.html');
+    const url  = `${base}?p=${project.id}&n=${name}&a=${addr}`;
+    document.getElementById('att-qr-url').textContent = url;
+    renderQR(url, document.getElementById('att-qr-canvas'), { scale: 5, padding: 3 });
+    document.getElementById('att-qr-overlay').style.display = 'flex';
+  });
 }
 
 init();

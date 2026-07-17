@@ -531,6 +531,7 @@ import { projectStore, PROJECT_STATUSES } from './js/toolkit/project-store.js';
 import { evaluateAll, aggregateMetrics } from './js/toolkit/health-engine.js';
 import { seedDemoData, isDemoActive, calcTimeSaved } from './js/toolkit/demo-data.js';
 import { checkAndInit as checkOnboarding } from './js/toolkit/onboarding.js';
+import { attendanceStore } from './js/toolkit/attendance-store.js';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -853,6 +854,35 @@ function renderPriorities(reports) {
       priorities.push({ ...a, projectName: r.project.name, projectId: r.project.id });
     });
   });
+
+  // Attendance smart actions
+  const projects = projectStore.list().filter(p => p.status === 'active');
+  for (const proj of projects) {
+    const forgot = attendanceStore.forgotCheckout(proj.id);
+    if (forgot.length) {
+      priorities.push({
+        severity: 'warning',
+        headline: `${forgot.length} worker${forgot.length > 1 ? 's' : ''} may have forgotten to check out`,
+        projectName: proj.name,
+        projectId: proj.id,
+        detail: forgot.map(r => r.name).join(', '),
+        actions: [{ label: 'View attendance', href: `attendance.html?p=${proj.id}`, isPrimary: true }],
+      });
+    }
+    const todayRec = attendanceStore.todayForProject(proj.id);
+    const onSiteNow = todayRec.filter(r => !r.timeOut);
+    if (onSiteNow.some(r => r.type === 'visitor' || r.type === 'inspector')) {
+      const vis = onSiteNow.filter(r => r.type === 'visitor' || r.type === 'inspector');
+      priorities.push({
+        severity: 'info',
+        headline: `${vis.length} visitor${vis.length > 1 ? 's' : ''} still signed in`,
+        projectName: proj.name,
+        projectId: proj.id,
+        detail: vis.map(r => r.name).join(', '),
+        actions: [{ label: 'View', href: `attendance.html?p=${proj.id}`, isPrimary: true }],
+      });
+    }
+  }
 
   if (priorities.length === 0) { section.hidden = true; return; }
   section.hidden = false;
