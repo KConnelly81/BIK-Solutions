@@ -129,6 +129,9 @@
           <button id="att-qr-btn" class="dash-btn dash-btn--ghost-dark" style="font-size:0.78rem">
             📱 Show QR Code
           </button>
+          <button id="att-qr-print-btn" class="dash-btn dash-btn--ghost-dark" style="font-size:0.78rem">
+            🖨️ Print QR Sign
+          </button>
         </div>
       </section>
 
@@ -139,9 +142,15 @@
           <p style="font-size:0.8rem;color:#666;margin-bottom:16px;line-height:1.6">Workers scan to check in. No app required.</p>
           <canvas id="att-qr-canvas" style="border:1px solid #e8e4de;border-radius:8px;margin-bottom:12px"></canvas>
           <div style="font-size:0.68rem;color:#888;word-break:break-all;margin-bottom:16px;font-family:monospace" id="att-qr-url"></div>
-          <button onclick="document.getElementById('att-qr-overlay').style.display='none'" style="background:#252320;color:#fff;border:none;border-radius:7px;padding:10px 20px;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">Close</button>
+          <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+            <button onclick="document.getElementById('att-qr-overlay').style.display='none'" style="background:#e8e4de;color:#252320;border:none;border-radius:7px;padding:10px 20px;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">Close</button>
+            <button id="att-qr-print-from-modal" style="background:#252320;color:#fff;border:none;border-radius:7px;padding:10px 20px;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit">🖨️ Print Sign</button>
+          </div>
         </div>
       </div>
+
+      <!-- QR Sign print frame (hidden, rendered before print) -->
+      <iframe id="att-qr-sign-frame" style="display:none" aria-hidden="true"></iframe>
 
       <!-- Future-ready section (coming soon stubs) -->
       <section class="proj-future-section">
@@ -822,23 +831,56 @@ function init() {
 
 // ── Attendance section ──────────────────────────────────────────────────────
 
+function _attEsc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function _checkinUrl(project) {
+  const token = checkinTokens.getOrCreate(project);
+  const base  = location.origin + location.pathname.replace('project.html', 'checkin.html');
+  return { url: `${base}?t=${token}`, token };
+}
+
 function renderAttendanceStrip(project) {
-  const token   = checkinTokens.forProject(project.id);
-  const today   = attendanceStore.forProjectOrToken(project.id, token)
-                    .filter(r => r.date === attendanceStore._today());
-  const onSite  = today.filter(r => !r.timeOut);
-  const strip   = document.getElementById('att-today-strip');
-  const esc     = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const token      = checkinTokens.forProject(project.id);
+  const active     = attendanceStore.forProjectOrToken(project.id, token)
+                       .filter(r => r.status !== 'voided');
+  const todayStr   = attendanceStore._today();
+  const today      = active.filter(r => r.date === todayStr);
+  const onSite     = today.filter(r => r.status === 'active');
+  const coReq      = today.filter(r => r.status === 'checkout-required');
+  const checkedOut = today.filter(r => r.status === 'checked-out');
+  const strip      = document.getElementById('att-today-strip');
+
+  // Recorded site hours total
+  const totalHrs   = checkedOut.reduce((s, r) => s + (r.hoursOnSite || 0), 0);
+  const hrsDisplay = totalHrs > 0
+    ? `${totalHrs.toFixed(1)} recorded site hr${totalHrs !== 1 ? 's' : ''}`
+    : null;
 
   if (!today.length) {
     strip.innerHTML = `<div style="background:#fafaf8;border:1px solid #e8e4de;border-radius:8px;padding:14px 16px;font-size:0.82rem;color:#888">
       No attendance recorded today. Share the QR code for workers to check in.
     </div>`;
   } else {
+    const chips = workers => workers.map(r =>
+      `<span style="background:${r.status==='active'?'#e8f5e9':r.status==='checkout-required'?'#fff3e0':'#f0ece6'};` +
+      `color:${r.status==='active'?'#2e7d32':r.status==='checkout-required'?'#e65100':'#666'};` +
+      `border-radius:20px;padding:4px 10px;font-size:0.75rem;font-weight:600">${_attEsc(r.name)}</span>`
+    ).join('');
+
     strip.innerHTML = `<div style="background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:14px 16px;margin-bottom:10px">
-      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888;margin-bottom:10px">Today — ${today.length} worker${today.length!==1?'s':''} · ${onSite.length} on site</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+        <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#888">
+          Today — ${today.length} worker${today.length!==1?'s':''} · ${onSite.length} on site
+        </div>
+        ${hrsDisplay ? `<div style="font-size:0.72rem;color:#4a7c59;font-weight:700">${_attEsc(hrsDisplay)}</div>` : ''}
+      </div>
+      ${coReq.length ? `<div style="font-size:0.75rem;color:#e65100;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:5px">
+        ⚠️ ${coReq.length} worker${coReq.length!==1?'s':''} require checkout confirmation
+      </div>` : ''}
       <div style="display:flex;flex-wrap:wrap;gap:6px">
-        ${today.map(r => `<span style="background:${r.timeOut?'#f0ece6':'#e8f5e9'};color:${r.timeOut?'#666':'#2e7d32'};border-radius:20px;padding:4px 10px;font-size:0.75rem;font-weight:600">${esc(r.name)}</span>`).join('')}
+        ${chips(onSite)}${chips(coReq)}${chips(checkedOut)}
       </div>
     </div>`;
   }
@@ -848,13 +890,91 @@ function renderAttendanceStrip(project) {
 
   // QR button
   document.getElementById('att-qr-btn').addEventListener('click', () => {
-    const token = checkinTokens.getOrCreate(project);
-    const base  = location.origin + location.pathname.replace('project.html', 'checkin.html');
-    const url   = `${base}?t=${token}`;
+    const { url } = _checkinUrl(project);
     document.getElementById('att-qr-url').textContent = url;
     renderQR(url, document.getElementById('att-qr-canvas'), { scale: 5, padding: 3 });
     document.getElementById('att-qr-overlay').style.display = 'flex';
   });
+
+  // Print QR Sign (both from button and from modal)
+  function doPrintQRSign() {
+    const { url } = _checkinUrl(project);
+    _printQRSign(project, url);
+  }
+  document.getElementById('att-qr-print-btn').addEventListener('click', doPrintQRSign);
+  document.getElementById('att-qr-print-from-modal').addEventListener('click', doPrintQRSign);
+}
+
+function _printQRSign(project, checkinUrl) {
+  // Build A4 printable HTML with inline QR data URI
+  // We render QR to a temporary canvas to get data URI
+  const tmpCanvas = document.createElement('canvas');
+  renderQR(checkinUrl, tmpCanvas, { scale: 8, padding: 4 });
+  const qrDataUri = tmpCanvas.toDataURL('image/png');
+
+  const name    = _attEsc(project.name || 'This Project');
+  const addr    = _attEsc((project.siteAddress || '').split('\n')[0] || '');
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Site Sign-In — ${name}</title>
+<style>
+  @page { size: A4; margin: 20mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #252320; background: #fff; }
+  .sign-wrap { display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 0; }
+  .sign-brand { width: 100%; text-align: center; margin-bottom: 24px; padding: 16px 0 0; }
+  .sign-brand-name { font-size: 1.1rem; font-weight: 900; letter-spacing: -0.01em; color: #252320; }
+  .sign-brand-tag  { font-size: 0.7rem; color: #888; letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; }
+  .sign-project  { font-size: 2rem; font-weight: 900; letter-spacing: -0.02em; text-align: center; line-height: 1.1; margin: 8px 0 4px; }
+  .sign-address  { font-size: 0.95rem; color: #666; text-align: center; margin-bottom: 24px; }
+  .sign-qr-box   { border: 2px solid #e8e4de; border-radius: 16px; padding: 24px; background: #fff; margin-bottom: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .sign-qr-box img { width: 260px; height: 260px; }
+  .sign-heading  { font-size: 1.4rem; font-weight: 800; text-align: center; margin-bottom: 4px; }
+  .sign-sub      { font-size: 0.9rem; color: #555; text-align: center; margin-bottom: 0; }
+  .sign-steps    { list-style: none; margin: 16px 0 0; width: 100%; max-width: 360px; }
+  .sign-steps li { font-size: 0.85rem; color: #444; padding: 8px 0; border-bottom: 1px solid #f0ece6; display: flex; align-items: flex-start; gap: 10px; }
+  .sign-steps li:last-child { border-bottom: none; }
+  .sign-step-num { font-weight: 800; color: #e05a2b; min-width: 20px; }
+  .sign-footer   { margin-top: auto; padding: 20px 0 0; font-size: 0.68rem; color: #aaa; text-align: center; line-height: 1.6; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+<div class="sign-wrap">
+  <div class="sign-brand">
+    <div class="sign-brand-name">BIK Business Toolkit</div>
+    <div class="sign-brand-tag">Beyond Industry Knowledge</div>
+  </div>
+  <div class="sign-project">${name}</div>
+  ${addr ? `<div class="sign-address">📍 ${addr}</div>` : ''}
+  <div class="sign-qr-box">
+    <div class="sign-heading">Scan to Sign In or Out</div>
+    <img src="${qrDataUri}" alt="QR code for site sign-in" width="260" height="260"/>
+    <div class="sign-sub">Point your phone camera at the QR code.<br/>No app required.</div>
+  </div>
+  <ol class="sign-steps">
+    <li><span class="sign-step-num">1</span><span>Open your phone camera and point it at the QR code above</span></li>
+    <li><span class="sign-step-num">2</span><span>Tap the link that appears on your screen</span></li>
+    <li><span class="sign-step-num">3</span><span>Enter your name, company and trade, then tap <strong>Check In</strong></span></li>
+    <li><span class="sign-step-num">4</span><span>When you leave, scan again or use the link to <strong>Check Out</strong></span></li>
+  </ol>
+  <div class="sign-footer">
+    This sign-in records your attendance for site safety and workforce register purposes.<br/>
+    Recorded site hours are not automatically approved payroll or billable hours.<br/>
+    For support: biksolutions.com.au
+  </div>
+</div>
+<script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank', 'width=800,height=1100');
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+  }
 }
 
 init();

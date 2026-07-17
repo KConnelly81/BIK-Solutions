@@ -4,292 +4,169 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <meta name="robots" content="noindex" />
-  <title>Site Check-In — BIK Business Toolkit</title>
+  <title>Site Sign-In — BIK Solutions</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --charcoal: #252320;
-      --coral: #D85A30;
-      --coral-dark: #b84a24;
-      --paper: #F2EDE5;
-      --border: #e2d9cc;
-      --text: #252320;
-      --muted: #666;
-      --radius: 10px;
-      --green: #2e7d32;
+      --charcoal: #252320; --coral: #D85A30; --coral-dark: #b84a24;
+      --paper: #F2EDE5; --border: #e2d9cc; --text: #252320;
+      --muted: #666; --radius: 10px; --green: #2e7d32; --amber: #b45309;
     }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--paper); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--paper);
-      color: var(--text);
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-    }
+    /* ── Header ── */
+    .ci-header { background: var(--charcoal); padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+    .ci-logo-mark { width:34px;height:34px;background:var(--coral);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.05rem;color:#fff;flex-shrink:0; }
+    .ci-header-title { font-size:0.85rem;font-weight:700;color:#fff; }
+    .ci-header-sub { font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:2px; }
 
-    /* ── HEADER ── */
-    .ci-header {
-      background: var(--charcoal);
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .ci-logo-mark {
-      width: 34px; height: 34px;
-      background: var(--coral);
-      border-radius: 7px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 1.05rem; color: #fff;
-      flex-shrink: 0;
-    }
-    .ci-header-text { flex: 1; }
-    .ci-header-title { font-size: 0.85rem; font-weight: 700; color: #fff; }
-    .ci-header-sub { font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    /* ── Project band ── */
+    .ci-project-band { background:var(--coral);padding:14px 20px;display:flex;align-items:center;gap:10px; }
+    .ci-project-name { font-size:0.92rem;font-weight:700;color:#fff; }
+    .ci-project-addr { font-size:0.72rem;color:rgba(255,255,255,0.8);margin-top:2px; }
 
-    /* ── PROJECT BAND ── */
-    .ci-project-band {
-      background: var(--coral);
-      padding: 14px 20px;
-      display: flex; align-items: center; gap: 10px;
-    }
-    .ci-project-icon { font-size: 1.1rem; }
-    .ci-project-name { font-size: 0.92rem; font-weight: 700; color: #fff; }
-    .ci-project-addr { font-size: 0.72rem; color: rgba(255,255,255,0.75); margin-top: 2px; }
+    /* ── Screens ── */
+    .screen { display:none; }
+    .screen.active { display:block; }
 
-    /* ── SCREENS ── */
-    .screen { display: none; }
-    .screen.active { display: block; }
+    /* ── Form ── */
+    .ci-form { padding:20px;max-width:480px;margin:0 auto; }
+    .ci-step-label { font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--coral);margin-bottom:6px; }
+    .ci-step-title { font-size:1.1rem;font-weight:800;color:var(--charcoal);margin-bottom:20px;line-height:1.2; }
 
-    /* ── FORM ── */
-    .ci-form { padding: 20px; max-width: 480px; margin: 0 auto; }
-
-    .ci-step-label {
-      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em;
-      text-transform: uppercase; color: var(--coral);
-      margin-bottom: 6px;
-    }
-    .ci-step-title {
-      font-size: 1.1rem; font-weight: 800; color: var(--charcoal);
-      margin-bottom: 20px; line-height: 1.2;
-    }
-
-    .field { margin-bottom: 16px; }
-    .field label {
-      display: block; font-size: 0.78rem; font-weight: 700;
-      color: var(--charcoal); margin-bottom: 6px;
-    }
-    .field label .req { color: var(--coral); }
+    .field { margin-bottom:16px; }
+    .field label { display:block;font-size:0.78rem;font-weight:700;color:var(--charcoal);margin-bottom:6px; }
+    .field label .req { color:var(--coral); }
+    .field label .opt { font-size:0.72rem;font-weight:400;color:#888; }
     .field input, .field select {
-      width: 100%;
-      padding: 14px 16px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      font-size: 1rem; /* large for mobile */
-      font-family: inherit;
-      background: #fff;
-      color: var(--text);
-      appearance: none;
-      -webkit-appearance: none;
-      outline: none;
-      transition: border-color 0.15s;
+      width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius);
+      font-size:1rem;font-family:inherit;background:#fff;color:var(--text);
+      appearance:none;-webkit-appearance:none;outline:none;transition:border-color 0.15s;
     }
-    .field input:focus, .field select:focus { border-color: var(--coral); }
-    .field input::placeholder { color: #aaa; }
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field input:focus, .field select:focus { border-color:var(--coral); }
+    .field input::placeholder { color:#aaa; }
+    .field input.error { border-color:#e53e3e; }
+    .field-hint { font-size:0.72rem;color:#e53e3e;margin-top:5px;display:none; }
+    .field-hint.show { display:block; }
+    .field-row { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px; }
 
-    .type-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-      margin-bottom: 16px;
-    }
+    /* ── Type grid ── */
+    .type-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px; }
     .type-btn {
-      padding: 12px 8px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      background: #fff;
-      font-size: 0.8rem; font-weight: 600;
-      color: var(--muted);
-      cursor: pointer;
-      text-align: center;
-      font-family: inherit;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      padding:13px 6px;border:1.5px solid var(--border);border-radius:var(--radius);
+      background:#fff;font-size:0.78rem;font-weight:600;color:var(--muted);cursor:pointer;
+      text-align:center;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+      transition:border-color 0.15s,color 0.15s,background 0.15s;
     }
-    .type-btn.selected {
-      border-color: var(--coral);
-      background: #fff8f5;
-      color: var(--coral);
-    }
-    .type-btn .type-icon { font-size: 1.1rem; }
+    .type-btn.selected { border-color:var(--coral);background:#fff8f5;color:var(--coral); }
+    .type-btn .type-icon { font-size:1.3rem; }
 
-    /* ── OPTIONAL SECTION ── */
-    .optional-section {
-      background: #fff;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-    .optional-toggle {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 16px;
-      cursor: pointer;
-      font-size: 0.84rem; font-weight: 600; color: var(--charcoal);
-      user-select: none;
-    }
-    .optional-toggle-icon { color: var(--coral); font-size: 1.1rem; transition: transform 0.2s; }
-    .optional-toggle.open .optional-toggle-icon { transform: rotate(45deg); }
-    .optional-body { padding: 0 16px 16px; display: none; }
-    .optional-body.open { display: block; }
+    /* ── Time display ── */
+    .time-display { text-align:center;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px; }
+    .time-display .td-label { font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px; }
+    .time-display .td-time { font-size:2rem;font-weight:800;color:var(--charcoal);letter-spacing:-0.02em;font-variant-numeric:tabular-nums; }
+    .time-display .td-date { font-size:0.78rem;color:var(--muted);margin-top:2px; }
 
-    /* GPS status */
-    .gps-btn {
-      width: 100%; padding: 14px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      background: #fff;
-      font-size: 0.88rem; font-weight: 600;
-      color: var(--charcoal);
-      cursor: pointer; font-family: inherit;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      transition: border-color 0.15s;
-    }
-    .gps-btn.captured { border-color: var(--green); color: var(--green); }
-    .gps-status { font-size: 0.76rem; color: var(--muted); margin-top: 6px; text-align: center; }
+    /* ── Optional section ── */
+    .optional-section { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px; }
+    .optional-toggle { display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;font-size:0.84rem;font-weight:600;color:var(--charcoal);user-select:none; }
+    .optional-toggle-icon { color:var(--coral);font-size:1.1rem;transition:transform 0.2s; }
+    .optional-toggle.open .optional-toggle-icon { transform:rotate(45deg); }
+    .optional-body { padding:0 16px 16px;display:none; }
+    .optional-body.open { display:block; }
+    .gps-btn { width:100%;padding:14px;border:1.5px solid var(--border);border-radius:var(--radius);background:#fff;font-size:0.88rem;font-weight:600;color:var(--charcoal);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color 0.15s; }
+    .gps-btn.captured { border-color:var(--green);color:var(--green); }
+    .gps-status { font-size:0.76rem;color:var(--muted);margin-top:6px;text-align:center; }
 
-    /* ── BUTTONS ── */
-    .btn-primary {
-      width: 100%;
-      background: var(--coral);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius);
-      padding: 18px;
-      font-size: 1.05rem; font-weight: 800;
-      cursor: pointer; font-family: inherit;
-      letter-spacing: 0.01em;
-      transition: background 0.15s;
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-    }
-    .btn-primary:hover { background: var(--coral-dark); }
-    .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+    /* ── Privacy notice ── */
+    .privacy-notice { background:#f8f5f0;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;font-size:0.76rem;color:#555;line-height:1.6; }
+    .privacy-notice strong { color:var(--charcoal); }
 
-    .btn-secondary {
-      width: 100%;
-      background: transparent;
-      color: var(--charcoal);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px;
-      font-size: 0.9rem; font-weight: 600;
-      cursor: pointer; font-family: inherit;
-      margin-top: 10px;
-    }
+    /* ── Buttons ── */
+    .btn-primary { width:100%;background:var(--coral);color:#fff;border:none;border-radius:var(--radius);padding:18px;font-size:1.05rem;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:0.01em;transition:background 0.15s;display:flex;align-items:center;justify-content:center;gap:10px; }
+    .btn-primary:hover { background:var(--coral-dark); }
+    .btn-primary:active { background:var(--coral-dark); }
+    .btn-secondary { width:100%;background:transparent;color:var(--charcoal);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:inherit;margin-top:10px; }
+    .btn-green { background:var(--green);color:#fff;border:none;border-radius:var(--radius);padding:18px;font-size:1.05rem;font-weight:800;cursor:pointer;font-family:inherit;width:100%;transition:background 0.15s; }
+    .btn-green:hover { background:#1b5e20; }
 
-    /* ── TIME DISPLAY ── */
-    .time-display {
-      text-align: center;
-      background: #fff;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-    .time-display .td-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-    .time-display .td-time { font-size: 2rem; font-weight: 800; color: var(--charcoal); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-    .time-display .td-date { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    /* ── Error / Warning ── */
+    .ci-error { background:#fff5f5;border:1.5px solid #fbb;border-radius:var(--radius);padding:14px 16px;font-size:0.84rem;color:#c00;margin-bottom:16px;display:none; }
 
-    /* ── SUCCESS SCREEN ── */
-    .success-screen {
-      padding: 40px 20px;
-      max-width: 480px;
-      margin: 0 auto;
-      text-align: center;
-    }
-    .success-icon {
-      width: 72px; height: 72px;
-      background: var(--green);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 20px;
-      font-size: 2rem;
-    }
-    .success-name { font-size: 1.4rem; font-weight: 900; color: var(--charcoal); margin-bottom: 6px; }
-    .success-sub { font-size: 0.88rem; color: var(--muted); margin-bottom: 32px; line-height: 1.5; }
-    .success-detail {
-      background: #fff;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 20px;
-      text-align: left;
-    }
-    .sd-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.84rem; }
-    .sd-row:last-child { border-bottom: none; }
-    .sd-label { color: var(--muted); }
-    .sd-value { font-weight: 600; color: var(--charcoal); }
-    .checkout-prompt {
-      background: var(--paper);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-bottom: 20px;
-      line-height: 1.6;
-    }
-    .checkout-prompt strong { color: var(--charcoal); }
+    /* ── Success screen ── */
+    .success-screen { padding:32px 20px 40px;max-width:480px;margin:0 auto;text-align:center; }
+    .success-icon { width:72px;height:72px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem; }
+    .success-name { font-size:1.4rem;font-weight:900;color:var(--charcoal);margin-bottom:6px; }
+    .success-sub { font-size:0.88rem;color:var(--muted);margin-bottom:24px;line-height:1.5; }
+    .success-detail { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px;text-align:left; }
+    .sd-row { display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:0.84rem; }
+    .sd-row:last-child { border-bottom:none; }
+    .sd-label { color:var(--muted); }
+    .sd-value { font-weight:600;color:var(--charcoal);text-align:right;max-width:60%; }
+    .save-tip { background:#f0f9f0;border:1.5px solid #c3e6cb;border-radius:var(--radius);padding:12px 14px;font-size:0.78rem;color:#1b5e20;margin-bottom:20px;line-height:1.6; }
 
-    /* ── ERROR ── */
-    .ci-error {
-      background: #fff5f5;
-      border: 1.5px solid #fbb;
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      font-size: 0.84rem;
-      color: #c00;
-      margin-bottom: 16px;
-      display: none;
-    }
+    /* ── Already signed in screen ── */
+    .already-in { padding:32px 20px;max-width:480px;margin:0 auto;text-align:center; }
+    .already-in-icon { width:68px;height:68px;background:var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.8rem; }
+    .already-in-title { font-size:1.2rem;font-weight:900;color:var(--charcoal);margin-bottom:8px; }
+    .already-in-sub { font-size:0.88rem;color:var(--muted);margin-bottom:24px;line-height:1.5; }
+    .already-in-card { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;text-align:left;margin-bottom:24px; }
 
-    /* ── PROJECT NOT FOUND ── */
-    .not-found {
-      padding: 60px 20px;
-      text-align: center;
-      max-width: 360px;
-      margin: 0 auto;
-    }
-    .not-found h2 { font-size: 1.1rem; color: var(--charcoal); margin-bottom: 8px; }
-    .not-found p { font-size: 0.85rem; color: var(--muted); line-height: 1.65; }
+    /* ── Not found ── */
+    .not-found { padding:60px 20px;text-align:center;max-width:360px;margin:0 auto; }
+    .not-found h2 { font-size:1.1rem;color:var(--charcoal);margin-bottom:8px; }
+    .not-found p { font-size:0.85rem;color:var(--muted);line-height:1.65; }
   </style>
 </head>
 <body>
 
 <header class="ci-header">
   <div class="ci-logo-mark">B</div>
-  <div class="ci-header-text">
-    <div class="ci-header-title">BIK Site Check-In</div>
+  <div>
+    <div class="ci-header-title">BIK Site Sign-In</div>
     <div class="ci-header-sub" id="ci-time-header"></div>
   </div>
 </header>
 
-<!-- Screens -->
+<!-- Loading -->
 <div id="screen-loading" class="screen active" style="padding:60px 20px;text-align:center;color:#888;font-size:0.9rem;">Loading…</div>
 
+<!-- Project not found -->
 <div id="screen-notfound" class="screen">
   <div class="not-found">
     <div style="font-size:2.5rem;margin-bottom:16px;">⚠️</div>
-    <h2>Project not found</h2>
-    <p>This QR code may be outdated. Please ask the site supervisor for an updated check-in link.</p>
+    <h2>Check-in link not found</h2>
+    <p>This QR code may be outdated or incorrect. Please ask the site supervisor for an updated sign-in link.</p>
   </div>
 </div>
 
+<!-- Already signed in -->
+<div id="screen-already-in" class="screen">
+  <div id="project-band-ai" class="ci-project-band" style="display:none">
+    <div>
+      <div class="ci-project-name" id="ai-project-name"></div>
+      <div class="ci-project-addr" id="ai-project-addr"></div>
+    </div>
+  </div>
+  <div class="already-in">
+    <div class="already-in-icon">⏱</div>
+    <div class="already-in-title">You are currently signed in</div>
+    <div class="already-in-sub" id="ai-sub">You already have an open sign-in record for this site.</div>
+    <div class="already-in-card">
+      <div class="sd-row"><span class="sd-label">Name</span><span class="sd-value" id="ai-name"></span></div>
+      <div class="sd-row"><span class="sd-label">Project</span><span class="sd-value" id="ai-project"></span></div>
+      <div class="sd-row"><span class="sd-label">Signed in at</span><span class="sd-value" id="ai-timein"></span></div>
+      <div class="sd-row" id="ai-trade-row"><span class="sd-label">Trade</span><span class="sd-value" id="ai-trade"></span></div>
+    </div>
+    <button class="btn-green" id="ai-btn-checkout" style="margin-bottom:10px">Check Out Now →</button>
+    <button class="btn-secondary" id="ai-btn-different">That's not me — sign in as a different person</button>
+  </div>
+</div>
+
+<!-- Check-in form -->
 <div id="screen-form" class="screen">
   <div class="ci-project-band" id="project-band" style="display:none">
-    <div class="ci-project-icon">🏗️</div>
+    <div style="font-size:1.1rem;margin-right:2px">🏗️</div>
     <div>
       <div class="ci-project-name" id="project-name-display"></div>
       <div class="ci-project-addr" id="project-addr-display"></div>
@@ -299,11 +176,11 @@
   <form class="ci-form" id="checkin-form" novalidate>
 
     <div class="ci-step-label">Site attendance</div>
-    <div class="ci-step-title">Check in</div>
+    <div class="ci-step-title">Sign in to site</div>
 
     <!-- Time display -->
     <div class="time-display">
-      <div class="td-label">Time In</div>
+      <div class="td-label">Sign-in time</div>
       <div class="td-time" id="live-time">--:--</div>
       <div class="td-date" id="live-date"></div>
     </div>
@@ -312,69 +189,75 @@
     <div class="field">
       <label>I am a <span class="req">*</span></label>
       <div class="type-grid">
-        <button type="button" class="type-btn selected" data-type="subcontractor"><span class="type-icon">🔨</span> Subcontractor</button>
-        <button type="button" class="type-btn" data-type="employee"><span class="type-icon">👷</span> Employee</button>
-        <button type="button" class="type-btn" data-type="labour-hire"><span class="type-icon">🤝</span> Labour Hire</button>
-        <button type="button" class="type-btn" data-type="visitor"><span class="type-icon">👤</span> Visitor</button>
-        <button type="button" class="type-btn" data-type="inspector"><span class="type-icon">📋</span> Inspector</button>
-        <button type="button" class="type-btn" data-type="supplier"><span class="type-icon">🚚</span> Supplier</button>
+        <button type="button" class="type-btn selected" data-type="subcontractor"><span class="type-icon">🔨</span>Subcontractor</button>
+        <button type="button" class="type-btn" data-type="employee"><span class="type-icon">👷</span>Employee</button>
+        <button type="button" class="type-btn" data-type="contractor"><span class="type-icon">🤝</span>Contractor</button>
+        <button type="button" class="type-btn" data-type="visitor"><span class="type-icon">👤</span>Visitor</button>
+        <button type="button" class="type-btn" data-type="inspector"><span class="type-icon">📋</span>Inspector</button>
+        <button type="button" class="type-btn" data-type="supplier"><span class="type-icon">🚚</span>Supplier / Delivery</button>
       </div>
     </div>
 
-    <!-- Name + Company -->
-    <div class="field-row">
-      <div class="field" style="margin-bottom:0">
-        <label>Full name <span class="req">*</span></label>
-        <input type="text" id="f-name" autocomplete="name" placeholder="John Smith" inputmode="text" />
-      </div>
-      <div class="field" style="margin-bottom:0">
-        <label>Company</label>
-        <input type="text" id="f-company" autocomplete="organization" placeholder="JS Plumbing" />
-      </div>
+    <!-- Name -->
+    <div class="field">
+      <label for="f-name">Full name <span class="req">*</span></label>
+      <input type="text" id="f-name" autocomplete="name" placeholder="John Smith" inputmode="text" autocapitalize="words" />
+      <div class="field-hint" id="f-name-hint">Please enter your full name (at least 2 characters).</div>
     </div>
-    <div style="margin-bottom:16px"></div>
 
-    <!-- Trade + Mobile -->
-    <div class="field-row">
-      <div class="field" style="margin-bottom:0">
-        <label>Trade / Role</label>
-        <input type="text" id="f-trade" placeholder="Plumber" inputmode="text" list="trade-list" />
-        <datalist id="trade-list">
-          <option value="Carpenter">
-          <option value="Concreter">
-          <option value="Electrician">
-          <option value="Engineer">
-          <option value="Excavator">
-          <option value="Inspector">
-          <option value="Labourer">
-          <option value="Painter">
-          <option value="Plasterer">
-          <option value="Plumber">
-          <option value="Roofer">
-          <option value="Site Manager">
-          <option value="Steel Fixer">
-          <option value="Tiler">
-        </datalist>
-      </div>
-      <div class="field" style="margin-bottom:0">
-        <label>Mobile</label>
-        <input type="tel" id="f-mobile" autocomplete="tel" placeholder="0400 000 000" inputmode="tel" />
-      </div>
+    <!-- Company -->
+    <div class="field" id="f-company-wrap">
+      <label for="f-company">Company <span class="req" id="f-company-req">*</span><span class="opt" id="f-company-opt" style="display:none"> (optional)</span></label>
+      <input type="text" id="f-company" autocomplete="organization" placeholder="e.g. ABC Electrical" />
+      <div class="field-hint" id="f-company-hint">Company is required for this worker type.</div>
     </div>
-    <div style="margin-bottom:16px"></div>
+
+    <!-- Trade / Role -->
+    <div class="field" id="f-trade-wrap">
+      <label for="f-trade">Trade / Role <span class="req" id="f-trade-req">*</span><span class="opt" id="f-trade-opt" style="display:none"> (optional)</span></label>
+      <input type="text" id="f-trade" placeholder="e.g. Plumber" inputmode="text" autocapitalize="words" list="trade-list" />
+      <datalist id="trade-list">
+        <option value="Carpenter">
+        <option value="Concreter">
+        <option value="Electrician">
+        <option value="Engineer">
+        <option value="Excavator">
+        <option value="Inspector">
+        <option value="Labourer">
+        <option value="Painter">
+        <option value="Plasterer">
+        <option value="Plumber">
+        <option value="Roofer">
+        <option value="Site Manager">
+        <option value="Steel Fixer">
+        <option value="Tiler">
+      </datalist>
+      <div class="field-hint" id="f-trade-hint">Trade is required for subcontractors and contractors.</div>
+    </div>
+
+    <!-- Mobile -->
+    <div class="field">
+      <label for="f-mobile">Mobile number <span class="opt">(optional — helps if you need to look up your sign-out)</span></label>
+      <input type="tel" id="f-mobile" autocomplete="tel" placeholder="0400 000 000" inputmode="tel" />
+    </div>
 
     <!-- Optional: GPS -->
     <div class="optional-section">
       <div class="optional-toggle" id="opt-gps-toggle">
-        <span>📍 Record location <span style="font-size:0.72rem;font-weight:400;color:#888;">(optional)</span></span>
+        <span>📍 Share my location <span style="font-size:0.72rem;font-weight:400;color:#888;">— optional</span></span>
         <span class="optional-toggle-icon">+</span>
       </div>
       <div class="optional-body" id="opt-gps-body">
         <button type="button" class="gps-btn" id="gps-btn">
-          <span>📍</span> Tap to record GPS location
+          📍 Tap to share GPS location
         </button>
         <div class="gps-status" id="gps-status"></div>
       </div>
+    </div>
+
+    <!-- Privacy notice -->
+    <div class="privacy-notice">
+      <strong>Privacy notice:</strong> Your details are collected by the site operator to maintain site attendance, safety and project records. Your location is only collected when you choose to share it. Contact the site operator if you need access to or correction of your information.
     </div>
 
     <!-- Error -->
@@ -383,33 +266,39 @@
     <!-- Submit -->
     <button type="submit" class="btn-primary" id="btn-submit">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-      Check In Now
+      Sign In Now
     </button>
 
   </form>
 </div>
 
-<!-- Success -->
+<!-- Success screen -->
 <div id="screen-success" class="screen">
+  <div id="project-band-s" class="ci-project-band" style="display:none">
+    <div>
+      <div class="ci-project-name" id="s-project-band-name"></div>
+      <div class="ci-project-addr" id="s-project-band-addr"></div>
+    </div>
+  </div>
   <div class="success-screen">
     <div class="success-icon">✓</div>
     <div class="success-name" id="s-name"></div>
-    <div class="success-sub" id="s-sub"></div>
+    <div class="success-sub">You are currently recorded as being on site.</div>
     <div class="success-detail">
       <div class="sd-row"><span class="sd-label">Project</span><span class="sd-value" id="s-project"></span></div>
-      <div class="sd-row"><span class="sd-label">Time in</span><span class="sd-value" id="s-timein"></span></div>
+      <div class="sd-row" id="s-addr-row" style="display:none"><span class="sd-label">Address</span><span class="sd-value" id="s-addr"></span></div>
+      <div class="sd-row"><span class="sd-label">Signed in at</span><span class="sd-value" id="s-timein"></span></div>
       <div class="sd-row"><span class="sd-label">Trade</span><span class="sd-value" id="s-trade"></span></div>
       <div class="sd-row"><span class="sd-label">Type</span><span class="sd-value" id="s-type"></span></div>
     </div>
-    <div class="checkout-prompt">
-      <strong>Remember to check out when you leave.</strong><br>
-      Your ID for check-out: <strong id="s-attid" style="font-family:monospace;color:#D85A30"></strong>
+    <div class="save-tip">
+      💾 <strong>Save this page</strong> or bookmark it to check out later — even after closing this tab.
     </div>
     <button class="btn-primary" id="btn-checkout-now" style="margin-bottom:10px">
-      Check out now →
+      Check Out →
     </button>
     <button class="btn-secondary" id="btn-checkin-another">
-      Another person checking in
+      Sign in as another person
     </button>
   </div>
 </div>
@@ -418,49 +307,42 @@
   import { attendanceStore } from './js/toolkit/attendance-store.js';
   import { checkinTokens }   from './js/toolkit/checkin-token.js';
 
+  const $ = id => document.getElementById(id);
+
   // ── Clock ──
   function updateClock() {
     const now = new Date();
     const t = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
     const d = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const el = document.getElementById('live-time');
-    const de = document.getElementById('live-date');
-    const he = document.getElementById('ci-time-header');
-    if (el) el.textContent = t;
-    if (de) de.textContent = d;
-    if (he) he.textContent = d;
+    if ($('live-time')) $('live-time').textContent = t;
+    if ($('live-date')) $('live-date').textContent = d;
+    if ($('ci-time-header')) $('ci-time-header').textContent = d;
   }
   updateClock();
   setInterval(updateClock, 5000);
 
-  // ── Show screen ──
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id)?.classList.add('active');
+    $(id)?.classList.add('active');
   }
 
-  // ── Resolve token → minimal project info ──
-  // The URL carries ?t=<32-char-hex> — never an internal project ID.
-  // checkinTokens.lookup() returns { projectId, name, address } on the builder's device,
-  // or null on a worker's own phone (token not in their localStorage).
-  const params = new URLSearchParams(location.search);
+  // ── Resolve token ──
+  const params  = new URLSearchParams(location.search);
   const token   = params.get('t');
 
-  let resolvedProjectId = null;   // internal UUID when available, otherwise the token itself
+  let resolvedProjectId = null;
   let projectName       = '';
   let projectAddress    = '';
 
   if (token) {
     const info = checkinTokens.lookup(token);
     if (info) {
-      // Builder's device — or worker on same device — full lookup succeeded
       resolvedProjectId = info.projectId;
       projectName       = info.name    || 'Site Project';
       projectAddress    = info.address || '';
     } else {
-      // Worker's own phone: token not in localStorage — use token as projectId fallback
-      resolvedProjectId = token;
-      projectName       = 'Site Project';
+      resolvedProjectId = token;   // worker's own device — fallback
+      projectName       = 'Site';
       projectAddress    = '';
     }
   }
@@ -468,101 +350,190 @@
   if (!token) {
     show('screen-notfound');
   } else {
-    document.getElementById('project-band').style.display = 'flex';
-    document.getElementById('project-name-display').textContent = projectName;
-    document.getElementById('project-addr-display').textContent = projectAddress;
+    // Show project band on form and sub-screens
+    $('project-band').style.display        = 'flex';
+    $('project-name-display').textContent  = projectName;
+    $('project-addr-display').textContent  = projectAddress;
+    $('ai-project-name').textContent       = projectName;
+    $('ai-project-addr').textContent       = projectAddress;
+    if (projectName) $('project-band-ai').style.display = 'flex';
+    $('s-project-band-name').textContent   = projectName;
+    $('s-project-band-addr').textContent   = projectAddress;
+    if (projectName) $('project-band-s').style.display = 'flex';
     show('screen-form');
   }
 
   // ── Worker type selector ──
+  const TYPE_LABELS = {
+    subcontractor: 'Subcontractor', employee: 'Employee', contractor: 'Contractor',
+    'labour-hire': 'Contractor', visitor: 'Visitor', inspector: 'Inspector',
+    supplier: 'Supplier / Delivery', other: 'Other',
+  };
+  const COMPANY_REQUIRED = new Set(['subcontractor','contractor','labour-hire','supplier','inspector']);
+  const TRADE_REQUIRED   = new Set(['subcontractor','contractor','labour-hire']);
+
   let selectedType = 'subcontractor';
+
   document.querySelectorAll('.type-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       selectedType = btn.dataset.type;
+      updateFieldRequirements();
     });
   });
 
-  // ── Optional GPS toggle ──
-  const gpsToggle = document.getElementById('opt-gps-toggle');
-  const gpsBody = document.getElementById('opt-gps-body');
-  gpsToggle.addEventListener('click', () => {
-    const open = gpsBody.classList.toggle('open');
-    gpsToggle.classList.toggle('open', open);
+  function updateFieldRequirements() {
+    const compReq = COMPANY_REQUIRED.has(selectedType);
+    const tradeReq = TRADE_REQUIRED.has(selectedType);
+    $('f-company-req').style.display = compReq ? '' : 'none';
+    $('f-company-opt').style.display = compReq ? 'none' : '';
+    $('f-trade-req').style.display   = tradeReq ? '' : 'none';
+    $('f-trade-opt').style.display   = tradeReq ? 'none' : '';
+  }
+  updateFieldRequirements();
+
+  // ── GPS toggle ──
+  $('opt-gps-toggle').addEventListener('click', () => {
+    const open = $('opt-gps-body').classList.toggle('open');
+    $('opt-gps-toggle').classList.toggle('open', open);
   });
 
-  // ── GPS capture ──
   let capturedGPS = null;
-  document.getElementById('gps-btn').addEventListener('click', () => {
-    const btn = document.getElementById('gps-btn');
-    const status = document.getElementById('gps-status');
+  $('gps-btn').addEventListener('click', () => {
+    const btn = $('gps-btn');
+    const status = $('gps-status');
     btn.textContent = '⏳ Getting location…';
     navigator.geolocation.getCurrentPosition(
       pos => {
         capturedGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
         btn.className = 'gps-btn captured';
-        btn.textContent = '✓ Location captured';
+        btn.textContent = '✓ Location shared';
         status.textContent = `±${Math.round(pos.coords.accuracy)}m accuracy`;
       },
-      err => {
-        btn.textContent = '📍 Tap to record GPS location';
-        status.textContent = 'Location unavailable — that\'s OK';
+      () => {
+        btn.textContent = '📍 Tap to share GPS location';
+        status.textContent = 'Location unavailable — you can still sign in without it.';
       },
       { timeout: 8000, enableHighAccuracy: true }
     );
   });
 
+  // ── Validation helpers ──
+  function showHint(id, show) {
+    const el = $(id);
+    if (!el) return;
+    el.classList.toggle('show', show);
+  }
+  function setError(inputId, hintId, hasError) {
+    const input = $(inputId);
+    if (input) input.classList.toggle('error', hasError);
+    showHint(hintId, hasError);
+    return hasError;
+  }
+
+  function validateForm() {
+    const name    = $('f-name').value.trim();
+    const company = $('f-company').value.trim();
+    const trade   = $('f-trade').value.trim();
+    let valid = true;
+    if (setError('f-name', 'f-name-hint', name.length < 2)) valid = false;
+    if (COMPANY_REQUIRED.has(selectedType) && setError('f-company', 'f-company-hint', !company)) valid = false;
+    if (TRADE_REQUIRED.has(selectedType)   && setError('f-trade',   'f-trade-hint',   !trade))   valid = false;
+    return valid;
+  }
+
+  // ── Already signed in state ──
+  let duplicateRecord = null;
+
+  function showAlreadyIn(rec) {
+    duplicateRecord = rec;
+    $('ai-name').textContent = rec.name;
+    $('ai-project').textContent = rec.projectName || projectName;
+    $('ai-timein').textContent = new Date(rec.timeIn).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+    if (rec.trade) {
+      $('ai-trade').textContent = rec.trade;
+    } else {
+      $('ai-trade-row').style.display = 'none';
+    }
+    show('screen-already-in');
+  }
+
+  $('ai-btn-checkout').addEventListener('click', () => {
+    if (duplicateRecord) {
+      location.href = `checkout.html?id=${encodeURIComponent(duplicateRecord.id)}`;
+    }
+  });
+
+  $('ai-btn-different').addEventListener('click', () => {
+    duplicateRecord = null;
+    $('f-name').value = '';
+    $('f-mobile').value = '';
+    show('screen-form');
+  });
+
   // ── Form submit ──
   document.getElementById('checkin-form').addEventListener('submit', e => {
     e.preventDefault();
-    const name = document.getElementById('f-name').value.trim();
-    const errEl = document.getElementById('ci-error');
-    if (!name) {
-      errEl.textContent = 'Please enter your full name.';
-      errEl.style.display = 'block';
-      document.getElementById('f-name').focus();
+    $('ci-error').style.display = 'none';
+
+    if (!validateForm()) {
+      $('f-name').scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    errEl.style.display = 'none';
+
+    const name   = $('f-name').value.trim();
+    const mobile = $('f-mobile').value.trim();
+
+    // Duplicate check
+    const dup = attendanceStore.findDuplicate(resolvedProjectId, token, name, mobile);
+    if (dup) {
+      showAlreadyIn(dup);
+      return;
+    }
 
     const id = attendanceStore.checkIn({
       projectId:    resolvedProjectId,
       checkinToken: token,
       projectName,
       name,
-      company:     document.getElementById('f-company').value.trim(),
-      trade:       document.getElementById('f-trade').value.trim(),
-      mobile:      document.getElementById('f-mobile').value.trim(),
-      type:        selectedType,
-      gps:         capturedGPS,
-      checkedInBy: 'self',
+      company:      $('f-company').value.trim(),
+      trade:        $('f-trade').value.trim(),
+      mobile,
+      type:         selectedType,
+      gps:          capturedGPS,
+      checkedInBy:  'self',
     });
 
-    const rec = attendanceStore.get(id);
+    const rec     = attendanceStore.get(id);
     const timeStr = new Date(rec.timeIn).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
 
-    document.getElementById('s-name').textContent = name;
-    document.getElementById('s-sub').textContent = `You're checked in at ${projectName}.`;
-    document.getElementById('s-project').textContent = projectName;
-    document.getElementById('s-timein').textContent = timeStr;
-    document.getElementById('s-trade').textContent = rec.trade || '—';
-    document.getElementById('s-type').textContent = { subcontractor:'Subcontractor', employee:'Employee', 'labour-hire':'Labour Hire', visitor:'Visitor', inspector:'Inspector', supplier:'Supplier' }[rec.type] || rec.type;
-    document.getElementById('s-attid').textContent = id.split('-').slice(-2).join('-');
+    $('s-name').textContent    = name;
+    $('s-project').textContent = projectName;
+    $('s-timein').textContent  = timeStr;
+    $('s-trade').textContent   = rec.trade  || '—';
+    $('s-type').textContent    = TYPE_LABELS[rec.type] || rec.type;
 
-    document.getElementById('btn-checkout-now').onclick = () => {
+    if (projectAddress) {
+      $('s-addr').textContent     = projectAddress;
+      $('s-addr-row').style.display = 'flex';
+    }
+
+    $('btn-checkout-now').onclick = () => {
       location.href = `checkout.html?id=${encodeURIComponent(id)}`;
     };
 
-    document.getElementById('btn-checkin-another').onclick = () => {
-      document.getElementById('f-name').value = '';
-      document.getElementById('f-company').value = '';
-      document.getElementById('f-trade').value = '';
-      document.getElementById('f-mobile').value = '';
+    $('btn-checkin-another').onclick = () => {
+      duplicateRecord = null;
       capturedGPS = null;
+      $('f-name').value    = '';
+      $('f-company').value = '';
+      $('f-trade').value   = '';
+      $('f-mobile').value  = '';
       document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
       document.querySelector('[data-type="subcontractor"]').classList.add('selected');
       selectedType = 'subcontractor';
+      updateFieldRequirements();
       show('screen-form');
     };
 

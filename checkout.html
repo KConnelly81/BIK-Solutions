@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <meta name="robots" content="noindex" />
-  <title>Site Check-Out — BIK Business Toolkit</title>
+  <title>Site Sign-Out — BIK Solutions</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -19,29 +19,44 @@
     .ci-header-sub { font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:2px; }
     .screen { display:none; }
     .screen.active { display:block; }
+
+    /* Form layout */
     .co-form { padding:20px;max-width:480px;margin:0 auto; }
     .ci-step-label { font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--coral);margin-bottom:6px; }
     .ci-step-title { font-size:1.1rem;font-weight:800;color:var(--charcoal);margin-bottom:20px;line-height:1.2; }
+
+    /* Worker card */
     .worker-card { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px; }
     .wc-name { font-size:1.1rem;font-weight:800;color:var(--charcoal);margin-bottom:4px; }
     .wc-meta { font-size:0.8rem;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap; }
     .wc-time { background:var(--paper);border-radius:6px;padding:12px;margin-top:12px;font-size:0.82rem;color:var(--muted); }
     .wc-time strong { color:var(--charcoal); }
+
+    /* Time display */
     .time-display { text-align:center;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px; }
     .td-label { font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px; }
     .td-time { font-size:2rem;font-weight:800;color:var(--charcoal);letter-spacing:-0.02em;font-variant-numeric:tabular-nums; }
+
+    /* Fields */
     .field { margin-bottom:16px; }
     .field label { display:block;font-size:0.78rem;font-weight:700;color:var(--charcoal);margin-bottom:6px; }
-    .field textarea { width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:0.95rem;font-family:inherit;background:#fff;color:var(--text);resize:vertical;min-height:80px;outline:none; }
-    .field textarea:focus { border-color:var(--coral); }
+    .field label .opt { font-size:0.72rem;font-weight:400;color:#888; }
+    .field input, .field select, .field textarea {
+      width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius);
+      font-size:1rem;font-family:inherit;background:#fff;color:var(--text);outline:none;
+    }
+    .field textarea { resize:vertical;min-height:80px;font-size:0.95rem; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--coral); }
+    .field input::placeholder { color:#aaa; }
+
+    /* Buttons */
     .btn-primary { width:100%;background:var(--coral);color:#fff;border:none;border-radius:var(--radius);padding:18px;font-size:1.05rem;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:background 0.15s; }
     .btn-primary:hover { background:var(--coral-dark); }
     .btn-secondary { width:100%;background:transparent;color:var(--charcoal);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:inherit;margin-top:10px; }
-    /* Manual lookup */
-    .lookup-form { padding:20px;max-width:480px;margin:0 auto; }
-    .field input { width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:1rem;font-family:inherit;background:#fff;color:var(--text);outline:none; }
-    .field input:focus { border-color:var(--coral); }
+
+    /* Error */
     .ci-error { background:#fff5f5;border:1.5px solid #fbb;border-radius:var(--radius);padding:14px 16px;font-size:0.84rem;color:#c00;margin-bottom:16px;display:none; }
+
     /* Success */
     .success-screen { padding:40px 20px;max-width:480px;margin:0 auto;text-align:center; }
     .success-icon { width:72px;height:72px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem; }
@@ -51,6 +66,14 @@
     .hb-label { font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:6px; }
     .hb-value { font-size:2.5rem;font-weight:900;color:#fff;font-variant-numeric:tabular-nums; }
     .hb-unit { font-size:0.9rem;color:rgba(255,255,255,0.5);margin-top:2px; }
+    .hb-note { font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:6px; }
+
+    /* Multi-match list */
+    .match-list { display:flex;flex-direction:column;gap:8px;margin-bottom:20px; }
+    .match-card { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:border-color 0.15s; }
+    .match-card:hover { border-color:var(--coral); }
+    .match-card .mc-name { font-size:0.92rem;font-weight:700;color:var(--charcoal); }
+    .match-card .mc-meta { font-size:0.78rem;color:var(--muted);margin-top:3px; }
   </style>
 </head>
 <body>
@@ -58,7 +81,7 @@
 <header class="ci-header">
   <div class="ci-logo-mark">B</div>
   <div>
-    <div class="ci-header-title">BIK Site Check-Out</div>
+    <div class="ci-header-title">BIK Site Sign-Out</div>
     <div class="ci-header-sub" id="co-header-time"></div>
   </div>
 </header>
@@ -68,28 +91,42 @@
 
 <!-- Manual lookup (no id in URL) -->
 <div id="screen-lookup" class="screen">
-  <div class="lookup-form">
-    <div class="ci-step-label">Check out</div>
-    <div class="ci-step-title">Enter your name to check out</div>
+  <div class="co-form">
+    <div class="ci-step-label">Sign out</div>
+    <div class="ci-step-title">Find your sign-in record</div>
     <div class="field">
-      <label>Full name</label>
-      <input type="text" id="lookup-name" placeholder="John Smith" autocomplete="name" />
+      <label for="lookup-name">Full name <span style="font-size:0.72rem;font-weight:400;color:#888;">(as you signed in with)</span></label>
+      <input type="text" id="lookup-name" placeholder="John Smith" autocomplete="name" autocapitalize="words" />
     </div>
     <div class="field">
-      <label>Project name (optional)</label>
-      <input type="text" id="lookup-project" placeholder="Smith Residence" />
+      <label for="lookup-mobile">Mobile number <span style="font-size:0.72rem;font-weight:400;color:#888;">(if you entered it at sign-in)</span></label>
+      <input type="tel" id="lookup-mobile" placeholder="0400 000 000" autocomplete="tel" inputmode="tel" />
     </div>
     <div class="ci-error" id="lookup-error"></div>
     <button class="btn-primary" id="btn-lookup">
-      Find my check-in →
+      Find my sign-in →
     </button>
+    <div style="margin-top:16px;font-size:0.78rem;color:#888;text-align:center;line-height:1.6">
+      Can't find your record? Ask your site supervisor for assistance.
+    </div>
+  </div>
+</div>
+
+<!-- Multiple matches — ask for confirmation -->
+<div id="screen-matches" class="screen">
+  <div class="co-form">
+    <div class="ci-step-label">Sign out</div>
+    <div class="ci-step-title">Select your record</div>
+    <p style="font-size:0.84rem;color:var(--muted);margin-bottom:20px;line-height:1.5">Multiple sign-in records were found. Please select yours to continue.</p>
+    <div class="match-list" id="match-list"></div>
+    <button class="btn-secondary" id="btn-matches-back">Go back</button>
   </div>
 </div>
 
 <!-- Confirm check-out -->
 <div id="screen-checkout" class="screen">
   <div class="co-form">
-    <div class="ci-step-label">Check out</div>
+    <div class="ci-step-label">Sign out</div>
     <div class="ci-step-title">Confirm your departure</div>
 
     <div class="worker-card">
@@ -99,17 +136,17 @@
         <span id="co-trade"></span>
       </div>
       <div class="wc-time">
-        Checked in at <strong id="co-timein"></strong> on <strong id="co-project"></strong>
+        Signed in at <strong id="co-timein"></strong> · <strong id="co-project"></strong>
       </div>
     </div>
 
     <div class="time-display">
-      <div class="td-label">Time Out</div>
+      <div class="td-label">Sign-out time</div>
       <div class="td-time" id="live-time">--:--</div>
     </div>
 
     <div class="field">
-      <label>Notes <span style="font-size:0.72rem;font-weight:400;color:#888;">(optional)</span></label>
+      <label for="co-notes">Notes <span class="opt">(optional)</span></label>
       <textarea id="co-notes" placeholder="Any notes about today's work, delays, or site conditions…"></textarea>
     </div>
 
@@ -117,9 +154,25 @@
 
     <button class="btn-primary" id="btn-checkout">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-      Confirm Check-Out
+      Confirm Sign-Out
     </button>
     <button class="btn-secondary" id="btn-wrong">That's not me</button>
+  </div>
+</div>
+
+<!-- Already checked out -->
+<div id="screen-already-out" class="screen">
+  <div class="success-screen">
+    <div class="success-icon" style="background:#888">✓</div>
+    <div class="success-name" id="ao-name"></div>
+    <div class="success-sub">You have already been signed out.</div>
+    <div class="hours-badge">
+      <div class="hb-label">Recorded site hours</div>
+      <div class="hb-value" id="ao-hours">—</div>
+      <div class="hb-unit">hours</div>
+      <div class="hb-note">Recorded site hours reflect sign-in and sign-out times and are not automatically approved payroll or billable hours.</div>
+    </div>
+    <button class="btn-secondary" onclick="location.href='checkin.html'">Back to sign-in</button>
   </div>
 </div>
 
@@ -128,14 +181,15 @@
   <div class="success-screen">
     <div class="success-icon">✓</div>
     <div class="success-name" id="s-name"></div>
-    <div class="success-sub" id="s-sub">You've been checked out. See you next time.</div>
+    <div class="success-sub" id="s-sub">You've been signed out. See you next time.</div>
     <div class="hours-badge">
-      <div class="hb-label">Time on site</div>
+      <div class="hb-label">Recorded site hours</div>
       <div class="hb-value" id="s-hours">—</div>
       <div class="hb-unit">hours</div>
+      <div class="hb-note">Recorded site hours reflect sign-in and sign-out times and are not automatically approved payroll or billable hours.</div>
     </div>
-    <button class="btn-secondary" id="btn-home" onclick="location.href='checkin.html'">
-      Back to check-in
+    <button class="btn-secondary" onclick="location.href='checkin.html'">
+      Back to sign-in
     </button>
   </div>
 </div>
@@ -143,10 +197,12 @@
 <script type="module">
   import { attendanceStore } from './js/toolkit/attendance-store.js';
 
+  const $ = id => document.getElementById(id);
+
   function updateClock() {
     const t = new Date().toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
-    const el = document.getElementById('live-time');
-    const he = document.getElementById('co-header-time');
+    const el = $('live-time');
+    const he = $('co-header-time');
     if (el) el.textContent = t;
     if (he) he.textContent = new Date().toLocaleDateString('en-AU', { weekday:'short', day:'numeric', month:'long' });
   }
@@ -155,7 +211,7 @@
 
   function show(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById(id)?.classList.add('active');
+    $(id)?.classList.add('active');
   }
 
   const params = new URLSearchParams(location.search);
@@ -165,22 +221,28 @@
 
   function populateCheckout(rec) {
     currentRecord = rec;
-    document.getElementById('co-name').textContent    = rec.name;
-    document.getElementById('co-company').textContent = rec.company || '';
-    document.getElementById('co-trade').textContent   = rec.trade   || '';
-    document.getElementById('co-project').textContent = rec.projectName || 'the site';
-    document.getElementById('co-timein').textContent  = new Date(rec.timeIn).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+    $('co-name').textContent    = rec.name;
+    $('co-company').textContent = rec.company || '';
+    $('co-trade').textContent   = rec.trade   || '';
+    $('co-project').textContent = rec.projectName || 'this site';
+    $('co-timein').textContent  = new Date(rec.timeIn).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+    $('co-notes').value = '';
     show('screen-checkout');
   }
 
+  function showAlreadyOut(rec) {
+    $('ao-name').textContent  = rec.name;
+    $('ao-hours').textContent = rec.hoursOnSite != null ? rec.hoursOnSite.toFixed(2) : '—';
+    show('screen-already-out');
+  }
+
+  // ── Direct link via ?id= ──
   if (attId) {
     const rec = attendanceStore.get(attId);
-    if (!rec) { show('screen-lookup'); }
-    else if (rec.timeOut) {
-      // Already checked out — show success with existing data
-      document.getElementById('s-name').textContent  = rec.name;
-      document.getElementById('s-hours').textContent = rec.hoursOnSite != null ? rec.hoursOnSite.toFixed(2) : '—';
-      show('screen-success');
+    if (!rec) {
+      show('screen-lookup');
+    } else if (rec.timeOut || rec.status === 'checked-out') {
+      showAlreadyOut(rec);
     } else {
       populateCheckout(rec);
     }
@@ -188,48 +250,76 @@
     show('screen-lookup');
   }
 
-  // Manual lookup
-  document.getElementById('btn-lookup').addEventListener('click', () => {
-    const name    = document.getElementById('lookup-name').value.trim();
-    const projHint = document.getElementById('lookup-project').value.trim().toLowerCase();
-    const errEl   = document.getElementById('lookup-error');
-    if (!name) { errEl.textContent = 'Please enter your name.'; errEl.style.display='block'; return; }
+  // ── Manual lookup ──
+  $('btn-lookup').addEventListener('click', () => {
+    const name    = $('lookup-name').value.trim();
+    const mobile  = $('lookup-mobile').value.trim();
+    const errEl   = $('lookup-error');
+    errEl.style.display = 'none';
 
-    const all = JSON.parse(localStorage.getItem('bik-attendance') || '[]');
-    const matches = all.filter(r =>
-      !r.timeOut &&
-      r.name.toLowerCase() === name.toLowerCase() &&
-      (!projHint || (r.projectName || '').toLowerCase().includes(projHint))
-    );
-
-    if (!matches.length) {
-      errEl.textContent = 'No active check-in found for that name. Please check your spelling or ask the site supervisor.';
-      errEl.style.display='block';
+    if (!name && !mobile) {
+      errEl.textContent = 'Please enter your name or mobile number.';
+      errEl.style.display = 'block';
       return;
     }
-    errEl.style.display='none';
-    populateCheckout(matches[0]);
+
+    const matches = attendanceStore.findActiveByLookup(name, mobile);
+
+    if (!matches.length) {
+      errEl.textContent = 'No active sign-in found. Please check your name and mobile number, or ask the site supervisor.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    if (matches.length === 1) {
+      populateCheckout(matches[0]);
+      return;
+    }
+
+    // Multiple matches — show confirmation list without exposing full roster
+    $('match-list').innerHTML = matches.map((r, i) => `
+      <div class="match-card" data-idx="${i}">
+        <div class="mc-name">${r.name}</div>
+        <div class="mc-meta">${r.projectName || 'Site'} · Signed in at ${new Date(r.timeIn).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' })}</div>
+      </div>
+    `).join('');
+
+    document.querySelectorAll('.match-card').forEach((card, i) => {
+      card.addEventListener('click', () => populateCheckout(matches[i]));
+    });
+
+    window._lookupMatches = matches;
+    show('screen-matches');
   });
 
-  // Confirm check-out
-  document.getElementById('btn-checkout').addEventListener('click', () => {
+  $('btn-matches-back').addEventListener('click', () => show('screen-lookup'));
+
+  // ── Confirm sign-out ──
+  $('btn-checkout').addEventListener('click', () => {
     if (!currentRecord) return;
-    const notes = document.getElementById('co-notes').value.trim();
+    const notes = $('co-notes').value.trim();
     const ok = attendanceStore.checkOut(currentRecord.id, { notes });
     if (!ok) {
-      document.getElementById('co-error').textContent = 'Unable to record check-out. Please try again.';
-      document.getElementById('co-error').style.display = 'block';
+      $('co-error').textContent = 'Unable to record sign-out. The sign-out time may be before the sign-in time.';
+      $('co-error').style.display = 'block';
       return;
     }
     const updated = attendanceStore.get(currentRecord.id);
-    document.getElementById('s-name').textContent  = updated.name;
-    document.getElementById('s-hours').textContent = updated.hoursOnSite != null ? updated.hoursOnSite.toFixed(2) : '—';
+    $('s-name').textContent  = updated.name;
+    $('s-sub').textContent   = `Signed out from ${updated.projectName || 'the site'}. See you next time.`;
+    $('s-hours').textContent = updated.hoursOnSite != null ? updated.hoursOnSite.toFixed(2) : '—';
     show('screen-success');
   });
 
-  document.getElementById('btn-wrong').addEventListener('click', () => {
+  $('btn-wrong').addEventListener('click', () => {
     currentRecord = null;
+    $('co-error').style.display = 'none';
     show('screen-lookup');
+  });
+
+  // Allow pressing Enter in lookup fields
+  [$('lookup-name'), $('lookup-mobile')].forEach(el => {
+    el?.addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-lookup').click(); });
   });
 </script>
 

@@ -4,54 +4,66 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex" />
-  <title>Site Attendance — BIK Business Toolkit</title>
+  <title>Site Attendance — BIK Solutions</title>
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    /* ── Layout ── */
-    .att-shell { display:flex; flex-direction:column; min-height:100vh; background:#f5f0e8; }
-    .att-header { background:#252320; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-    .att-header-left { display:flex; align-items:center; gap:12px; }
+    /* ── Shell ── */
+    .att-shell { display:flex;flex-direction:column;min-height:100vh;background:#f5f0e8; }
+    .att-header { background:#252320;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap; }
+    .att-header-left { display:flex;align-items:center;gap:12px; }
     .att-logo-mark { width:32px;height:32px;background:#D85A30;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;color:#fff;flex-shrink:0; }
     .att-header-title { font-size:0.9rem;font-weight:700;color:#fff; }
     .att-header-back { font-size:0.72rem;color:rgba(255,255,255,0.45);text-decoration:none; }
     .att-header-back:hover { color:#fff; }
+    .att-header-actions { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
 
-    /* Project selector */
-    .att-project-bar { background:#1a1816; padding:10px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    /* Project bar */
+    .att-project-bar { background:#1a1816;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap; }
     .att-project-label { font-size:0.72rem;color:rgba(255,255,255,0.4);white-space:nowrap; }
     .att-project-select { background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:7px 12px;border-radius:6px;font-size:0.82rem;font-family:inherit;outline:none;flex:1;max-width:360px; }
     .att-date-input { background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:7px 12px;border-radius:6px;font-size:0.82rem;font-family:inherit;outline:none; }
-    .att-project-bar .spacer { flex:1; }
-    .qr-btn { background:#D85A30;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px; }
 
-    /* ── Tab bar ── */
-    .att-tabs { background:#fff;border-bottom:1px solid #e8e4de;padding:0 20px;display:flex;gap:0; }
+    /* Header action buttons */
+    .qr-btn { background:#D85A30;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px; }
+    .rollcall-btn { background:#b45309;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px; }
+
+    /* Tabs */
+    .att-tabs { background:#fff;border-bottom:1px solid #e8e4de;padding:0 20px;display:flex;gap:0;overflow-x:auto; }
     .att-tab { padding:13px 18px;font-size:0.82rem;font-weight:600;color:#888;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;white-space:nowrap; }
     .att-tab.active { color:#D85A30;border-bottom-color:#D85A30; }
 
-    /* ── Body ── */
+    /* Body */
     .att-body { padding:20px;flex:1; }
     .att-tab-content { display:none; }
     .att-tab-content.active { display:block; }
 
-    /* ── Stats row ── */
-    .att-stats { display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:20px; }
-    .att-stat { background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:14px 16px; }
-    .att-stat-val { font-size:1.6rem;font-weight:900;color:#252320;font-variant-numeric:tabular-nums;line-height:1; }
-    .att-stat-label { font-size:0.72rem;color:#888;margin-top:4px; }
+    /* Stats row */
+    .att-stats { display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:20px; }
+    .att-stat { background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:12px 14px; }
+    .att-stat-val { font-size:1.5rem;font-weight:900;color:#252320;font-variant-numeric:tabular-nums;line-height:1; }
+    .att-stat-label { font-size:0.7rem;color:#888;margin-top:4px;line-height:1.3; }
     .att-stat.highlight .att-stat-val { color:#D85A30; }
+    .att-stat.warning .att-stat-val { color:#b45309; }
+    .att-stat.green .att-stat-val { color:#2e7d32; }
+    .att-stat-tip { font-size:0.65rem;color:#aaa;margin-top:2px; }
 
-    /* ── Cards / table ── */
-    .att-section-label { font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:10px;margin-top:20px; }
+    /* Section labels */
+    .att-section-label { font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:10px;margin-top:20px;display:flex;align-items:center;justify-content:space-between; }
     .att-section-label:first-child { margin-top:0; }
+
+    /* Cards */
     .att-card-list { display:flex;flex-direction:column;gap:8px; }
-    .att-card { background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:14px 16px;display:flex;align-items:center;gap:14px; }
-    .att-card-avatar { width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#fff;flex-shrink:0; }
+    .att-card { background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:14px 16px; }
+    .att-card.checkout-required { border-left:4px solid #b45309; }
+    .att-card.voided { opacity:0.5; }
+    .att-card-top { display:flex;align-items:center;gap:12px; }
+    .att-card-avatar { width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.88rem;font-weight:700;color:#fff;flex-shrink:0; }
     .att-card-avatar.on-site { background:#2e7d32; }
     .att-card-avatar.left { background:#888; }
     .att-card-avatar.visitor { background:#1565c0; }
+    .att-card-avatar.warn { background:#b45309; }
     .att-card-body { flex:1;min-width:0; }
-    .att-card-name { font-size:0.88rem;font-weight:700;color:#252320;margin-bottom:2px; }
+    .att-card-name { font-size:0.88rem;font-weight:700;color:#252320;margin-bottom:2px;display:flex;align-items:center;gap:6px; }
     .att-card-meta { font-size:0.75rem;color:#888;display:flex;gap:8px;flex-wrap:wrap; }
     .att-card-meta span { white-space:nowrap; }
     .att-card-right { text-align:right;flex-shrink:0; }
@@ -59,16 +71,28 @@
     .att-badge.on-site { background:#e8f5e9;color:#2e7d32; }
     .att-badge.left { background:#f0ece6;color:#888; }
     .att-badge.visitor { background:#e3f2fd;color:#1565c0; }
-    .att-time { font-size:0.78rem;color:#888;margin-top:3px;font-variant-numeric:tabular-nums; }
+    .att-badge.warn { background:#fef3c7;color:#b45309; }
+    .att-badge.voided { background:#f0ece6;color:#888;text-decoration:line-through; }
+    .att-badge.corrected { background:#e8f0ff;color:#1a56db;font-size:0.62rem; }
+    .att-time { font-size:0.75rem;color:#888;margin-top:3px;font-variant-numeric:tabular-nums; }
     .att-hours { font-size:0.82rem;font-weight:700;color:#252320; }
-    .checkout-btn { background:#f5f0e8;border:1px solid #e8e4de;border-radius:6px;padding:6px 10px;font-size:0.75rem;font-weight:600;color:#252320;cursor:pointer;font-family:inherit;white-space:nowrap; }
-    .checkout-btn:hover { background:#e8e4de; }
+
+    /* Card action buttons */
+    .att-card-actions { display:flex;gap:6px;margin-top:10px;flex-wrap:wrap; }
+    .act-btn { background:#f5f0e8;border:1px solid #e8e4de;border-radius:6px;padding:5px 10px;font-size:0.72rem;font-weight:600;color:#252320;cursor:pointer;font-family:inherit;white-space:nowrap;display:flex;align-items:center;gap:4px; }
+    .act-btn:hover { background:#e8e4de; }
+    .act-btn.primary { background:#D85A30;color:#fff;border-color:#D85A30; }
+    .act-btn.primary:hover { background:#b84a24; }
+    .act-btn.danger { color:#c00;border-color:#fbb; }
+    .act-btn.danger:hover { background:#fff5f5; }
+
+    /* Empty state */
     .empty-state { text-align:center;padding:40px 20px;color:#888;font-size:0.85rem;line-height:1.7; }
 
-    /* ── QR Modal ── */
-    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px; }
+    /* QR Modal */
+    .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto; }
     .modal-overlay.open { display:flex; }
-    .modal { background:#fff;border-radius:12px;padding:28px;max-width:360px;width:100%;text-align:center; }
+    .modal { background:#fff;border-radius:12px;padding:28px;max-width:400px;width:100%;text-align:center;margin:auto; }
     .modal h3 { font-size:1rem;font-weight:800;color:#252320;margin-bottom:6px; }
     .modal p { font-size:0.82rem;color:#666;margin-bottom:20px;line-height:1.6; }
     .modal canvas { border:1px solid #e8e4de;border-radius:8px;margin-bottom:16px; }
@@ -76,23 +100,54 @@
     .modal-close { background:#252320;color:#fff;border:none;border-radius:7px;padding:10px 20px;font-size:0.82rem;font-weight:700;cursor:pointer;font-family:inherit; }
     .modal-copy { background:#f5f0e8;border:1px solid #e8e4de;color:#252320;border-radius:7px;padding:10px 20px;font-size:0.82rem;font-weight:600;cursor:pointer;font-family:inherit;margin-right:8px; }
 
-    /* ── Reports ── */
-    .report-actions { display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px; }
-    .report-btn { background:#fff;border:1px solid #e8e4de;border-radius:7px;padding:10px 16px;font-size:0.82rem;font-weight:600;color:#252320;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px; }
-    .report-btn:hover { background:#f5f0e8; }
+    /* Edit modal */
+    #edit-modal .modal { max-width:480px;text-align:left; }
+    .edit-field { margin-bottom:14px; }
+    .edit-field label { display:block;font-size:0.76rem;font-weight:700;color:#252320;margin-bottom:5px; }
+    .edit-field input, .edit-field select, .edit-field textarea {
+      width:100%;padding:10px 12px;border:1.5px solid #e2d9cc;border-radius:8px;
+      font-size:0.9rem;font-family:inherit;background:#fff;color:#252320;outline:none;
+    }
+    .edit-field input:focus, .edit-field select:focus, .edit-field textarea:focus { border-color:#D85A30; }
+    .edit-field-row { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+    .edit-modal-footer { display:flex;gap:8px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap; }
+    .edit-save-btn { background:#D85A30;color:#fff;border:none;border-radius:7px;padding:10px 20px;font-size:0.84rem;font-weight:700;cursor:pointer;font-family:inherit; }
+    .edit-cancel-btn { background:#f5f0e8;border:1px solid #e8e4de;color:#252320;border-radius:7px;padding:10px 20px;font-size:0.84rem;font-weight:600;cursor:pointer;font-family:inherit; }
+    .edit-reason-note { font-size:0.72rem;color:#888;margin-top:4px; }
 
-    /* ── Register table ── */
+    /* Audit modal */
+    #audit-modal .modal { max-width:480px;text-align:left; }
+    .audit-entry { padding:12px 0;border-bottom:1px solid #e8e4de; }
+    .audit-entry:last-child { border-bottom:none; }
+    .audit-ts { font-size:0.72rem;color:#888;margin-bottom:4px; }
+    .audit-reason { font-size:0.8rem;font-weight:700;color:#252320;margin-bottom:4px; }
+    .audit-change { font-size:0.76rem;color:#555;margin-top:3px; }
+    .audit-change .from { color:#c00;text-decoration:line-through; }
+    .audit-change .to { color:#2e7d32; }
+
+    /* Workforce Register table */
     .reg-table { width:100%;border-collapse:collapse;font-size:0.8rem;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e8e4de; }
     .reg-table th { background:#f5f0e8;padding:10px 14px;text-align:left;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#888;border-bottom:1px solid #e8e4de; }
     .reg-table td { padding:10px 14px;border-bottom:1px solid #f0ece6;color:#444;vertical-align:top; }
     .reg-table tr:last-child td { border-bottom:none; }
-    .reg-table td strong { color:#252320; }
+
+    /* Reports */
+    .report-actions { display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px; }
+    .report-btn { background:#fff;border:1px solid #e8e4de;border-radius:7px;padding:10px 16px;font-size:0.82rem;font-weight:600;color:#252320;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px; }
+    .report-btn:hover { background:#f5f0e8; }
+    .demo-section { background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:16px;margin-top:20px; }
+    .demo-section h4 { font-size:0.78rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px; }
+
+    /* Void banner */
+    .void-section { margin-top:16px; }
+    .void-section .att-section-label { color:#bbb; }
 
     @media (max-width:600px) {
       .att-stats { grid-template-columns:1fr 1fr; }
       .att-header { padding:12px 16px; }
-      .att-body { padding:16px; }
+      .att-body { padding:14px; }
       .reg-table { display:block;overflow-x:auto; }
+      .modal { padding:20px; }
     }
   </style>
 </head>
@@ -108,10 +163,13 @@
         <a href="dashboard.html" class="att-header-back">← Dashboard</a>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px">
+    <div class="att-header-actions">
+      <button class="rollcall-btn" id="btn-rollcall" disabled title="Emergency roll call — on-site workers only">
+        🚨 Roll Call
+      </button>
       <button class="qr-btn" id="btn-show-qr" disabled>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3m0 4h4V14h-4m-3 7h3"/></svg>
-        Show QR Code
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3m0 4h4V14h-4m-3 7h3"/></svg>
+        QR Code
       </button>
     </div>
   </div>
@@ -137,10 +195,27 @@
     <div id="tab-today" class="att-tab-content active">
 
       <div class="att-stats" id="stats-row">
-        <div class="att-stat highlight"><div class="att-stat-val" id="stat-onsite">0</div><div class="att-stat-label">On site now</div></div>
-        <div class="att-stat"><div class="att-stat-val" id="stat-left">0</div><div class="att-stat-label">Checked out</div></div>
-        <div class="att-stat"><div class="att-stat-val" id="stat-total">0</div><div class="att-stat-label">Total today</div></div>
-        <div class="att-stat"><div class="att-stat-val" id="stat-hours">0.0</div><div class="att-stat-label">Labour hours</div></div>
+        <div class="att-stat highlight">
+          <div class="att-stat-val" id="stat-onsite">0</div>
+          <div class="att-stat-label">On site now</div>
+        </div>
+        <div class="att-stat">
+          <div class="att-stat-val" id="stat-left">0</div>
+          <div class="att-stat-label">Checked out</div>
+        </div>
+        <div class="att-stat warning" id="stat-req-wrap" style="display:none">
+          <div class="att-stat-val" id="stat-req">0</div>
+          <div class="att-stat-label">Checkout required</div>
+        </div>
+        <div class="att-stat">
+          <div class="att-stat-val" id="stat-total">0</div>
+          <div class="att-stat-label">Total today</div>
+        </div>
+        <div class="att-stat green">
+          <div class="att-stat-val" id="stat-hours">0.0</div>
+          <div class="att-stat-label">Recorded site hrs</div>
+          <div class="att-stat-tip" title="Recorded site hours reflect check-in and check-out times and are not automatically approved payroll or billable hours.">ⓘ Not payroll</div>
+        </div>
       </div>
 
       <div id="on-site-section">
@@ -148,9 +223,19 @@
         <div class="att-card-list" id="on-site-list"></div>
       </div>
 
+      <div id="checkout-req-section" style="display:none;margin-top:4px">
+        <div class="att-section-label" style="color:#b45309">⚠ Checkout required</div>
+        <div class="att-card-list" id="checkout-req-list"></div>
+      </div>
+
       <div id="checked-out-section" style="margin-top:4px">
         <div class="att-section-label">Checked out today</div>
         <div class="att-card-list" id="checked-out-list"></div>
+      </div>
+
+      <div id="voided-section" class="void-section" style="display:none;margin-top:4px">
+        <div class="att-section-label">Voided records</div>
+        <div class="att-card-list" id="voided-list"></div>
       </div>
 
     </div>
@@ -164,7 +249,7 @@
             <tr>
               <th>Name</th><th>Company</th><th>Trade</th><th>Type</th>
               <th>Mobile</th><th>First Visit</th><th>Last Visit</th>
-              <th>Visits</th><th>Total Hrs</th>
+              <th>Visits</th><th>Recorded Site Hrs</th>
             </tr>
           </thead>
           <tbody id="register-body"></tbody>
@@ -175,35 +260,170 @@
     <!-- REPORTS TAB -->
     <div id="tab-reports" class="att-tab-content">
       <div class="report-actions">
-        <button class="report-btn" id="btn-export-daily">
-          📄 Daily Attendance CSV
-        </button>
-        <button class="report-btn" id="btn-export-register">
-          👷 Workforce Register CSV
-        </button>
-        <button class="report-btn" id="btn-print-daily">
-          🖨️ Print Daily Report
-        </button>
+        <button class="report-btn" id="btn-export-daily">📄 Daily Attendance CSV</button>
+        <button class="report-btn" id="btn-export-register">👷 Workforce Register CSV</button>
+        <button class="report-btn" id="btn-print-daily">🖨️ Print Daily Report</button>
+        <button class="report-btn" id="btn-print-qr">📋 Print QR Sign</button>
       </div>
-      <div id="report-preview" style="background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:20px;overflow-x:auto;font-size:0.82rem;color:#444;line-height:1.7;min-height:120px">
-        <span style="color:#aaa">Select a project and date, then choose a report above.</span>
+      <div id="report-preview" style="background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:20px;font-size:0.82rem;color:#888;min-height:80px">
+        Select a project and date, then choose a report above.
+      </div>
+
+      <div class="demo-section">
+        <h4>Demo &amp; testing</h4>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="report-btn" id="btn-load-demo">🧪 Load Attendance Demo Data</button>
+          <button class="report-btn" id="btn-clear-demo">🗑 Remove Demo Data</button>
+        </div>
+        <div style="font-size:0.72rem;color:#aaa;margin-top:8px">Demo data includes sample workers, checked-out records, a forgotten checkout, a visitor, and a corrected record.</div>
       </div>
     </div>
 
-  </div><!-- /.att-body -->
+  </div>
 
-</div><!-- /.att-shell -->
+</div>
 
-<!-- QR Modal -->
+<!-- QR Code modal -->
 <div class="modal-overlay" id="qr-modal">
   <div class="modal">
-    <h3>Site Check-In QR Code</h3>
-    <p>Workers scan this with their phone to check in. No app required.</p>
+    <h3>Site Sign-In QR Code</h3>
+    <p>Workers scan this with their phone to sign in. No app required.</p>
     <canvas id="qr-canvas"></canvas>
     <div class="modal-url" id="qr-url-display"></div>
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px">
       <button class="modal-copy" id="btn-copy-url">Copy link</button>
       <button class="modal-close" id="btn-close-qr">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit record modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3 id="edit-modal-title">Edit Attendance Record</h3>
+    <p style="font-size:0.78rem;color:#888;margin-bottom:16px">All changes are logged to the audit history.</p>
+
+    <div class="edit-field-row">
+      <div class="edit-field">
+        <label>Worker name</label>
+        <input type="text" id="edit-name" autocapitalize="words" />
+      </div>
+      <div class="edit-field">
+        <label>Company</label>
+        <input type="text" id="edit-company" />
+      </div>
+    </div>
+    <div class="edit-field-row">
+      <div class="edit-field">
+        <label>Trade / Role</label>
+        <input type="text" id="edit-trade" />
+      </div>
+      <div class="edit-field">
+        <label>Mobile</label>
+        <input type="tel" id="edit-mobile" />
+      </div>
+    </div>
+    <div class="edit-field">
+      <label>Worker type</label>
+      <select id="edit-type">
+        <option value="subcontractor">Subcontractor</option>
+        <option value="employee">Employee</option>
+        <option value="contractor">Contractor</option>
+        <option value="labour-hire">Labour Hire (legacy)</option>
+        <option value="visitor">Visitor</option>
+        <option value="inspector">Inspector</option>
+        <option value="supplier">Supplier / Delivery</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="edit-field-row">
+      <div class="edit-field">
+        <label>Check-in date &amp; time</label>
+        <input type="datetime-local" id="edit-timein" />
+      </div>
+      <div class="edit-field">
+        <label>Check-out date &amp; time</label>
+        <input type="datetime-local" id="edit-timeout" placeholder="Leave blank if still on site" />
+      </div>
+    </div>
+    <div class="edit-field">
+      <label>Unpaid break (minutes)</label>
+      <input type="number" id="edit-break" min="0" max="480" placeholder="0" />
+    </div>
+    <div class="edit-field">
+      <label>Notes</label>
+      <textarea id="edit-notes" rows="2"></textarea>
+    </div>
+    <div class="edit-field">
+      <label>Correction reason <span style="color:#D85A30">*</span></label>
+      <select id="edit-reason">
+        <option value="">— Select a reason —</option>
+        <option value="Worker forgot to check out">Worker forgot to check out</option>
+        <option value="Incorrect check-in time">Incorrect check-in time</option>
+        <option value="Incorrect check-out time">Incorrect check-out time</option>
+        <option value="Duplicate entry">Duplicate entry</option>
+        <option value="Entered wrong company">Entered wrong company</option>
+        <option value="Supervisor correction">Supervisor correction</option>
+        <option value="Other">Other</option>
+      </select>
+      <div class="edit-reason-note">Required before saving any change.</div>
+    </div>
+
+    <div class="edit-modal-footer">
+      <button class="edit-cancel-btn" id="edit-cancel">Cancel</button>
+      <button class="edit-save-btn" id="edit-save">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Audit history modal -->
+<div class="modal-overlay" id="audit-modal">
+  <div class="modal">
+    <h3>Change History</h3>
+    <p style="font-size:0.78rem;color:#888;margin-bottom:16px">All corrections to this record are shown below.</p>
+    <div id="audit-list" style="max-height:400px;overflow-y:auto;margin-bottom:16px"></div>
+    <div style="text-align:right">
+      <button class="modal-close" id="btn-close-audit">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Emergency Roll Call modal -->
+<div class="modal-overlay" id="rollcall-modal">
+  <div class="modal" style="max-width:560px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <h3 style="color:#b45309">🚨 Emergency Roll Call</h3>
+      <div style="display:flex;gap:8px">
+        <button class="modal-copy" id="btn-rollcall-refresh">Refresh</button>
+        <button class="modal-copy" onclick="window.print()">Print</button>
+        <button class="modal-close" id="btn-close-rollcall">Close</button>
+      </div>
+    </div>
+    <div id="rollcall-meta" style="font-size:0.78rem;color:#888;margin-bottom:16px;line-height:1.6"></div>
+    <div id="rollcall-list" style="margin-bottom:16px"></div>
+    <div style="background:#fff8e1;border:1px solid #ffe082;border-radius:7px;padding:12px;font-size:0.76rem;color:#856404;line-height:1.6">
+      ⚠️ This roll call reflects BIK sign-in records and should be verified by the site supervisor during an emergency.
+    </div>
+  </div>
+</div>
+
+<!-- Void confirmation modal -->
+<div class="modal-overlay" id="void-modal">
+  <div class="modal" style="max-width:360px">
+    <h3>Void this record?</h3>
+    <p style="font-size:0.84rem;color:#666;margin-bottom:16px;line-height:1.6">The record will be marked as Voided and kept for audit purposes. It will not count toward attendance totals.</p>
+    <div class="edit-field">
+      <label>Void reason</label>
+      <select id="void-reason">
+        <option value="Duplicate entry">Duplicate entry</option>
+        <option value="Test record">Test record</option>
+        <option value="Error by builder">Error by builder</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      <button class="edit-cancel-btn" id="void-cancel">Cancel</button>
+      <button class="edit-save-btn" id="void-confirm" style="background:#c00;border-color:#c00">Void Record</button>
     </div>
   </div>
 </div>
@@ -213,15 +433,21 @@
   import { renderQR }        from './js/toolkit/qr-generator.js';
   import { checkinTokens }   from './js/toolkit/checkin-token.js';
 
-  // ── Helpers ──
   const $ = id => document.getElementById(id);
-  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const fmt = (iso, opts) => iso ? new Date(iso).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', ...opts }) : '—';
+  const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' }) : '—';
+  const fmtDateTime = iso => iso ? new Date(iso).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '—';
   const fmtDate = s => s ? new Date(s + 'T00:00:00').toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' }) : '';
+  const isoToLocal = iso => iso ? new Date(iso).toISOString().slice(0,16) : '';
+  const localToISO = s => s ? new Date(s).toISOString() : null;
 
-  const TYPE_LABELS = { subcontractor:'Subcontractor', employee:'Employee', 'labour-hire':'Labour Hire', visitor:'Visitor', inspector:'Inspector', supplier:'Supplier', other:'Other' };
+  const TYPE_LABELS = {
+    subcontractor:'Subcontractor', employee:'Employee', contractor:'Contractor',
+    'labour-hire':'Contractor', visitor:'Visitor', inspector:'Inspector',
+    supplier:'Supplier / Delivery', other:'Other',
+  };
 
-  // ── Today date default ──
   const todayStr = attendanceStore._today();
   $('date-select').value = todayStr;
 
@@ -241,6 +467,7 @@
   sel.addEventListener('change', () => {
     selectedProjectId = sel.value || null;
     $('btn-show-qr').disabled = !selectedProjectId;
+    $('btn-rollcall').disabled = !selectedProjectId;
     render();
   });
   $('date-select').addEventListener('change', render);
@@ -260,25 +487,41 @@
   function render() {
     const pid   = selectedProjectId;
     const date  = $('date-select').value || todayStr;
-    const token = pid ? checkinTokens.forProject(pid) : null;
-    const all   = pid ? attendanceStore.forProjectOrToken(pid, token).filter(r => r.date === date) : [];
-    const onSite     = all.filter(r => !r.timeOut);
-    const checkedOut = all.filter(r =>  r.timeOut);
-    const totalHrs   = all.reduce((s, r) => s + (r.hoursOnSite || 0), 0);
+    const tok   = pid ? checkinTokens.forProject(pid) : null;
+    const all   = pid ? attendanceStore.forProjectOrToken(pid, tok).filter(r => r.date === date) : [];
+    const now18 = new Date(Date.now() - 18 * 3600000).toISOString();
+
+    const onSite     = all.filter(r => r.status === 'active' && !r.timeOut);
+    const reqCheckout = all.filter(r => r.status === 'checkout-required' || (r.status === 'active' && !r.timeOut && r.timeIn < now18));
+    const checkedOut = all.filter(r => r.status === 'checked-out' || r.timeOut);
+    const voided     = all.filter(r => r.status === 'voided');
+    const active     = all.filter(r => r.status !== 'voided');
+
+    const totalHrs = checkedOut.reduce((s, r) => s + (r.hoursOnSite || 0), 0);
 
     $('stat-onsite').textContent = onSite.length;
     $('stat-left').textContent   = checkedOut.length;
-    $('stat-total').textContent  = all.length;
+    $('stat-total').textContent  = active.length;
     $('stat-hours').textContent  = totalHrs.toFixed(1);
 
-    $('on-site-list').innerHTML   = renderCards(onSite, 'on-site');
-    $('checked-out-list').innerHTML = renderCards(checkedOut, 'left');
+    const reqN = reqCheckout.length;
+    $('stat-req').textContent = reqN;
+    $('stat-req-wrap').style.display = reqN ? '' : 'none';
+    $('checkout-req-section').style.display = reqN ? '' : 'none';
+
+    $('on-site-list').innerHTML      = renderCards(onSite, 'on-site');
+    $('checkout-req-list').innerHTML = renderCards(reqCheckout, 'warn');
+    $('checked-out-list').innerHTML  = renderCards(checkedOut, 'left');
+    $('voided-list').innerHTML       = renderCards(voided, 'voided');
+    $('voided-section').style.display = voided.length ? '' : 'none';
 
     if (!pid) {
       $('on-site-list').innerHTML = '<div class="empty-state">Select a project to view attendance.</div>';
       $('checked-out-list').innerHTML = '';
-    } else if (!all.length) {
-      $('on-site-list').innerHTML = '<div class="empty-state">No attendance records for this date.<br>Share the QR code for workers to check in.</div>';
+      return;
+    }
+    if (!active.length) {
+      $('on-site-list').innerHTML = '<div class="empty-state">No attendance records for this date.<br>Share the QR code for workers to sign in.</div>';
       $('checked-out-list').innerHTML = '';
     }
   }
@@ -286,40 +529,196 @@
   function renderCards(records, status) {
     if (!records.length) return '';
     return records.map(r => {
-      const initials = r.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-      const avatarClass = r.type === 'visitor' || r.type === 'inspector' ? 'visitor' : status;
-      const badgeClass  = r.type === 'visitor' || r.type === 'inspector' ? 'visitor' : status;
-      const badgeLabel  = status === 'on-site' ? 'On site' : 'Left';
-      const timeInfo    = status === 'on-site'
-        ? `In: ${fmt(r.timeIn)}`
-        : `In: ${fmt(r.timeIn)} · Out: ${fmt(r.timeOut)} · ${r.hoursOnSite != null ? r.hoursOnSite.toFixed(1)+'h' : ''}`;
-      const coBtn = status === 'on-site'
-        ? `<button class="checkout-btn" onclick="doCheckout('${r.id}')">Check out</button>`
-        : `<span class="att-hours">${r.hoursOnSite != null ? r.hoursOnSite.toFixed(1)+' hrs' : ''}</span>`;
-      return `<div class="att-card">
-        <div class="att-card-avatar ${avatarClass}">${esc(initials)}</div>
-        <div class="att-card-body">
-          <div class="att-card-name">${esc(r.name)}</div>
-          <div class="att-card-meta">
-            ${r.company ? `<span>${esc(r.company)}</span>` : ''}
-            ${r.trade   ? `<span>${esc(r.trade)}</span>`   : ''}
-            <span>${esc(TYPE_LABELS[r.type] || r.type)}</span>
+      const initials = r.name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() || '?';
+      const isVisitor = r.type === 'visitor' || r.type === 'inspector';
+      const avatarClass = isVisitor ? 'visitor' : status === 'on-site' ? 'on-site' : status === 'warn' ? 'warn' : 'left';
+      const badgeClass  = isVisitor ? 'visitor' : status;
+      const badgeLabel  = {
+        'on-site': 'On site', 'warn': 'Checkout required', 'left': 'Left',
+        'voided': 'Voided', 'visitor': 'Visitor',
+      }[badgeClass] || 'On site';
+
+      const timeInfo = r.timeOut
+        ? `In: ${fmtTime(r.timeIn)} · Out: ${fmtTime(r.timeOut)}${r.hoursOnSite != null ? ' · ' + r.hoursOnSite.toFixed(1) + 'h' : ''}${r.breakMinutes ? ' (−' + r.breakMinutes + 'min break)' : ''}`
+        : `In: ${fmtTime(r.timeIn)}`;
+
+      const hasCorrected = r.auditLog && r.auditLog.length;
+      const isVoided = r.status === 'voided';
+
+      const mobileLink = r.mobile ? `<a href="tel:${esc(r.mobile)}" class="act-btn" title="Call ${esc(r.name)}">📞</a>` : '';
+      const checkoutBtn = (!r.timeOut && !isVoided) ? `<button class="act-btn primary" onclick="doCheckout('${r.id}')">✓ Check out</button>` : '';
+      const editBtn    = !isVoided ? `<button class="act-btn" onclick="openEdit('${r.id}')">✏️ Edit</button>` : '';
+      const historyBtn = hasCorrected ? `<button class="act-btn" onclick="openAudit('${r.id}')">📋 History</button>` : '';
+      const voidBtn    = !isVoided ? `<button class="act-btn danger" onclick="openVoid('${r.id}')">✕ Void</button>` : '';
+
+      return `<div class="att-card ${status === 'warn' ? 'checkout-required' : ''} ${isVoided ? 'voided' : ''}">
+        <div class="att-card-top">
+          <div class="att-card-avatar ${avatarClass}">${esc(initials)}</div>
+          <div class="att-card-body">
+            <div class="att-card-name">
+              ${esc(r.name)}
+              ${hasCorrected ? '<span class="att-badge corrected">Corrected</span>' : ''}
+            </div>
+            <div class="att-card-meta">
+              ${r.company ? `<span>${esc(r.company)}</span>` : ''}
+              ${r.trade   ? `<span>${esc(r.trade)}</span>`   : ''}
+              <span>${esc(TYPE_LABELS[r.type] || r.type)}</span>
+            </div>
+            <div class="att-time">${timeInfo}</div>
           </div>
-          <div class="att-time">${timeInfo}</div>
+          <div class="att-card-right">
+            <span class="att-badge ${badgeClass}">${badgeLabel}</span>
+          </div>
         </div>
-        <div class="att-card-right">
-          <div><span class="att-badge ${badgeClass}">${badgeLabel}</span></div>
-          <div style="margin-top:6px">${coBtn}</div>
+        <div class="att-card-actions">
+          ${checkoutBtn}${editBtn}${historyBtn}${mobileLink}${voidBtn}
         </div>
       </div>`;
     }).join('');
   }
 
-  // Quick check-out from dashboard card
+  // ── Quick check-out ──
   window.doCheckout = function(id) {
     attendanceStore.checkOut(id);
     render();
   };
+
+  // ── Edit modal ──
+  let editingId = null;
+
+  window.openEdit = function(id) {
+    const rec = attendanceStore.get(id);
+    if (!rec) return;
+    editingId = id;
+    $('edit-modal-title').textContent = `Edit: ${rec.name}`;
+    $('edit-name').value    = rec.name;
+    $('edit-company').value = rec.company || '';
+    $('edit-trade').value   = rec.trade || '';
+    $('edit-mobile').value  = rec.mobile || '';
+    $('edit-type').value    = rec.type || 'subcontractor';
+    $('edit-timein').value  = isoToLocal(rec.timeIn);
+    $('edit-timeout').value = isoToLocal(rec.timeOut);
+    $('edit-break').value   = rec.breakMinutes || 0;
+    $('edit-notes').value   = rec.notes || '';
+    $('edit-reason').value  = '';
+    $('edit-modal').classList.add('open');
+  };
+
+  $('edit-cancel').addEventListener('click', () => $('edit-modal').classList.remove('open'));
+  $('edit-modal').addEventListener('click', e => { if (e.target === $('edit-modal')) $('edit-modal').classList.remove('open'); });
+
+  $('edit-save').addEventListener('click', () => {
+    const reason = $('edit-reason').value;
+    if (!reason) { alert('Please select a correction reason before saving.'); return; }
+    const timeIn  = $('edit-timein').value ? localToISO($('edit-timein').value) : null;
+    const timeOut = $('edit-timeout').value ? localToISO($('edit-timeout').value) : null;
+    if (timeIn && timeOut && new Date(timeOut) <= new Date(timeIn)) {
+      alert('Check-out time must be after check-in time.'); return;
+    }
+    attendanceStore.edit(editingId, {
+      name:         $('edit-name').value.trim(),
+      company:      $('edit-company').value.trim(),
+      trade:        $('edit-trade').value.trim(),
+      mobile:       $('edit-mobile').value.trim(),
+      type:         $('edit-type').value,
+      timeIn:       timeIn || attendanceStore.get(editingId)?.timeIn,
+      timeOut:      timeOut || null,
+      breakMinutes: parseInt($('edit-break').value) || 0,
+      notes:        $('edit-notes').value.trim(),
+    }, { reason, source: 'dashboard edit' });
+    $('edit-modal').classList.remove('open');
+    render();
+  });
+
+  // ── Audit history modal ──
+  window.openAudit = function(id) {
+    const log = attendanceStore.getAudit(id);
+    if (!log.length) { alert('No change history for this record.'); return; }
+    $('audit-list').innerHTML = log.map(entry => {
+      const changes = entry.changes.map(c =>
+        `<div class="audit-change">
+          <strong>${esc(c.field)}</strong>:
+          <span class="from">${esc(String(c.from ?? '(empty)'))}</span>
+          → <span class="to">${esc(String(c.to ?? '(empty)'))}</span>
+        </div>`
+      ).join('');
+      return `<div class="audit-entry">
+        <div class="audit-ts">${fmtDateTime(entry.timestamp)} · ${esc(entry.changedBy)}</div>
+        <div class="audit-reason">${esc(entry.reason)}</div>
+        ${changes}
+      </div>`;
+    }).reverse().join('');
+    $('audit-modal').classList.add('open');
+  };
+
+  $('btn-close-audit').addEventListener('click', () => $('audit-modal').classList.remove('open'));
+  $('audit-modal').addEventListener('click', e => { if (e.target === $('audit-modal')) $('audit-modal').classList.remove('open'); });
+
+  // ── Void modal ──
+  let voidingId = null;
+
+  window.openVoid = function(id) {
+    voidingId = id;
+    $('void-modal').classList.add('open');
+  };
+
+  $('void-cancel').addEventListener('click', () => $('void-modal').classList.remove('open'));
+  $('void-modal').addEventListener('click', e => { if (e.target === $('void-modal')) $('void-modal').classList.remove('open'); });
+
+  $('void-confirm').addEventListener('click', () => {
+    if (!voidingId) return;
+    const reason = $('void-reason').value;
+    attendanceStore.voidRecord(voidingId, `Voided – ${reason}`, 'dashboard edit');
+    $('void-modal').classList.remove('open');
+    voidingId = null;
+    render();
+  });
+
+  // ── Emergency Roll Call ──
+  $('btn-rollcall').addEventListener('click', () => {
+    if (!selectedProjectId) return;
+    renderRollCall();
+    $('rollcall-modal').classList.add('open');
+  });
+
+  $('btn-rollcall-refresh').addEventListener('click', renderRollCall);
+  $('btn-close-rollcall').addEventListener('click', () => $('rollcall-modal').classList.remove('open'));
+
+  function renderRollCall() {
+    const tok = checkinTokens.forProject(selectedProjectId);
+    const proj = projects.find(p => p.id === selectedProjectId);
+    const projName = proj?.name || proj?.projectName || 'Site';
+    const onSite = attendanceStore.forProjectOrToken(selectedProjectId, tok)
+      .filter(r => !r.timeOut && r.status !== 'voided');
+
+    const now = new Date().toLocaleString('en-AU', { weekday:'short', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+    $('rollcall-meta').innerHTML = `
+      <strong>${esc(projName)}</strong>${proj?.siteAddress ? ' · ' + esc(proj.siteAddress) : ''}<br>
+      ${now} · <strong>${onSite.length}</strong> person${onSite.length !== 1 ? 's' : ''} currently on site
+    `;
+
+    if (!onSite.length) {
+      $('rollcall-list').innerHTML = '<div style="text-align:center;padding:20px;color:#888;font-size:0.85rem">No workers currently signed in.</div>';
+      return;
+    }
+
+    $('rollcall-list').innerHTML = onSite.map((r, i) => `
+      <div style="padding:12px 0;border-bottom:1px solid #e8e4de;${i === onSite.length-1 ? 'border:none' : ''}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:0.92rem;font-weight:700;color:#252320">${esc(r.name)}</div>
+            <div style="font-size:0.78rem;color:#888;margin-top:2px">
+              ${r.company ? esc(r.company) + ' · ' : ''}${esc(TYPE_LABELS[r.type] || r.type)}${r.trade ? ' · ' + esc(r.trade) : ''}
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:0.8rem;font-weight:600;color:#252320">In: ${fmtTime(r.timeIn)}</div>
+            ${r.mobile ? `<a href="tel:${esc(r.mobile)}" style="font-size:0.75rem;color:#D85A30">${esc(r.mobile)}</a>` : ''}
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
 
   // ── Workforce register ──
   function renderRegister() {
@@ -363,7 +762,6 @@
 
   $('btn-close-qr').addEventListener('click', () => $('qr-modal').classList.remove('open'));
   $('qr-modal').addEventListener('click', e => { if (e.target === $('qr-modal')) $('qr-modal').classList.remove('open'); });
-
   $('btn-copy-url').addEventListener('click', () => {
     navigator.clipboard.writeText($('qr-url-display').textContent).then(() => {
       $('btn-copy-url').textContent = 'Copied!';
@@ -375,36 +773,68 @@
   $('btn-export-daily').addEventListener('click', () => {
     if (!selectedProjectId) { alert('Select a project first.'); return; }
     const date = $('date-select').value || todayStr;
-    const csv  = attendanceStore.exportCSV(selectedProjectId, date);
+    const tok  = checkinTokens.forProject(selectedProjectId);
+    const csv  = attendanceStore.exportCSV(selectedProjectId, date, tok);
     const proj = projects.find(p => p.id === selectedProjectId);
-    const name = (proj?.name || proj?.projectName || 'project').replace(/\s+/g,'-');
-    _download(csv, `attendance-${name}-${date}.csv`, 'text/csv');
+    const name = (proj?.name || 'project').replace(/[^a-zA-Z0-9]/g,'-');
+    _download(csv, `attendance-${name}-${date}.csv`, 'text/csv;charset=utf-8');
   });
 
   $('btn-export-register').addEventListener('click', () => {
     if (!selectedProjectId) { alert('Select a project first.'); return; }
-    const workers = attendanceStore.workforceRegister(selectedProjectId, checkinTokens.forProject(selectedProjectId));
-    const header = 'Name,Company,Trade,Type,Mobile,First Visit,Last Visit,Visits,Total Hours';
-    const lines  = workers.map(w => [
+    const tok = checkinTokens.forProject(selectedProjectId);
+    const workers = attendanceStore.workforceRegister(selectedProjectId, tok);
+    const header = 'Name,Company,Trade,Type,Mobile,First Visit,Last Visit,Visits,Total Recorded Site Hours';
+    const csv = v => `"${String(v ?? '').replace(/"/g,'""').replace(/\r?\n/g,' ')}"`;
+    const lines = workers.map(w => [
       w.name, w.company, w.trade, TYPE_LABELS[w.type]||w.type, w.mobile,
       fmtDate(w.firstSeen), fmtDate(w.lastSeen), w.visits, w.totalHours.toFixed(2)
-    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
+    ].map(csv).join(','));
     const proj = projects.find(p => p.id === selectedProjectId);
-    const name = (proj?.name || 'project').replace(/\s+/g,'-');
-    _download([header,...lines].join('\n'), `workforce-register-${name}.csv`, 'text/csv');
+    const name = (proj?.name || 'project').replace(/[^a-zA-Z0-9]/g,'-');
+    _download('﻿' + [header,...lines].join('\r\n'), `workforce-register-${name}.csv`, 'text/csv;charset=utf-8');
   });
 
   $('btn-print-daily').addEventListener('click', () => {
     if (!selectedProjectId) { alert('Select a project first.'); return; }
     const date  = $('date-select').value || todayStr;
     const tok   = checkinTokens.forProject(selectedProjectId);
-    const all   = attendanceStore.forProjectOrToken(selectedProjectId, tok).filter(r => r.date === date);
+    const all   = attendanceStore.forProjectOrToken(selectedProjectId, tok).filter(r => r.date === date && r.status !== 'voided');
     const proj  = projects.find(p => p.id === selectedProjectId);
-    const html  = buildPrintReport(proj, date, all);
-    const w     = window.open('', '_blank');
-    w.document.write(html);
+    const w = window.open('', '_blank');
+    w.document.write(buildPrintReport(proj, date, all));
     w.document.close();
     w.print();
+  });
+
+  $('btn-print-qr').addEventListener('click', () => {
+    if (!selectedProjectId) { alert('Select a project first.'); return; }
+    const proj  = projects.find(p => p.id === selectedProjectId);
+    const token = checkinTokens.getOrCreate(proj);
+    const base  = location.origin + location.pathname.replace('attendance.html','checkin.html');
+    const url   = `${base}?t=${token}`;
+    const w = window.open('', '_blank');
+    w.document.write(buildQRSign(proj, url));
+    w.document.close();
+    setTimeout(() => w.print(), 800);
+  });
+
+  // ── Demo data ──
+  $('btn-load-demo').addEventListener('click', () => {
+    if (!selectedProjectId) { alert('Select a project first, then load demo data.'); return; }
+    const proj = projects.find(p => p.id === selectedProjectId);
+    const tok  = checkinTokens.forProject(selectedProjectId) || '';
+    attendanceStore.seedDemo(selectedProjectId, proj?.name || 'Demo Site', tok);
+    alert('Demo attendance data loaded.');
+    render();
+    renderRegister();
+  });
+
+  $('btn-clear-demo').addEventListener('click', () => {
+    if (!confirm('Remove all demo attendance records?')) return;
+    attendanceStore.clearDemo();
+    render();
+    renderRegister();
   });
 
   function buildPrintReport(proj, date, records) {
@@ -412,51 +842,106 @@
     const onSite   = records.filter(r => !r.timeOut);
     const left     = records.filter(r =>  r.timeOut);
     const totalHrs = records.reduce((s,r) => s + (r.hoursOnSite||0), 0);
-    const rows     = records.map(r => `<tr>
+    const generatedAt = new Date().toLocaleString('en-AU');
+    const rows = records.map(r => `<tr>
       <td>${esc(r.name)}</td>
       <td>${esc(r.company)}</td>
       <td>${esc(r.trade)}</td>
       <td>${esc(TYPE_LABELS[r.type]||r.type)}</td>
-      <td>${fmt(r.timeIn)}</td>
-      <td>${r.timeOut ? fmt(r.timeOut) : '<em>On site</em>'}</td>
+      <td>${esc(r.mobile||'')}</td>
+      <td>${fmtTime(r.timeIn)}</td>
+      <td>${r.timeOut ? fmtTime(r.timeOut) : '<em>On site</em>'}</td>
+      <td>${r.breakMinutes||0}</td>
       <td>${r.hoursOnSite != null ? r.hoursOnSite.toFixed(2) : '—'}</td>
+      <td>${esc(r.status||'')}</td>
       <td>${esc(r.notes||'')}</td>
+      <td>${(r.auditLog&&r.auditLog.length)?'Yes':''}</td>
     </tr>`).join('');
-    return `<!DOCTYPE html><html><head><title>Attendance Report</title><style>
-      body{font-family:Arial,sans-serif;font-size:11px;padding:20px;color:#222}
-      h1{font-size:16px;margin:0 0 4px}h2{font-size:11px;font-weight:normal;color:#666;margin:0 0 16px}
-      table{width:100%;border-collapse:collapse;margin-top:12px}
-      th{background:#f0f0f0;padding:6px 8px;text-align:left;font-size:10px;text-transform:uppercase;border-bottom:1px solid #ccc}
-      td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:top}
-      .stats{display:flex;gap:20px;margin-bottom:16px}
-      .stat{border:1px solid #ddd;padding:8px 12px;border-radius:4px;text-align:center}
-      .stat-val{font-size:18px;font-weight:bold;color:#252320}
-      .stat-label{font-size:9px;color:#888;text-transform:uppercase;margin-top:2px}
+    return `<!DOCTYPE html><html><head><title>Attendance Report — ${esc(projName)}</title><meta charset="UTF-8"><style>
+      body{font-family:Arial,sans-serif;font-size:10.5px;padding:20px;color:#222}
+      h1{font-size:15px;margin:0 0 2px}h2{font-size:10px;font-weight:normal;color:#666;margin:0 0 4px}
+      .bik{font-size:9px;color:#D85A30;font-weight:700;margin-bottom:12px}
+      table{width:100%;border-collapse:collapse;margin-top:10px}
+      th{background:#f0f0f0;padding:5px 7px;text-align:left;font-size:9px;text-transform:uppercase;border-bottom:1px solid #ccc}
+      td{padding:5px 7px;border-bottom:1px solid #eee;vertical-align:top}
+      .stats{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+      .stat{border:1px solid #ddd;padding:7px 10px;border-radius:4px;text-align:center;min-width:70px}
+      .stat-val{font-size:16px;font-weight:bold;color:#252320}
+      .stat-label{font-size:8px;color:#888;text-transform:uppercase;margin-top:1px}
+      .disclaimer{margin-top:16px;font-size:9px;color:#999;border-top:1px solid #eee;padding-top:8px;line-height:1.6}
       @media print{body{padding:0}}
     </style></head><body>
+      <div class="bik">BIK Solutions — Site Attendance</div>
       <h1>Daily Attendance Report — ${esc(projName)}</h1>
-      <h2>${new Date(date+'T00:00:00').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h2>
+      <h2>${proj?.siteAddress ? esc(proj.siteAddress) + ' · ' : ''}${new Date(date+'T00:00:00').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h2>
       <div class="stats">
         <div class="stat"><div class="stat-val">${records.length}</div><div class="stat-label">Total</div></div>
         <div class="stat"><div class="stat-val">${onSite.length}</div><div class="stat-label">On site</div></div>
-        <div class="stat"><div class="stat-val">${left.length}</div><div class="stat-label">Left</div></div>
-        <div class="stat"><div class="stat-val">${totalHrs.toFixed(1)}</div><div class="stat-label">Labour hrs</div></div>
+        <div class="stat"><div class="stat-val">${left.length}</div><div class="stat-label">Checked out</div></div>
+        <div class="stat"><div class="stat-val">${totalHrs.toFixed(1)}</div><div class="stat-label">Recorded site hrs</div></div>
       </div>
-      <table><thead><tr><th>Name</th><th>Company</th><th>Trade</th><th>Type</th><th>In</th><th>Out</th><th>Hours</th><th>Notes</th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="8" style="color:#888;text-align:center;padding:20px">No records</td></tr>'}</tbody></table>
-      <p style="margin-top:20px;font-size:9px;color:#aaa">Generated by BIK Business Toolkit · ${new Date().toLocaleString('en-AU')}</p>
+      <table><thead><tr>
+        <th>Name</th><th>Company</th><th>Trade</th><th>Type</th><th>Mobile</th>
+        <th>Check-In</th><th>Check-Out</th><th>Break min</th><th>Recorded Hrs</th>
+        <th>Status</th><th>Notes</th><th>Corrected</th>
+      </tr></thead>
+      <tbody>${rows || '<tr><td colspan="12" style="color:#888;text-align:center;padding:16px">No records for this date.</td></tr>'}</tbody></table>
+      <div class="disclaimer">
+        Generated ${generatedAt} · BIK Solutions<br>
+        Attendance records reflect sign-in and sign-out times recorded via BIK. They are not automatically approved payroll or invoicing records and should be verified by the site supervisor before use.
+      </div>
+    </body></html>`;
+  }
+
+  function buildQRSign(proj, url) {
+    const projName = proj?.name || proj?.projectName || 'Site Project';
+    const addr     = proj?.siteAddress || '';
+    // Inline a small QR placeholder — actual QR rendered via canvas then exported as dataURL in a separate flow
+    return `<!DOCTYPE html><html><head><title>Sign-In QR — ${esc(projName)}</title><meta charset="UTF-8"><style>
+      @page{size:A4;margin:20mm}
+      body{font-family:Arial,sans-serif;text-align:center;padding:30px;color:#252320;-webkit-print-color-adjust:exact}
+      .logo{font-size:11px;font-weight:700;color:#D85A30;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:24px}
+      .site-name{font-size:26px;font-weight:900;margin:0 0 6px}
+      .site-addr{font-size:14px;color:#666;margin-bottom:32px}
+      .qr-box{display:inline-block;border:4px solid #252320;border-radius:12px;padding:20px;background:#fff;margin-bottom:24px}
+      .qr-box img{width:220px;height:220px;display:block}
+      .scan-label{font-size:22px;font-weight:800;color:#252320;margin-bottom:8px}
+      .instructions{font-size:13px;color:#555;line-height:1.7;max-width:340px;margin:0 auto 28px}
+      .url-box{background:#f5f0e8;border-radius:8px;padding:12px 16px;font-size:10px;color:#888;font-family:monospace;word-break:break-all;margin-bottom:24px}
+      .footer{font-size:10px;color:#bbb;margin-top:20px}
+      .print-hint{font-size:10px;color:#bbb;margin-bottom:16px}
+    </style></head><body>
+      <div class="logo">BIK Solutions</div>
+      <div class="site-name">${esc(projName)}</div>
+      ${addr ? `<div class="site-addr">${esc(addr)}</div>` : '<div style="margin-bottom:32px"></div>'}
+      <div class="qr-box" id="qr-render"></div>
+      <div class="scan-label">📱 Scan to Sign In or Out</div>
+      <div class="instructions">
+        1. Open your phone camera and point it at the QR code.<br>
+        2. Tap the notification that appears to open the sign-in page.<br>
+        3. Complete the form — it takes under 20 seconds.<br>
+        4. Sign out before you leave site using the same QR code or the link on your check-in confirmation.
+      </div>
+      <div class="url-box">${esc(url)}</div>
+      <div class="footer">BIK Solutions · Site Sign-In &amp; Workforce Register</div>
+      <script type="module">
+        import { renderQR } from '${location.origin}${location.pathname.replace('attendance.html','js/toolkit/qr-generator.js')}';
+        const canvas = document.createElement('canvas');
+        renderQR(${JSON.stringify(url)}, canvas, { scale: 6, padding: 2 });
+        document.getElementById('qr-render').appendChild(canvas);
+      <\/script>
     </body></html>`;
   }
 
   function _download(content, filename, mime) {
     const blob = new Blob([content], { type: mime });
-    const a    = document.createElement('a');
-    a.href     = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
     a.download = filename;
     a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }
 
-  // Initial render
   render();
 </script>
 

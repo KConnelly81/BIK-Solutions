@@ -532,6 +532,7 @@ import { evaluateAll, aggregateMetrics } from './js/toolkit/health-engine.js';
 import { seedDemoData, isDemoActive, calcTimeSaved } from './js/toolkit/demo-data.js';
 import { checkAndInit as checkOnboarding } from './js/toolkit/onboarding.js';
 import { attendanceStore } from './js/toolkit/attendance-store.js';
+import { checkinTokens }   from './js/toolkit/checkin-token.js';
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -855,24 +856,32 @@ function renderPriorities(reports) {
     });
   });
 
-  // Attendance smart actions
+  // Attendance smart actions (v2 store API)
+  const todayStr = attendanceStore._today();
   const projects = projectStore.list().filter(p => p.status === 'active');
   for (const proj of projects) {
-    const forgot = attendanceStore.forgotCheckout(proj.id);
-    if (forgot.length) {
+    const token   = checkinTokens.forProject(proj.id);
+    const allRecs = attendanceStore.forProjectOrToken(proj.id, token)
+                      .filter(r => r.status !== 'voided');
+    const today   = allRecs.filter(r => r.date === todayStr);
+    const onSite  = today.filter(r => r.status === 'active');
+    const coReq   = today.filter(r => r.status === 'checkout-required');
+
+    // Workers requiring checkout confirmation (>18h, likely forgotten)
+    if (coReq.length) {
       priorities.push({
         severity: 'warning',
-        headline: `${forgot.length} worker${forgot.length > 1 ? 's' : ''} may have forgotten to check out`,
+        headline: `${coReq.length} worker${coReq.length > 1 ? 's' : ''} require checkout confirmation`,
         projectName: proj.name,
         projectId: proj.id,
-        detail: forgot.map(r => r.name).join(', '),
+        detail: coReq.map(r => r.name).join(', '),
         actions: [{ label: 'View attendance', href: `attendance.html?p=${proj.id}`, isPrimary: true }],
       });
     }
-    const todayRec = attendanceStore.todayForProject(proj.id);
-    const onSiteNow = todayRec.filter(r => !r.timeOut);
-    if (onSiteNow.some(r => r.type === 'visitor' || r.type === 'inspector')) {
-      const vis = onSiteNow.filter(r => r.type === 'visitor' || r.type === 'inspector');
+
+    // Visitors or inspectors still on site
+    const vis = onSite.filter(r => r.type === 'visitor' || r.type === 'inspector');
+    if (vis.length) {
       priorities.push({
         severity: 'info',
         headline: `${vis.length} visitor${vis.length > 1 ? 's' : ''} still signed in`,
@@ -880,6 +889,18 @@ function renderPriorities(reports) {
         projectId: proj.id,
         detail: vis.map(r => r.name).join(', '),
         actions: [{ label: 'View', href: `attendance.html?p=${proj.id}`, isPrimary: true }],
+      });
+    }
+
+    // Active project with no attendance today (only if there are past records)
+    if (today.length === 0 && allRecs.length > 0) {
+      priorities.push({
+        severity: 'info',
+        headline: 'No attendance recorded today',
+        projectName: proj.name,
+        projectId: proj.id,
+        detail: 'Open the dashboard or share the QR code',
+        actions: [{ label: 'Open attendance', href: `attendance.html?p=${proj.id}`, isPrimary: true }],
       });
     }
   }

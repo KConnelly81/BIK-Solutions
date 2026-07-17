@@ -80,6 +80,88 @@
 
   <div class="rn-body">
 
+    <!-- ── Sprint 5.2 — Site Sign-In Beta ── -->
+    <div class="release">
+      <div class="release-header">
+        <span class="release-version">Version 0.11.1</span>
+        <span class="release-badge">Beta</span>
+        <span class="release-date">17 July 2026 — Site Sign-In &amp; Workforce Register</span>
+      </div>
+
+      <p class="release-intro">
+        Sprint 5.2 takes Site Sign-In &amp; Workforce Register from functional prototype to live-ready beta. A real builder and real contractors can now check in and out on a worksite in under 20 seconds — no app required. Builders get a live view of who is on site, a full audit trail of all edits, and a printable attendance record.
+      </p>
+
+      <div class="change-group">
+        <div class="change-group-title">Site Sign-In &amp; Workforce Register</div>
+        <ul class="change-list">
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Secure QR check-in tokens</strong> — QR sign-in URLs now use 128-bit random public tokens (e.g. <code>checkin.html?t=a3f...</code>) instead of internal project IDs. Tokens cannot be used to enumerate or guess other projects.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Returning worker detection</strong> — workers who scan the QR code again while already signed in see an "Already Signed In" screen with their check-in time and a direct checkout button. Prevents duplicate records without requiring the builder to intervene.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Manual checkout lookup</strong> — workers who lost their success-page link can check out by entering their name and mobile number at <code>checkout.html</code>. Multiple matches show a project + time selection screen for confirmation.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Edit and correction workflow</strong> — builders can correct any attendance record from the dashboard. Every edit requires a reason (data entry error, builder confirmed with worker, etc.) and is recorded in a full audit log. The audit log is accessible via the History button on each record card.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Break minutes</strong> — builders can enter unpaid break time (in minutes) against any record. Break minutes are deducted from recorded site hours and shown in exports.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Soft delete (void)</strong> — builders can void a duplicate or erroneous record with a reason. Voided records are preserved with full audit trail and excluded from all totals and reports.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Forgotten checkout flag</strong> — records open for more than 18 hours are flagged as "Checkout Required" (amber) and excluded from the site hours total. The dashboard shows an alert and the project strip shows a warning. Records are never auto-closed.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Emergency Roll Call</strong> — builders can open a roll call modal at any time showing only workers currently on site with a count and a print button. Designed for emergency musters and WHS compliance.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Print QR Sign</strong> — generates a professional A4 printable sign with project name, site address, QR code, and step-by-step instructions for workers. Accessible from both the project page and the QR modal.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>"Recorded Site Hours" terminology</strong> — all references to "labour hours" replaced with "Recorded Site Hours" throughout the dashboard, exports, and reports. A tooltip clarifies: "not automatically approved payroll or billable hours".</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Updated CSV exports</strong> — daily attendance and workforce register CSVs now include: Break (min), Status, Corrected indicator, and a BOM prefix for correct Excel opening. Column header "Recorded Site Hrs" replaces "Labour Hours".</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Privacy notice on check-in form</strong> — workers see a clear notice before submitting: data is stored on the builder's device only, not transmitted to external servers.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Standardised 6 worker types</strong> — Employee, Subcontractor, Contractor, Labour Hire, Visitor, Inspector, Supplier, Other. Company field required for subcontractor/contractor/supplier/inspector. Trade required for subcontractor/contractor.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Demo data for testing</strong> — builders can load a set of demo attendance records from the Reports tab, then remove them cleanly without affecting real records. Demo records are labelled and excluded from real totals while present.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Dashboard smart actions updated</strong> — attendance alerts now use the v2 data model: "Checkout Required" (>18h workers), visitors still on site, and "No attendance today" for projects with past records. Each links directly to the relevant project attendance page.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Project page attendance strip</strong> — the strip on the project page now shows: workers on site (green), checkout required warning (amber), recorded site hours today, and a Print QR Sign button.</span>
+          </li>
+          <li class="change-item"><span class="change-dot">●</span>
+            <span><strong>Schema v2 migration</strong> — existing attendance records are automatically migrated to v2 on first load. New fields (breakMinutes, status, auditLog, voidReason) are added non-destructively. No data loss.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="known-issues">
+        <div class="known-issues-title">Known limitations in this release</div>
+        <ul>
+          <li>All attendance data is stored in the builder's browser (localStorage). Data is not shared between devices. If the builder clears browser storage, attendance records will be lost — cloud sync is planned for a future sprint.</li>
+          <li>Recorded site hours are not verified hours. They are calculated from time in, time out, and break minutes entered on the day. They are not approved payroll or billable hours and should not be used as such without independent verification.</li>
+          <li>GPS co-ordinates are captured at check-in on supported devices. GPS accuracy varies and is not a verified attendance mechanism on its own.</li>
+          <li>The workforce register records all workers who have checked in via the QR code. It does not record workers who were not on the QR check-in system.</li>
+        </ul>
+      </div>
+    </div>
+
+    <hr class="rn-divider">
+
     <!-- ── Sprint 5.1 — Founding Builder Experience ── -->
     <div class="release">
       <div class="release-header">
