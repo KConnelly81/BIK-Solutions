@@ -23,7 +23,6 @@
  *   hoursOnSite:  number|null — (timeOut - timeIn - breakMinutes) in hours, min 0
  *   status:       string      — 'active'|'checked-out'|'checkout-required'|'voided'
  *   voidReason:   string|null
- *   gps:          {lat,lng,accuracy}|null
  *   notes:        string
  *   checkedInBy:  string      — 'self'|'builder'
  *   auditLog:     AuditEntry[]
@@ -33,9 +32,7 @@
  * AuditEntry:
  * { id, recordId, timestamp, changedBy, source, reason, changes:[{field,from,to}] }
  *
- * Migration from v1 → v2:
- *   Adds breakMinutes:0, status derived from timeOut, auditLog:[], voidReason:null.
- *   Non-destructive — no existing field is overwritten.
+ * Migration v1→v2: adds breakMinutes:0, status, auditLog:[], voidReason:null.
  */
 
 const STORE_KEY    = 'bik-attendance';
@@ -62,7 +59,7 @@ function _migrate(records) {
     status:       r.timeOut ? 'checked-out' : 'active',
     auditLog:     [],
     voidReason:   null,
-    ...r,                  // existing fields win over defaults
+    ...r,
   }));
   _save(migrated);
   localStorage.setItem(SCHEMA_KEY, String(SCHEMA_V));
@@ -124,7 +121,6 @@ export const attendanceStore = {
       breakMinutes: 0,
       hoursOnSite:  null,
       status:       'active',
-      gps:          data.gps          || null,
       notes:        (data.notes       || '').trim(),
       checkedInBy:  data.checkedInBy  || 'self',
       auditLog:     [],
@@ -383,7 +379,7 @@ export const attendanceStore = {
       name: '', company: '', trade: '', mobile: '', type: 'subcontractor',
       timeIn: new Date(now.getTime() - offset).toISOString(),
       timeOut: null, breakMinutes: 0, hoursOnSite: null,
-      status: 'active', gps: null, notes: '', checkedInBy: 'self',
+      status: 'active', notes: '', checkedInBy: 'self',
       auditLog: [], _demo: true, ...overrides,
     });
 

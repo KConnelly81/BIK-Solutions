@@ -67,17 +67,6 @@
     .time-display .td-time { font-size:2rem;font-weight:800;color:var(--charcoal);letter-spacing:-0.02em;font-variant-numeric:tabular-nums; }
     .time-display .td-date { font-size:0.78rem;color:var(--muted);margin-top:2px; }
 
-    /* ── Optional section ── */
-    .optional-section { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px; }
-    .optional-toggle { display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;font-size:0.84rem;font-weight:600;color:var(--charcoal);user-select:none; }
-    .optional-toggle-icon { color:var(--coral);font-size:1.1rem;transition:transform 0.2s; }
-    .optional-toggle.open .optional-toggle-icon { transform:rotate(45deg); }
-    .optional-body { padding:0 16px 16px;display:none; }
-    .optional-body.open { display:block; }
-    .gps-btn { width:100%;padding:14px;border:1.5px solid var(--border);border-radius:var(--radius);background:#fff;font-size:0.88rem;font-weight:600;color:var(--charcoal);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color 0.15s; }
-    .gps-btn.captured { border-color:var(--green);color:var(--green); }
-    .gps-status { font-size:0.76rem;color:var(--muted);margin-top:6px;text-align:center; }
-
     /* ── Privacy notice ── */
     .privacy-notice { background:#f8f5f0;border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;font-size:0.76rem;color:#555;line-height:1.6; }
     .privacy-notice strong { color:var(--charcoal); }
@@ -241,23 +230,9 @@
       <input type="tel" id="f-mobile" autocomplete="tel" placeholder="0400 000 000" inputmode="tel" />
     </div>
 
-    <!-- Optional: GPS -->
-    <div class="optional-section">
-      <div class="optional-toggle" id="opt-gps-toggle">
-        <span>📍 Share my location <span style="font-size:0.72rem;font-weight:400;color:#888;">— optional</span></span>
-        <span class="optional-toggle-icon">+</span>
-      </div>
-      <div class="optional-body" id="opt-gps-body">
-        <button type="button" class="gps-btn" id="gps-btn">
-          📍 Tap to share GPS location
-        </button>
-        <div class="gps-status" id="gps-status"></div>
-      </div>
-    </div>
-
     <!-- Privacy notice -->
     <div class="privacy-notice">
-      <strong>Privacy notice:</strong> Your details are collected by the site operator to maintain site attendance, safety and project records. Your location is only collected when you choose to share it. Contact the site operator if you need access to or correction of your information.
+      <strong>Privacy notice:</strong> Your details are collected by the site operator to maintain site attendance, safety and project records. Contact the site operator if you need access to or correction of your information.
     </div>
 
     <!-- Error -->
@@ -393,32 +368,6 @@
   }
   updateFieldRequirements();
 
-  // ── GPS toggle ──
-  $('opt-gps-toggle').addEventListener('click', () => {
-    const open = $('opt-gps-body').classList.toggle('open');
-    $('opt-gps-toggle').classList.toggle('open', open);
-  });
-
-  let capturedGPS = null;
-  $('gps-btn').addEventListener('click', () => {
-    const btn = $('gps-btn');
-    const status = $('gps-status');
-    btn.textContent = '⏳ Getting location…';
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        capturedGPS = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
-        btn.className = 'gps-btn captured';
-        btn.textContent = '✓ Location shared';
-        status.textContent = `±${Math.round(pos.coords.accuracy)}m accuracy`;
-      },
-      () => {
-        btn.textContent = '📍 Tap to share GPS location';
-        status.textContent = 'Location unavailable — you can still sign in without it.';
-      },
-      { timeout: 8000, enableHighAccuracy: true }
-    );
-  });
-
   // ── Validation helpers ──
   function showHint(id, show) {
     const el = $(id);
@@ -501,7 +450,6 @@
       trade:        $('f-trade').value.trim(),
       mobile,
       type:         selectedType,
-      gps:          capturedGPS,
       checkedInBy:  'self',
     });
 
@@ -525,7 +473,6 @@
 
     $('btn-checkin-another').onclick = () => {
       duplicateRecord = null;
-      capturedGPS = null;
       $('f-name').value    = '';
       $('f-company').value = '';
       $('f-trade').value   = '';
