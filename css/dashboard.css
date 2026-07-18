@@ -93,6 +93,14 @@
 
 .dash-btn--coral:hover { opacity: 0.88; }
 
+.dash-btn--outline {
+  background: transparent;
+  color: var(--charcoal);
+  border: 1.5px solid var(--border);
+}
+
+.dash-btn--outline:hover { background: var(--paper); }
+
 /* ── Main ── */
 .dash-main {
   max-width: 1100px;
