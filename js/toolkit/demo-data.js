@@ -18,7 +18,8 @@ const DEMO_PROFILE = {
   builderPhone:       '07 3456 7890',
   builderEmail:       'tom@harperbuildingco.com.au',
   builderAddress:     '22 Commerce Street, Newstead QLD 4006',
-  builderApprovalName:'Tom Harper'
+  builderApprovalName:'Tom Harper',
+  isSample:           true
 };
 
 // ── Projects ───────────────────────────────────────────────────────────────
@@ -40,7 +41,8 @@ const DEMO_PROJECTS = [
     contractValue: 485000,
     notes:         'Primary contact is David. Emma handles approvals. On-site access available 7am–5pm Mon–Fri.',
     createdAt:     daysAgo(62),
-    updatedAt:     daysAgo(1)
+    updatedAt:     daysAgo(1),
+    isSample:      true
   },
   {
     id:            'demo-proj-002',
@@ -55,7 +57,8 @@ const DEMO_PROJECTS = [
     contractValue: 210000,
     notes:         'On hold pending DA approval. Expected to resume August 2026.',
     createdAt:     daysAgo(41),
-    updatedAt:     daysAgo(18)
+    updatedAt:     daysAgo(18),
+    isSample:      true
   },
   {
     id:            'demo-proj-003',
@@ -70,7 +73,8 @@ const DEMO_PROJECTS = [
     contractValue: 780000,
     notes:         '',
     createdAt:     daysAgo(28),
-    updatedAt:     daysAgo(1)
+    updatedAt:     daysAgo(1),
+    isSample:      true
   }
 ];
 
@@ -89,6 +93,7 @@ function doc(toolId, title, reference, projectId, fields, daysOld, approval = nu
     title,
     reference,
     projectId,
+    isSample:  true,
     createdAt: daysAgo(daysOld),
     updatedAt: daysAgo(Math.max(0, daysOld - 1)),
     formData: {
@@ -313,14 +318,35 @@ export function seedDemoData() {
 }
 
 /**
- * Remove all demo-seeded data from localStorage.
+ * Remove all sample-tagged records from localStorage.
+ * Preserves any user-created records in the same keys.
+ * Safe to call even if additional sample content types are added later —
+ * anything with isSample: true will be removed; everything else is untouched.
  */
 export function clearDemoData() {
-  localStorage.removeItem('bik-builder-profile');
-  localStorage.removeItem('bik-projects');
-  localStorage.removeItem('bik-doc-history');
-  localStorage.removeItem('bik-doc-counters');
-  localStorage.removeItem('bik-onboarding-complete');
+  // Projects — filter out sample records, preserve real ones
+  try {
+    const projects = JSON.parse(localStorage.getItem('bik-projects') || '[]');
+    const real = projects.filter(p => !p.isSample);
+    if (real.length > 0) localStorage.setItem('bik-projects', JSON.stringify(real));
+    else localStorage.removeItem('bik-projects');
+  } catch { localStorage.removeItem('bik-projects'); }
+
+  // Document history — filter out sample records, preserve real ones
+  try {
+    const docs = JSON.parse(localStorage.getItem('bik-doc-history') || '[]');
+    const real = docs.filter(d => !d.isSample);
+    if (real.length > 0) localStorage.setItem('bik-doc-history', JSON.stringify(real));
+    else localStorage.removeItem('bik-doc-history');
+  } catch { localStorage.removeItem('bik-doc-history'); }
+
+  // Builder profile — remove only if it was seeded (isSample flag present)
+  try {
+    const profile = JSON.parse(localStorage.getItem('bik-builder-profile') || '{}');
+    if (profile.isSample) localStorage.removeItem('bik-builder-profile');
+  } catch { /* leave it */ }
+
+  // Clear the sample flag; leave all other keys (onboarding, counters, tokens) untouched
   localStorage.removeItem(DEMO_FLAG_KEY);
 }
 

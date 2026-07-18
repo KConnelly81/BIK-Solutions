@@ -264,11 +264,31 @@
     <section id="empty-section" aria-label="Get started" hidden>
       <div class="empty-start">
         <div class="empty-start-icon" aria-hidden="true">🏗️</div>
-        <h2 class="empty-start-heading">Start your first project</h2>
-        <p class="empty-start-body">Create a project to connect your quotes, variations, and site diaries in one place. BIK will monitor activity and surface what needs attention.</p>
-        <button class="dash-btn dash-btn--coral" id="btn-new-project-empty" type="button">Create project</button>
+        <h2 class="empty-start-heading">Welcome to BIK Solutions</h2>
+        <p class="empty-start-sub">Spend less time on paperwork and more time building.</p>
+        <p class="empty-start-body">Create your first project to get started, or explore sample projects to see how BIK works before adding your own jobs.</p>
+        <div class="empty-start-actions">
+          <button class="dash-btn dash-btn--coral dash-btn--lg" id="btn-new-project-empty" type="button">+ Create Your First Project</button>
+          <button class="dash-btn dash-btn--outline dash-btn--lg" id="btn-explore-samples" type="button">Explore Sample Projects</button>
+        </div>
+        <p class="empty-start-hint">Sample projects are stored only in this browser and can be removed at any time.</p>
+        <p class="empty-start-privacy">Your projects stay in this browser during the beta. Cloud accounts and secure backups are coming soon.</p>
       </div>
     </section>
+
+    <!-- ── Sample projects banner ── -->
+    <div id="demo-banner" style="display:none" role="status" aria-live="polite">
+      <div class="sample-banner">
+        <div class="sample-banner-body">
+          <strong>Viewing Sample Projects</strong>
+          <p>These example projects are included so you can explore BIK's features. They are only stored in this browser and are not shared with anyone.</p>
+        </div>
+        <div class="sample-banner-actions">
+          <button id="btn-continue-exploring" class="dash-btn dash-btn--ghost" type="button">Continue Exploring</button>
+          <button id="btn-clear-samples" class="dash-btn dash-btn--outline sample-banner-clear" type="button">Clear Sample Projects</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ── Tools (always shown) ── -->
     <section class="dash-section" aria-labelledby="tools-heading">
@@ -529,7 +549,7 @@
 import { documentHistory } from './js/toolkit/document-history.js';
 import { projectStore, PROJECT_STATUSES } from './js/toolkit/project-store.js';
 import { evaluateAll, aggregateMetrics } from './js/toolkit/health-engine.js';
-import { seedDemoData, isDemoActive, calcTimeSaved } from './js/toolkit/demo-data.js';
+import { seedDemoData, clearDemoData, isDemoActive, calcTimeSaved } from './js/toolkit/demo-data.js';
 import { checkAndInit as checkOnboarding } from './js/toolkit/onboarding.js';
 import { attendanceStore } from './js/toolkit/attendance-store.js';
 import { checkinTokens }   from './js/toolkit/checkin-token.js';
@@ -709,6 +729,7 @@ function renderHealthCard(r) {
           </div>
           <h3 class="hcard-name">
             <a href="project.html?id=${esc(p.id)}" class="hcard-name-link">${esc(p.name)}</a>
+            ${p.id.startsWith('demo-') ? '<span class="sample-badge" aria-label="Sample project">Sample</span>' : ''}
           </h3>
           ${p.clientName ? `<div class="hcard-client">${esc(p.clientName)}</div>` : ''}
         </div>
@@ -964,21 +985,37 @@ function renderAll() {
   renderFoundingBanner();
 }
 
-// Seed demo data for first-time visitors (no existing projects or profile)
-(function () {
-  const hasProjects = projectStore.list().length > 0;
-  const hasProfile  = !!localStorage.getItem('bik-builder-profile');
-  if (!hasProjects && !hasProfile && !isDemoActive()) {
-    seedDemoData();
-  }
-})();
-
 renderAll();
+
+// ── Sample banner visibility ────────────────────────────────────────
+function syncDemoBanner() {
+  const banner = document.getElementById('demo-banner');
+  if (banner) banner.style.display = isDemoActive() ? 'block' : 'none';
+}
+syncDemoBanner();
 
 // ── Event wiring ───────────────────────────────────────────────────
 
 document.getElementById('btn-new-project').addEventListener('click', () => openProjectModal(null));
 document.getElementById('btn-new-project-empty')?.addEventListener('click', () => openProjectModal(null));
+
+document.getElementById('btn-explore-samples')?.addEventListener('click', () => {
+  seedDemoData();
+  syncDemoBanner();
+  renderAll();
+});
+
+document.getElementById('btn-continue-exploring')?.addEventListener('click', () => {
+  document.getElementById('demo-banner').style.display = 'none';
+});
+
+document.getElementById('btn-clear-samples')?.addEventListener('click', () => {
+  const confirmed = confirm('Remove all sample projects from this browser?\n\nYour own projects will not be affected.');
+  if (!confirmed) return;
+  clearDemoData();
+  syncDemoBanner();
+  renderAll();
+});
 
 document.getElementById('btn-project-close').addEventListener('click', closeProjectModal);
 document.getElementById('btn-project-cancel').addEventListener('click', closeProjectModal);
