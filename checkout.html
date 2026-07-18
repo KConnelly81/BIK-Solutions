@@ -68,19 +68,6 @@
     .hb-unit { font-size:0.9rem;color:rgba(255,255,255,0.5);margin-top:2px; }
     .hb-note { font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:6px; }
 
-    /* GPS */
-    .gps-section { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px; }
-    .gps-check-row { display:flex;align-items:flex-start;gap:12px;cursor:pointer; }
-    .gps-check-row input[type=checkbox] { width:20px;height:20px;flex-shrink:0;margin-top:1px;accent-color:#D85A30;cursor:pointer; }
-    .gps-check-label { font-size:0.88rem;font-weight:600;color:var(--charcoal);line-height:1.3; }
-    .gps-check-sub { font-size:0.75rem;color:var(--muted);margin-top:3px;line-height:1.4; }
-    .gps-feedback { margin-top:12px;display:none; }
-    .gps-feedback.visible { display:block; }
-    .gps-feedback-msg { display:flex;align-items:center;gap:8px;font-size:0.84rem;font-weight:600;padding:10px 12px;border-radius:8px;background:#f8f5f0; }
-    .gps-feedback-msg.capturing { color:#555; }
-    .gps-feedback-msg.captured  { color:#2e7d32;background:#f0f9f0; }
-    .gps-feedback-msg.failed    { color:var(--muted);background:#f8f5f0; }
-    .gps-accuracy { font-size:0.72rem;color:var(--muted);margin-top:4px;margin-left:2px; }
 
     /* Multi-match list */
     .match-list { display:flex;flex-direction:column;gap:8px;margin-bottom:20px; }
@@ -157,24 +144,6 @@
     <div class="time-display">
       <div class="td-label">Sign-out time</div>
       <div class="td-time" id="live-time">--:--</div>
-    </div>
-
-    <!-- Optional: GPS checkout -->
-    <div class="gps-section">
-      <label class="gps-check-row">
-        <input type="checkbox" id="gps-co-checkbox" />
-        <div>
-          <div class="gps-check-label">📍 Share my current location <span style="font-size:0.72rem;font-weight:400;color:#888;">— optional</span></div>
-          <div class="gps-check-sub">Records where you were when you signed out.</div>
-        </div>
-      </label>
-      <div class="gps-feedback" id="gps-co-feedback">
-        <div class="gps-feedback-msg capturing" id="gps-co-msg">
-          <span id="gps-co-icon">📍</span>
-          <span id="gps-co-text">Getting your location…</span>
-        </div>
-        <div class="gps-accuracy" id="gps-co-accuracy"></div>
-      </div>
     </div>
 
     <div class="field">
@@ -326,59 +295,11 @@
 
   $('btn-matches-back').addEventListener('click', () => show('screen-lookup'));
 
-  // ── GPS capture at checkout ──
-  let gpsCheckOut = null;
-
-  function setCoGpsMsg(state, text, accuracy) {
-    const msg = $('gps-co-msg');
-    const icon = $('gps-co-icon');
-    const txt  = $('gps-co-text');
-    const acc  = $('gps-co-accuracy');
-    msg.className = `gps-feedback-msg ${state}`;
-    txt.textContent = text;
-    icon.textContent = state === 'captured' ? '✓' : '📍';
-    acc.textContent = accuracy || '';
-  }
-
-  $('gps-co-checkbox').addEventListener('change', e => {
-    const fb = $('gps-co-feedback');
-    if (!e.target.checked) {
-      fb.classList.remove('visible');
-      gpsCheckOut = { status: 'not_requested', latitude: null, longitude: null, accuracy: null, timestamp: null };
-      return;
-    }
-    fb.classList.add('visible');
-    setCoGpsMsg('capturing', 'Getting your location…', '');
-    if (!navigator.geolocation) {
-      setCoGpsMsg('failed', 'Location not available on this device', '');
-      gpsCheckOut = { status: 'unavailable', latitude: null, longitude: null, accuracy: null, timestamp: new Date().toISOString() };
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        gpsCheckOut = {
-          latitude:  pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracy:  pos.coords.accuracy,
-          timestamp: new Date().toISOString(),
-          status:    'captured',
-        };
-        setCoGpsMsg('captured', 'Location captured', `±${Math.round(pos.coords.accuracy)}m accuracy`);
-      },
-      err => {
-        gpsCheckOut = { status: err.code === 1 ? 'denied' : 'unavailable', latitude: null, longitude: null, accuracy: null, timestamp: new Date().toISOString() };
-        setCoGpsMsg('failed', 'Location not shared — you can still sign out', '');
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-    );
-  });
-
   // ── Confirm sign-out ──
   $('btn-checkout').addEventListener('click', () => {
     if (!currentRecord) return;
     const notes = $('co-notes').value.trim();
-    const finalGps = gpsCheckOut || { status: 'not_requested', latitude: null, longitude: null, accuracy: null, timestamp: null };
-    const ok = attendanceStore.checkOut(currentRecord.id, { notes, gpsCheckOut: finalGps });
+    const ok = attendanceStore.checkOut(currentRecord.id, { notes });
     if (!ok) {
       $('co-error').textContent = 'Unable to record sign-out. The sign-out time may be before the sign-in time.';
       $('co-error').style.display = 'block';
@@ -393,9 +314,6 @@
 
   $('btn-wrong').addEventListener('click', () => {
     currentRecord = null;
-    gpsCheckOut = null;
-    $('gps-co-checkbox').checked = false;
-    $('gps-co-feedback').classList.remove('visible');
     $('co-error').style.display = 'none';
     show('screen-lookup');
   });
