@@ -265,20 +265,29 @@
       <div class="empty-start">
         <div class="empty-start-icon" aria-hidden="true">🏗️</div>
         <h2 class="empty-start-heading">Welcome to BIK Solutions</h2>
-        <p class="empty-start-body">Get started by creating your first project, or load a demo workspace to explore what BIK looks like with real data.</p>
-        <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:4px">
-          <button class="dash-btn dash-btn--coral" id="btn-new-project-empty" type="button">+ Create Your First Project</button>
-          <button class="dash-btn dash-btn--outline" id="btn-load-demo" type="button">Load Demo Workspace</button>
+        <p class="empty-start-sub">Spend less time on paperwork and more time building.</p>
+        <p class="empty-start-body">Create your first project to get started, or explore sample projects to see how BIK works before adding your own jobs.</p>
+        <div class="empty-start-actions">
+          <button class="dash-btn dash-btn--coral dash-btn--lg" id="btn-new-project-empty" type="button">+ Create Your First Project</button>
+          <button class="dash-btn dash-btn--outline dash-btn--lg" id="btn-explore-samples" type="button">Explore Sample Projects</button>
         </div>
+        <p class="empty-start-hint">Sample projects are stored only in this browser and can be removed at any time.</p>
+        <p class="empty-start-privacy">Your projects stay in this browser during the beta. Cloud accounts and secure backups are coming soon.</p>
       </div>
     </section>
 
-    <!-- ── Demo active banner ── -->
-    <div id="demo-banner" style="display:none;background:#fff8e6;border:1.5px solid #ffe082;border-radius:10px;padding:14px 18px;margin-bottom:20px;display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:0.84rem;color:#7c5c00;line-height:1.5">
-        <strong>Demo workspace active.</strong> You are viewing sample data — Harper Building Co., 3 demo projects, and 15 sample documents. This data is stored only in your browser and is not visible to anyone else.
+    <!-- ── Sample projects banner ── -->
+    <div id="demo-banner" style="display:none" role="status" aria-live="polite">
+      <div class="sample-banner">
+        <div class="sample-banner-body">
+          <strong>Viewing Sample Projects</strong>
+          <p>These example projects are included so you can explore BIK's features. They are only stored in this browser and are not shared with anyone.</p>
+        </div>
+        <div class="sample-banner-actions">
+          <button id="btn-continue-exploring" class="dash-btn dash-btn--ghost" type="button">Continue Exploring</button>
+          <button id="btn-clear-samples" class="dash-btn dash-btn--outline sample-banner-clear" type="button">Clear Sample Projects</button>
+        </div>
       </div>
-      <button id="btn-clear-demo" class="dash-btn dash-btn--outline" style="white-space:nowrap;border-color:#e0a800;color:#7c5c00;font-size:0.82rem" type="button">Clear Demo Data</button>
     </div>
 
     <!-- ── Tools (always shown) ── -->
@@ -720,6 +729,7 @@ function renderHealthCard(r) {
           </div>
           <h3 class="hcard-name">
             <a href="project.html?id=${esc(p.id)}" class="hcard-name-link">${esc(p.name)}</a>
+            ${p.id.startsWith('demo-') ? '<span class="sample-badge" aria-label="Sample project">Sample</span>' : ''}
           </h3>
           ${p.clientName ? `<div class="hcard-client">${esc(p.clientName)}</div>` : ''}
         </div>
@@ -977,10 +987,10 @@ function renderAll() {
 
 renderAll();
 
-// ── Demo banner visibility ──────────────────────────────────────────
+// ── Sample banner visibility ────────────────────────────────────────
 function syncDemoBanner() {
   const banner = document.getElementById('demo-banner');
-  if (banner) banner.style.display = isDemoActive() ? 'flex' : 'none';
+  if (banner) banner.style.display = isDemoActive() ? 'block' : 'none';
 }
 syncDemoBanner();
 
@@ -989,13 +999,19 @@ syncDemoBanner();
 document.getElementById('btn-new-project').addEventListener('click', () => openProjectModal(null));
 document.getElementById('btn-new-project-empty')?.addEventListener('click', () => openProjectModal(null));
 
-document.getElementById('btn-load-demo')?.addEventListener('click', () => {
+document.getElementById('btn-explore-samples')?.addEventListener('click', () => {
   seedDemoData();
   syncDemoBanner();
   renderAll();
 });
 
-document.getElementById('btn-clear-demo')?.addEventListener('click', () => {
+document.getElementById('btn-continue-exploring')?.addEventListener('click', () => {
+  document.getElementById('demo-banner').style.display = 'none';
+});
+
+document.getElementById('btn-clear-samples')?.addEventListener('click', () => {
+  const confirmed = confirm('Remove all sample projects from this browser?\n\nYour own projects will not be affected.');
+  if (!confirmed) return;
   clearDemoData();
   syncDemoBanner();
   renderAll();
