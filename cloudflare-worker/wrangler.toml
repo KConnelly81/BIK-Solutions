@@ -1,0 +1,16 @@
+name       = "bik-ai-proxy"
+main       = "worker.js"
+compatibility_date = "2024-01-01"
+
+# ── Environment variables (not secrets) ──────────────────────────────────────
+# ANTHROPIC_API_KEY is stored as a Worker secret, not here.
+# Set it once with: wrangler secret put ANTHROPIC_API_KEY
+#
+# Update ALLOWED_ORIGIN to match your production domain.
+[vars]
+ALLOWED_ORIGIN = "https://biksolutions.com.au"
+
+# ── Local development ─────────────────────────────────────────────────────────
+# For local testing, create a .dev.vars file (git-ignored) with:
+#   ANTHROPIC_API_KEY=sk-ant-...
+#   ALLOWED_ORIGIN=http://localhost:8765

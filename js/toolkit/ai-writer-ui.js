@@ -164,10 +164,6 @@ export function injectAIAssist(fieldId, writer, engine, track, toastFn, modes = 
       toastFn('Enter some text first, then click the AI button.');
       return;
     }
-    if (!writer.hasKey()) {
-      showAIKeyModal(writer, () => handleAI(mode), toastFn);
-      return;
-    }
 
     setLoading(true, mode);
     try {
@@ -186,12 +182,9 @@ export function injectAIAssist(fieldId, writer, engine, track, toastFn, modes = 
       toastFn(AI_MODES[mode]?.toast || 'Text updated by AI.');
 
     } catch (err) {
-      if (err.message === 'NO_KEY') {
-        showAIKeyModal(writer, () => handleAI(mode), toastFn);
-      } else if (err.message === 'INVALID_KEY') {
-        writer.clearKey();
-        toastFn('API key invalid — please re-enter it.');
-        showAIKeyModal(writer, () => handleAI(mode), toastFn);
+      if (err.message === 'PROXY_NOT_CONFIGURED') {
+        toastFn('AI writing is not yet available — proxy setup required.');
+        console.error('[BIK AI] PROXY_URL not configured in ai-writer.js');
       } else {
         toastFn(`AI writing failed: ${err.message}`);
         console.error('[BIK AI]', err);
@@ -233,111 +226,10 @@ export function injectAIAssist(fieldId, writer, engine, track, toastFn, modes = 
 }
 
 /**
- * Show the AI API key setup modal.
- * Created once in the DOM; reused on subsequent calls.
- *
- * @param {AIWriter}      writer    — AIWriter instance
- * @param {Function|null} onSuccess — called after key is saved
- * @param {Function}      toastFn   — toast notification function
+ * showAIKeyModal — retired.
+ * AI Writer now routes through the BIK proxy; no API key is required from users.
+ * Kept as a no-op export so any tool that imports it does not break at runtime.
  */
-export function showAIKeyModal(writer, onSuccess, toastFn) {
-  let modal = document.getElementById('ai-key-modal');
-
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id        = 'ai-key-modal';
-    modal.className = 'ai-key-modal';
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-labelledby', 'ai-modal-title');
-    modal.innerHTML = `
-      <div class="ai-key-modal-inner">
-        <div class="ai-modal-header">
-          <span class="ai-modal-icon" aria-hidden="true">&#10022;</span>
-          <h2 class="ai-modal-title" id="ai-modal-title">AI Professional Writer Setup</h2>
-        </div>
-        <p class="ai-modal-body">
-          The AI Writer uses Anthropic Claude to rewrite your text into professional,
-          contract-ready Australian construction language. You supply your own Anthropic API key
-          &mdash; it is stored only in this browser and never sent to BIK servers.
-        </p>
-        <div class="ai-modal-field">
-          <label class="form-label" for="ai-key-input">Anthropic API key</label>
-          <input type="password" class="form-input" id="ai-key-input"
-            placeholder="sk-ant-api03-&hellip;"
-            autocomplete="off" spellcheck="false" />
-          <span class="field-hint">
-            Get a key at
-            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">
-              console.anthropic.com/settings/keys</a>
-            &mdash; typical cost is a few cents per rewrite.
-          </span>
-        </div>
-        <div class="ai-modal-security">
-          <span aria-hidden="true">&#128274;</span>
-          Your key is stored only in this browser&rsquo;s local storage on this device.
-          It is never transmitted to BIK Solutions servers.
-        </div>
-        <div class="ai-modal-actions">
-          <button class="app-btn app-btn--ghost-dark" id="ai-modal-cancel" type="button">Cancel</button>
-          <button class="app-btn app-btn--coral" id="ai-modal-save" type="button">Save key</button>
-        </div>
-        <div id="ai-modal-clear-wrap" class="ai-modal-clear-wrap" style="display:none">
-          <button class="ai-modal-clear-btn" id="ai-modal-clear" type="button">
-            Remove saved key from this device
-          </button>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && !modal.hidden) closeModal();
-    });
-  }
-
-  const keyInput  = modal.querySelector('#ai-key-input');
-  const saveBtn   = modal.querySelector('#ai-modal-save');
-  const cancelBtn = modal.querySelector('#ai-modal-cancel');
-  const clearBtn  = modal.querySelector('#ai-modal-clear');
-  const clearWrap = modal.querySelector('#ai-modal-clear-wrap');
-
-  clearWrap.style.display = writer.hasKey() ? '' : 'none';
-  keyInput.value = '';
-
-  function closeModal() {
-    modal.hidden = true;
-    document.body.style.overflow = '';
-  }
-
-  const newSave = saveBtn.cloneNode(true);
-  saveBtn.replaceWith(newSave);
-  newSave.addEventListener('click', () => {
-    const k = keyInput.value.trim();
-    if (!k.startsWith('sk-ant-')) {
-      toastFn('That doesn\'t look right — Anthropic keys start with sk-ant-');
-      keyInput.focus();
-      return;
-    }
-    writer.setKey(k);
-    clearWrap.style.display = '';
-    closeModal();
-    toastFn('API key saved. AI writing is ready to use.');
-    onSuccess?.();
-  });
-
-  const newCancel = cancelBtn.cloneNode(true);
-  cancelBtn.replaceWith(newCancel);
-  newCancel.addEventListener('click', closeModal);
-
-  const newClear = clearBtn.cloneNode(true);
-  clearBtn.replaceWith(newClear);
-  newClear.addEventListener('click', () => {
-    writer.clearKey();
-    closeModal();
-    toastFn('API key removed from this device.');
-  });
-
-  modal.hidden = false;
-  document.body.style.overflow = 'hidden';
-  setTimeout(() => keyInput?.focus(), 50);
+export function showAIKeyModal() {
+  console.warn('[BIK AI] showAIKeyModal() called but AI Writer now uses a server proxy. No action taken.');
 }
