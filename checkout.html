@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Site Sign-Out — BIK Solutions Workforce Register" />
+  <title>Site Sign-Out — BIK Solutions</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    body { background: #1c1a18; color: var(--cream); min-height: 100vh; }
+
+    .co-header {
+      background: #252320;
+      border-bottom: 1px solid #3A3835;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .co-logo-mark {
+      width: 36px; height: 36px;
+      background: #3A3835;
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1rem; color: var(--coral);
+      flex-shrink: 0;
+    }
+    .co-header-text strong { font-size: 0.9rem; color: var(--cream); display: block; line-height: 1.2; }
+    .co-header-text span { font-size: 0.75rem; color: var(--stone); }
+
+    .co-wrap {
+      padding: 24px 20px;
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    /* ── Record card ── */
+    .record-card {
+      background: #2a2724;
+      border: 1px solid #3A3835;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .record-card .eyebrow { font-size: 0.7rem; margin-bottom: 10px; }
+    .record-name { font-size: 1.3rem; font-weight: 600; margin-bottom: 4px; }
+    .record-meta { font-size: 0.85rem; color: var(--stone); margin-bottom: 2px; }
+    .record-site {
+      font-size: 0.82rem;
+      color: var(--coral);
+      border-top: 1px solid #3A3835;
+      margin-top: 12px;
+      padding-top: 10px;
+    }
+
+    .time-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .time-box {
+      flex: 1;
+      background: #1c1a18;
+      border-radius: 6px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .time-box .time-label { font-size: 0.68rem; color: var(--stone); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .time-box .time-val { font-size: 0.95rem; font-weight: 500; }
+    .time-box.highlight { border: 1px solid var(--coral); }
+    .time-box .time-val.big { font-size: 1.4rem; color: var(--coral); font-weight: 700; }
+
+    .btn-signout {
+      width: 100%;
+      background: #3A3835;
+      color: var(--cream);
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      padding: 18px;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background 0.2s;
+    }
+    .btn-signout:hover { background: #4a4845; }
+    .btn-signout:disabled { opacity: 0.5; cursor: default; }
+
+    /* ── Success ── */
+    .co-success {
+      display: none;
+      text-align: center;
+      padding: 32px 0;
+    }
+    .co-success.show { display: block; }
+    .co-success-icon {
+      width: 72px; height: 72px;
+      background: #1e3030;
+      border: 3px solid #3a6060;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 2rem;
+    }
+    .co-success h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; }
+    .co-success p  { color: var(--stone); font-size: 0.9rem; margin-bottom: 6px; }
+    .co-success .hours-badge {
+      display: inline-block;
+      background: #1e3030;
+      border: 2px solid #3a6060;
+      border-radius: 8px;
+      padding: 16px 28px;
+      margin: 16px 0;
+    }
+    .co-success .hours-badge .hours-num { font-size: 2.5rem; font-weight: 700; color: #5dcfcf; }
+    .co-success .hours-badge .hours-label { font-size: 0.78rem; color: var(--stone); text-transform: uppercase; letter-spacing: 0.1em; }
+    .co-success .signin-link { color: var(--coral); font-size: 0.85rem; margin-top: 20px; display: inline-block; }
+
+    /* ── Alerts ── */
+    .alert {
+      border-radius: 6px; padding: 14px 16px;
+      margin-bottom: 16px; font-size: 0.9rem;
+      line-height: 1.5; display: none;
+    }
+    .alert.show { display: block; }
+    .alert--error { background: #3a1a1a; border: 1px solid #7a1a1a; color: #f07070; }
+    .alert--info  { background: #1a2a3a; border: 1px solid #1a4a7a; color: #70a0f0; }
+
+    /* ── Search fallback ── */
+    .search-section { margin-top: 24px; }
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      color: var(--stone); font-size: 0.8rem; margin: 24px 0;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1; height: 1px; background: #3A3835;
+    }
+
+    .field-group { margin-bottom: 16px; }
+    .field-group label {
+      display: block; font-size: 0.8rem; font-weight: 500;
+      letter-spacing: 0.04em; color: var(--stone);
+      margin-bottom: 6px; text-transform: uppercase;
+    }
+    .field-group input {
+      width: 100%; background: #2a2724;
+      border: 1.5px solid #3A3835; border-radius: 6px;
+      color: var(--cream); font-family: var(--font-stack);
+      font-size: 1rem; padding: 14px;
+      transition: border-color 0.2s;
+    }
+    .field-group input:focus { outline: none; border-color: var(--coral); }
+
+    .btn-search {
+      width: 100%; background: #2a2724;
+      border: 1.5px solid #3A3835; border-radius: 6px;
+      color: var(--cream); font-size: 1rem; font-weight: 500;
+      padding: 14px; cursor: pointer; transition: border-color 0.2s;
+    }
+    .btn-search:hover { border-color: var(--coral); }
+
+    /* ── Search results ── */
+    .search-results { margin-top: 12px; }
+    .search-result-item {
+      background: #2a2724; border: 1px solid #3A3835;
+      border-radius: 6px; padding: 14px 16px;
+      margin-bottom: 8px; cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .search-result-item:hover { border-color: var(--coral); }
+    .search-result-item strong { font-size: 1rem; display: block; }
+    .search-result-item span { font-size: 0.82rem; color: var(--stone); }
+
+    .already-out {
+      background: #252320; border: 1px solid #3A3835;
+      border-radius: 6px; padding: 16px;
+      text-align: center; color: var(--stone);
+      font-size: 0.9rem;
+    }
+
+    .privacy-note {
+      text-align: center; font-size: 0.72rem; color: #555;
+      padding: 16px 20px 32px; max-width: 540px; margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="co-header">
+    <div class="co-logo-mark">B</div>
+    <div class="co-header-text">
+      <strong>BIK Solutions</strong>
+      <span>Site Sign-Out</span>
+    </div>
+  </header>
+
+  <div class="co-wrap">
+
+    <div class="alert alert--error" id="errorAlert"></div>
+    <div class="alert alert--info"  id="infoAlert"></div>
+
+    <!-- Direct checkout (via ?id=…) -->
+    <div id="directSection"></div>
+
+    <!-- Success -->
+    <div class="co-success" id="successScreen">
+      <div class="co-success-icon">✓</div>
+      <h2>Signed Out</h2>
+      <p id="successName" style="font-size:1.1rem;color:var(--cream);font-weight:500;"></p>
+      <p id="successSite"></p>
+      <div class="hours-badge">
+        <div class="hours-num" id="successHours">—</div>
+        <div class="hours-label">Recorded Site Hours</div>
+      </div>
+      <p id="successCheckin" style="color:var(--stone);font-size:0.82rem;"></p>
+      <p id="successCheckout" style="color:var(--stone);font-size:0.82rem;"></p>
+      <a class="signin-link" href="#">Sign in to another project →</a>
+    </div>
+
+    <!-- Search fallback -->
+    <div class="search-section" id="searchSection">
+      <div class="divider">or find yourself by name</div>
+      <div class="field-group">
+        <label for="searchName">Your Name</label>
+        <input type="text" id="searchName" placeholder="Start typing your name…"
+               autocomplete="off" inputmode="text" />
+      </div>
+      <button class="btn-search" id="searchBtn">Search</button>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+  </div>
+
+  <p class="privacy-note">
+    Attendance information is stored in this browser during the beta.<br>
+    No location data is collected.
+  </p>
+
+  <script src="js/attendance-store.js"></script>
+  <script>
+  (function () {
+    var store   = window.BIKAttendance;
+    var params  = new URLSearchParams(window.location.search);
+    var recordId = params.get('id');
+
+    var errorAlert   = document.getElementById('errorAlert');
+    var infoAlert    = document.getElementById('infoAlert');
+    var directSection = document.getElementById('directSection');
+    var searchSection = document.getElementById('searchSection');
+    var successScreen = document.getElementById('successScreen');
+
+    function showError(msg) {
+      errorAlert.textContent = msg;
+      errorAlert.classList.add('show');
+    }
+
+    function showSuccess(record) {
+      var project = store.Projects.get(record.projectId);
+      directSection.style.display = 'none';
+      searchSection.style.display = 'none';
+      successScreen.classList.add('show');
+      document.getElementById('successName').textContent = record.workerName;
+      document.getElementById('successSite').textContent = project ? 'Site: ' + project.name : '';
+      document.getElementById('successHours').textContent =
+        record.recordedSiteHours != null ? record.recordedSiteHours.toFixed(2) : '—';
+      document.getElementById('successCheckin').textContent =
+        'Signed in: ' + store.formatDate(record.checkinAt);
+      document.getElementById('successCheckout').textContent =
+        'Signed out: ' + store.formatDate(record.checkoutAt);
+      document.querySelector('.signin-link').href =
+        project ? 'checkin.html?p=' + project.id : 'checkin.html';
+    }
+
+    function renderDirectCard(record) {
+      if (!record) { showError('Attendance record not found.'); return; }
+
+      var project = store.Projects.get(record.projectId);
+      var siteName = project ? project.name : 'Unknown Site';
+
+      if (record.status !== 'active') {
+        infoAlert.innerHTML =
+          '<strong>' + record.workerName + '</strong> is already signed out from this site' +
+          (record.checkoutAt ? ' at ' + store.formatDate(record.checkoutAt) + '.' : '.');
+        infoAlert.classList.add('show');
+        // Show hours summary below
+        successScreen.classList.add('show');
+        directSection.style.display = 'none';
+        document.getElementById('successName').textContent = record.workerName;
+        document.getElementById('successSite').textContent = 'Site: ' + siteName;
+        document.getElementById('successHours').textContent =
+          record.recordedSiteHours != null ? record.recordedSiteHours.toFixed(2) : '—';
+        document.getElementById('successCheckin').textContent =
+          'Signed in: ' + store.formatDate(record.checkinAt);
+        document.getElementById('successCheckout').textContent =
+          'Signed out: ' + store.formatDate(record.checkoutAt);
+        return;
+      }
+
+      directSection.innerHTML =
+        '<div class="record-card">' +
+          '<span class="eyebrow text-stone">Currently Signed In</span>' +
+          '<div class="record-name">' + escHtml(record.workerName) + '</div>' +
+          '<div class="record-meta">' + escHtml(record.company) + '</div>' +
+          '<div class="record-meta">' + escHtml(record.trade) + ' &bull; ' + escHtml(record.workerType) + '</div>' +
+          '<div class="record-site">&#128205; ' + escHtml(siteName) + '</div>' +
+          '<div class="time-row">' +
+            '<div class="time-box">' +
+              '<div class="time-label">Signed In</div>' +
+              '<div class="time-val">' + store.formatDate(record.checkinAt) + '</div>' +
+            '</div>' +
+            '<div class="time-box highlight">' +
+              '<div class="time-label">Duration</div>' +
+              '<div class="time-val big" id="liveDuration">—</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<button class="btn-signout" id="signoutBtn">Sign Out of Site</button>';
+
+      // Live duration ticker
+      updateDuration(record.checkinAt);
+      setInterval(function () { updateDuration(record.checkinAt); }, 30000);
+
+      document.getElementById('signoutBtn').addEventListener('click', function () {
+        var btn = this;
+        btn.disabled = true;
+        btn.textContent = 'Signing out…';
+        var updated = store.Records.checkout(record.id);
+        showSuccess(updated);
+      });
+    }
+
+    function updateDuration(checkinAt) {
+      var el = document.getElementById('liveDuration');
+      if (!el) return;
+      var ms = Date.now() - new Date(checkinAt).getTime();
+      var h = Math.floor(ms / 3600000);
+      var m = Math.floor((ms % 3600000) / 60000);
+      el.textContent = h + 'h ' + m + 'm';
+    }
+
+    function escHtml(str) {
+      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    /* ── Direct ID lookup ── */
+    if (recordId) {
+      var record = store.Records.get(recordId);
+      renderDirectCard(record);
+    }
+
+    /* ── Name search fallback ── */
+    var searchBtn  = document.getElementById('searchBtn');
+    var searchName = document.getElementById('searchName');
+    var searchResults = document.getElementById('searchResults');
+
+    searchBtn.addEventListener('click', function () {
+      var q = searchName.value.trim().toLowerCase();
+      if (!q) return;
+      searchResults.innerHTML = '';
+
+      var active = store.Records.active().filter(function (r) {
+        return r.workerName.toLowerCase().includes(q);
+      });
+
+      if (!active.length) {
+        searchResults.innerHTML = '<div class="already-out">No one currently on site matching that name.<br><span style="font-size:0.78rem">They may have already signed out.</span></div>';
+        return;
+      }
+
+      active.forEach(function (r) {
+        var project = store.Projects.get(r.projectId);
+        var siteName = project ? project.name : 'Unknown Site';
+        var item = document.createElement('div');
+        item.className = 'search-result-item';
+        item.innerHTML =
+          '<strong>' + escHtml(r.workerName) + '</strong>' +
+          '<span>' + escHtml(r.company) + ' &bull; ' + escHtml(siteName) + '<br>' +
+          'Signed in: ' + store.formatDate(r.checkinAt) + '</span>';
+        item.addEventListener('click', function () {
+          searchSection.style.display = 'none';
+          var updated = store.Records.checkout(r.id);
+          showSuccess(updated);
+        });
+        searchResults.appendChild(item);
+      });
+    });
+
+    searchName.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') searchBtn.click();
+    });
+
+  }());
+  </script>
+
+</body>
+</html>

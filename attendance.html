@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Site Attendance Dashboard — BIK Solutions Workforce Register" />
+  <title>Site Attendance — BIK Solutions</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* ─── Shell ──────────────────────────────────── */
+    body { background: var(--cream); color: var(--charcoal); }
+
+    /* ─── Top bar ────────────────────────────────── */
+    .att-topbar {
+      background: var(--charcoal);
+      color: var(--cream);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .att-topbar-left { display: flex; align-items: center; gap: 12px; }
+    .att-logo-mark {
+      width: 34px; height: 34px;
+      background: var(--coral);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.95rem; color: #fff;
+      flex-shrink: 0;
+    }
+    .att-topbar-title { font-size: 0.95rem; font-weight: 600; }
+    .att-topbar-sub   { font-size: 0.72rem; color: var(--stone); }
+
+    /* ─── Project selector ────────────────────────── */
+    .project-bar {
+      background: #F0EBE2;
+      border-bottom: 1px solid #DDD8CE;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .project-bar label { font-size: 0.8rem; font-weight: 500; white-space: nowrap; color: var(--stone); }
+    .project-bar select {
+      flex: 1; min-width: 180px;
+      background: #fff;
+      border: 1.5px solid #DDD8CE;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      color: var(--charcoal);
+      cursor: pointer;
+    }
+    .btn-new-project {
+      background: var(--coral);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-new-project:hover { background: #bf4e27; }
+
+    /* ─── Tabs ────────────────────────────────────── */
+    .att-tabs {
+      display: flex;
+      border-bottom: 2px solid #DDD8CE;
+      background: #fff;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .att-tab {
+      padding: 14px 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--stone);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      transition: color 0.2s, border-color 0.2s;
+      margin-bottom: -2px;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+    .att-tab.active { color: var(--charcoal); border-bottom-color: var(--coral); }
+    .att-tab:hover:not(.active) { color: var(--charcoal); }
+
+    .att-panel { display: none; padding: 20px; max-width: 1100px; margin: 0 auto; }
+    .att-panel.active { display: block; }
+
+    /* ─── Stats row ───────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #fff;
+      border: 1px solid #DDD8CE;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-card .stat-num { font-size: 2rem; font-weight: 700; color: var(--charcoal); line-height: 1; }
+    .stat-card .stat-num.coral { color: var(--coral); }
+    .stat-card .stat-label { font-size: 0.72rem; color: var(--stone); text-transform: uppercase; letter-spacing: 0.07em; margin-top: 4px; }
+
+    /* ─── Section headers ─────────────────────────── */
+    .panel-section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--stone);
+      margin: 20px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #DDD8CE;
+    }
+
+    /* ─── On-site list ────────────────────────────── */
+    .onsite-list { list-style: none; }
+    .onsite-item {
+      background: #fff;
+      border: 1px solid #DDD8CE;
+      border-left: 4px solid #4caf50;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .onsite-item.corrected { border-left-color: var(--stone); }
+    .onsite-item .item-name { font-weight: 600; font-size: 0.95rem; }
+    .onsite-item .item-meta { font-size: 0.8rem; color: var(--stone); }
+    .onsite-item .item-time { font-size: 0.8rem; color: var(--stone); white-space: nowrap; }
+    .btn-admin-out {
+      background: #fff;
+      border: 1px solid #DDD8CE;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      color: var(--charcoal);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-admin-out:hover { border-color: var(--coral); color: var(--coral); }
+
+    .checked-out-item {
+      background: #F8F5F0;
+      border: 1px solid #E8E3DC;
+      border-left: 4px solid var(--stone);
+    }
+
+    /* ─── Forgotten checkouts ─────────────────────── */
+    .forgotten-banner {
+      background: #fff8e6;
+      border: 1px solid #f0c830;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      font-size: 0.88rem;
+    }
+    .forgotten-banner strong { color: #8a5a00; }
+    .forgotten-item {
+      background: #fff8e6;
+      border: 1px solid #f0c830;
+      border-left: 4px solid #f0c830;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .forgotten-item .item-name { font-weight: 600; font-size: 0.9rem; }
+    .forgotten-item .item-meta { font-size: 0.78rem; color: #8a5a00; }
+
+    /* ─── Workforce register table ────────────────── */
+    .wf-table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #DDD8CE;
+    }
+    thead { background: #F0EBE2; }
+    th {
+      padding: 10px 12px;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--stone);
+      border-bottom: 1px solid #DDD8CE;
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #F0EBE2;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #FAF7F3; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .badge--green  { background: #e6f4e6; color: #2a6a2a; }
+    .badge--stone  { background: #E8E3DC; color: var(--stone); }
+    .badge--yellow { background: #fff3cc; color: #7a5a00; }
+    .badge--coral  { background: #fde8e0; color: var(--coral); }
+
+    /* ─── Reports panel ───────────────────────────── */
+    .report-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .report-card {
+      background: #fff;
+      border: 1px solid #DDD8CE;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .report-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 6px; }
+    .report-card p  { font-size: 0.82rem; color: var(--stone); margin-bottom: 14px; }
+    .btn-report {
+      width: 100%;
+      background: var(--charcoal);
+      color: var(--cream);
+      border: none;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-report:hover { background: #3A3835; }
+
+    /* ─── QR Generator ────────────────────────────── */
+    .qr-card {
+      background: #fff;
+      border: 1px solid #DDD8CE;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: center;
+      max-width: 400px;
+    }
+    .qr-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .qr-card p  { font-size: 0.82rem; color: var(--stone); margin-bottom: 16px; }
+    #qrCanvas {
+      border: 1px solid #DDD8CE;
+      border-radius: 6px;
+      margin: 0 auto 12px;
+      display: block;
+    }
+    .qr-url {
+      font-size: 0.72rem;
+      color: var(--stone);
+      word-break: break-all;
+      margin-bottom: 14px;
+    }
+    .btn-print-qr {
+      background: var(--coral);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-print-qr:hover { background: #bf4e27; }
+
+    /* ─── Emergency roll call ─────────────────────── */
+    .emergency-btn-wrap {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 200;
+    }
+    .btn-emergency {
+      background: #c0392b;
+      color: #fff;
+      border: none;
+      border-radius: 50px;
+      padding: 14px 22px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(192,57,43,0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.02em;
+    }
+    .btn-emergency:hover { background: #a93226; }
+
+    /* ─── Emergency modal ─────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 300;
+      overflow-y: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #1c1a18;
+      color: #fff;
+      border-radius: 8px;
+      margin: auto;
+      padding: 24px;
+      width: 100%;
+      max-width: 540px;
+      position: relative;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .modal-header h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #ff6b6b;
+    }
+    .emergency-disclaimer {
+      font-size: 0.78rem;
+      color: #888;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 12px;
+    }
+    .roll-call-count {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ff6b6b;
+      text-align: center;
+      margin: 8px 0 4px;
+    }
+    .roll-call-label {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #888;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .roll-call-list { list-style: none; }
+    .roll-call-item {
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .roll-call-item .rc-name { font-weight: 600; font-size: 0.95rem; }
+    .roll-call-item .rc-meta { font-size: 0.78rem; color: #888; }
+    .roll-call-item .rc-time { font-size: 0.78rem; color: #888; white-space: nowrap; }
+    .modal-actions {
+      display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;
+    }
+    .btn-modal-close {
+      flex: 1;
+      background: #3A3835;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-modal-refresh {
+      flex: 1;
+      background: #2a2724;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-modal-print {
+      flex: 1;
+      background: var(--coral);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    /* ─── Modal: correction / admin checkout ─────── */
+    .correction-modal .modal-box { background: #fff; color: var(--charcoal); max-width: 440px; }
+    .correction-modal h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+    .correction-modal p  { font-size: 0.82rem; color: var(--stone); margin-bottom: 14px; }
+    .correction-modal label {
+      display: block; font-size: 0.78rem; font-weight: 500;
+      color: var(--stone); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px;
+    }
+    .correction-modal input,
+    .correction-modal textarea {
+      width: 100%;
+      border: 1.5px solid #DDD8CE;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-family: var(--font-stack);
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+      color: var(--charcoal);
+    }
+    .correction-modal textarea { resize: vertical; min-height: 70px; }
+    .correction-modal input:focus,
+    .correction-modal textarea:focus { outline: none; border-color: var(--coral); }
+    .btn-confirm-correction {
+      width: 100%;
+      background: var(--charcoal);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .btn-confirm-correction:hover { background: #3A3835; }
+    .btn-cancel-correction {
+      width: 100%;
+      background: transparent;
+      border: 1px solid #DDD8CE;
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 0.85rem;
+      color: var(--stone);
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    /* ─── New project modal ───────────────────────── */
+    .new-project-modal .modal-box { background: #fff; color: var(--charcoal); max-width: 420px; }
+    .new-project-modal h3 { font-size: 1rem; font-weight: 600; margin-bottom: 14px; }
+    .new-project-modal label {
+      display: block; font-size: 0.78rem; font-weight: 500; color: var(--stone);
+      text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px;
+    }
+    .new-project-modal input {
+      width: 100%;
+      border: 1.5px solid #DDD8CE;
+      border-radius: 6px;
+      padding: 11px 12px;
+      font-family: var(--font-stack);
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+      color: var(--charcoal);
+    }
+    .new-project-modal input:focus { outline: none; border-color: var(--coral); }
+    .btn-create-project {
+      width: 100%; background: var(--coral); color: #fff;
+      border: none; border-radius: 6px;
+      padding: 13px; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    }
+    .btn-create-project:hover { background: #bf4e27; }
+    .btn-cancel-new-project {
+      width: 100%; background: transparent;
+      border: 1px solid #DDD8CE; border-radius: 6px;
+      padding: 10px; font-size: 0.85rem; color: var(--stone);
+      cursor: pointer; margin-top: 8px;
+    }
+
+    /* ─── Empty states ────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--stone);
+      font-size: 0.9rem;
+    }
+    .empty-state strong { display: block; color: var(--charcoal); font-size: 1rem; margin-bottom: 6px; }
+
+    /* ─── Privacy note ────────────────────────────── */
+    .privacy-note {
+      text-align: center; font-size: 0.72rem; color: var(--stone);
+      padding: 16px 20px 40px;
+    }
+
+    /* ─── Print styles ─────────────────────────────── */
+    @media print {
+      .att-topbar, .project-bar, .att-tabs, .emergency-btn-wrap,
+      .btn-admin-out, .btn-report, .btn-print-qr { display: none !important; }
+      body { background: #fff; }
+      .att-panel { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Top bar ─── -->
+  <div class="att-topbar">
+    <div class="att-topbar-left">
+      <div class="att-logo-mark">B</div>
+      <div>
+        <div class="att-topbar-title">Site Attendance</div>
+        <div class="att-topbar-sub">BIK Solutions Workforce Register</div>
+      </div>
+    </div>
+    <a href="index.html" style="color:var(--stone);font-size:0.8rem;">← Back to site</a>
+  </div>
+
+  <!-- ─── Project bar ─── -->
+  <div class="project-bar">
+    <label for="projectSelect">Project:</label>
+    <select id="projectSelect">
+      <option value="">— Select a project —</option>
+    </select>
+    <button class="btn-new-project" id="newProjectBtn">+ New Project</button>
+  </div>
+
+  <!-- ─── Tabs ─── -->
+  <div class="att-tabs" role="tablist">
+    <button class="att-tab active" role="tab" data-tab="today" aria-selected="true">Today</button>
+    <button class="att-tab" role="tab" data-tab="workforce" aria-selected="false">Workforce Register</button>
+    <button class="att-tab" role="tab" data-tab="reports" aria-selected="false">Reports</button>
+  </div>
+
+  <!-- ═══ TODAY PANEL ═══ -->
+  <div class="att-panel active" id="panel-today">
+
+    <div id="noProjectToday" class="empty-state" style="padding-top:48px;">
+      <strong>No project selected</strong>
+      Select an existing project above or create a new one.
+    </div>
+
+    <div id="todayContent" style="display:none;">
+
+      <!-- Stats -->
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card">
+          <div class="stat-num coral" id="statOnSite">0</div>
+          <div class="stat-label">On Site Now</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statCheckedOut">0</div>
+          <div class="stat-label">Checked Out Today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statTotal">0</div>
+          <div class="stat-label">Total Attended</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num coral" id="statHours">0</div>
+          <div class="stat-label">Recorded Site Hours</div>
+        </div>
+      </div>
+
+      <!-- Forgotten checkouts banner -->
+      <div class="forgotten-banner" id="forgottenBanner" style="display:none;">
+        <strong>⚠ Checkout Required</strong> — the following workers were still recorded as on site at the end of a previous day. Please manually close these records.
+      </div>
+      <ul class="onsite-list" id="forgottenList"></ul>
+
+      <!-- Currently on site -->
+      <div class="panel-section-title">Currently On Site</div>
+      <ul class="onsite-list" id="onsiteList"></ul>
+
+      <!-- Checked out today -->
+      <div class="panel-section-title">Checked Out Today</div>
+      <ul class="onsite-list" id="checkedOutList"></ul>
+
+    </div>
+  </div>
+
+  <!-- ═══ WORKFORCE PANEL ═══ -->
+  <div class="att-panel" id="panel-workforce">
+    <div id="noProjectWF" class="empty-state" style="padding-top:48px;">
+      <strong>No project selected</strong>
+      Select a project to view its workforce register.
+    </div>
+    <div id="wfContent" style="display:none;">
+      <div class="wf-table-wrap">
+        <table id="wfTable">
+          <thead>
+            <tr>
+              <th>Worker</th>
+              <th>Company</th>
+              <th>Trade</th>
+              <th>Type</th>
+              <th>Visits</th>
+              <th>Recorded Site Hours</th>
+              <th>Last Attendance</th>
+            </tr>
+          </thead>
+          <tbody id="wfTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ REPORTS PANEL ═══ -->
+  <div class="att-panel" id="panel-reports">
+
+    <div class="report-grid">
+      <div class="report-card">
+        <h3>Daily Attendance CSV</h3>
+        <p>All check-ins and check-outs for the selected project today.</p>
+        <button class="btn-report" id="btnDailyCSV">Download Today's Attendance</button>
+      </div>
+      <div class="report-card">
+        <h3>Workforce Register CSV</h3>
+        <p>All workers who have attended this project, with visit counts and total Recorded Site Hours.</p>
+        <button class="btn-report" id="btnWorkforceCSV">Download Workforce Register</button>
+      </div>
+      <div class="report-card">
+        <h3>Daily Attendance — Print</h3>
+        <p>Printable version of today's sign-in register for site records.</p>
+        <button class="btn-report" id="btnPrintDaily">Print Daily Register</button>
+      </div>
+    </div>
+
+    <!-- QR Generator -->
+    <div class="panel-section-title">QR Check-In Sign</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
+      <div class="qr-card" id="qrCard">
+        <h3 id="qrSiteName">—</h3>
+        <p id="qrSiteAddr"></p>
+        <canvas id="qrCanvas" width="220" height="220"></canvas>
+        <div class="qr-url" id="qrUrl"></div>
+        <button class="btn-print-qr" id="btnPrintQR">Print QR Sign</button>
+      </div>
+      <div style="max-width:320px;font-size:0.85rem;color:var(--stone);line-height:1.6;padding-top:8px;">
+        <p>Display this QR code at your site entry point. Workers scan it with their phone to sign in — no app download required.</p>
+        <p style="margin-top:10px;">The QR links directly to the check-in page for this project.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:32px;padding-top:24px;border-top:1px solid #DDD8CE;">
+      <div class="panel-section-title">Sample Data</div>
+      <p style="font-size:0.85rem;color:var(--stone);margin-bottom:14px;">Add sample records to test the system, or clear them without affecting real data.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-report" id="btnAddSample" style="background:#3A3835;flex:none;">Add Sample Records</button>
+        <button class="btn-report" id="btnClearSample" style="background:#888;flex:none;">Clear Sample Records</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── Emergency button ─── -->
+  <div class="emergency-btn-wrap">
+    <button class="btn-emergency" id="emergencyBtn">
+      🚨 Emergency Roll Call
+    </button>
+  </div>
+
+  <!-- ─── Emergency modal ─── -->
+  <div class="modal-overlay" id="emergencyModal" role="dialog" aria-modal="true" aria-label="Emergency Roll Call">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span style="font-size:1.8rem;">🚨</span>
+        <div>
+          <h2>Emergency Roll Call</h2>
+          <div style="font-size:0.78rem;color:#888;">Workers currently recorded as on site</div>
+        </div>
+      </div>
+      <div class="emergency-disclaimer">
+        This list shows workers recorded as signed in at this moment.
+        It does not replace statutory emergency procedures. Always follow your site emergency plan.
+      </div>
+      <div class="roll-call-count" id="rollCallCount">—</div>
+      <div class="roll-call-label">People On Site</div>
+      <ul class="roll-call-list" id="rollCallList"></ul>
+      <div class="modal-actions">
+        <button class="btn-modal-refresh" id="rollCallRefresh">↻ Refresh</button>
+        <button class="btn-modal-print">🖨 Print</button>
+        <button class="btn-modal-close" id="emergencyClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Admin checkout modal ─── -->
+  <div class="modal-overlay correction-modal" id="adminCheckoutModal">
+    <div class="modal-box">
+      <h3>Manual Site Sign-Out</h3>
+      <p id="adminCheckoutName"></p>
+      <p style="font-size:0.82rem;color:var(--stone);margin-bottom:14px;">
+        You are manually closing this attendance record as builder/admin.
+        A correction note is required. This action is logged in the audit trail.
+      </p>
+      <label>Correction Note (required)</label>
+      <textarea id="adminCheckoutNote" placeholder="e.g. Worker confirmed they left at approximately 3pm, forgot to sign out."></textarea>
+      <button class="btn-confirm-correction" id="adminCheckoutConfirm">Confirm Sign-Out</button>
+      <button class="btn-cancel-correction" id="adminCheckoutCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ─── Forgotten checkout modal ─── -->
+  <div class="modal-overlay correction-modal" id="forgottenModal">
+    <div class="modal-box">
+      <h3>Close Previous Day Record</h3>
+      <p id="forgottenWorkerName"></p>
+      <p style="font-size:0.82rem;color:var(--stone);margin-bottom:14px;">
+        Set the estimated check-out time and add a note. This is logged in the audit trail.
+        The original check-in data is preserved.
+      </p>
+      <label>Estimated Check-Out Time</label>
+      <input type="datetime-local" id="forgottenCheckoutTime" />
+      <label>Correction Note (required)</label>
+      <textarea id="forgottenNote" placeholder="e.g. Worker confirmed approximate departure time was 5pm."></textarea>
+      <button class="btn-confirm-correction" id="forgottenConfirm">Save Correction</button>
+      <button class="btn-cancel-correction" id="forgottenCancel">Cancel</button>
+    </div>
+  </div>
+
+  <!-- ─── New project modal ─── -->
+  <div class="modal-overlay new-project-modal" id="newProjectModal">
+    <div class="modal-box">
+      <h3>New Project / Site</h3>
+      <label for="npName">Site / Project Name</label>
+      <input type="text" id="npName" placeholder="e.g. Lot 14 Smith St, Coomera" maxlength="120" />
+      <label for="npAddress">Address <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.72rem;">(optional)</span></label>
+      <input type="text" id="npAddress" placeholder="e.g. 14 Smith Street, Coomera QLD 4209" maxlength="200" />
+      <button class="btn-create-project" id="createProjectBtn">Create Project</button>
+      <button class="btn-cancel-new-project" id="cancelNewProjectBtn">Cancel</button>
+    </div>
+  </div>
+
+  <p class="privacy-note">
+    Attendance information is stored in this browser during the beta.
+    No location data is collected.
+  </p>
+
+  <script src="js/qrcode-min.js"></script>
+  <script src="js/attendance-store.js"></script>
+  <script>
+  /* ════════════════════════════════════════════════════════
+     attendance.html — Dashboard controller
+  ════════════════════════════════════════════════════════ */
+  (function () {
+    var store = window.BIKAttendance;
+
+    /* ── State ── */
+    var currentProjectId = null;
+    var pendingAdminCheckoutId = null;
+    var pendingForgottenId = null;
+
+    /* ── Helpers ── */
+    function escHtml(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function fmtHours(h) {
+      if (h == null) return '—';
+      return Number(h).toFixed(2) + ' h';
+    }
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      return store.formatDate(iso);
+    }
+
+    /* ── Project selector ── */
+    var projectSelect = document.getElementById('projectSelect');
+
+    function refreshProjectSelector() {
+      var projects = store.Projects.all();
+      var prev = projectSelect.value;
+      projectSelect.innerHTML = '<option value="">— Select a project —</option>';
+      projects.forEach(function (p) {
+        var opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name + (p.isSample ? ' [SAMPLE]' : '');
+        projectSelect.appendChild(opt);
+      });
+      if (prev && store.Projects.get(prev)) projectSelect.value = prev;
+    }
+
+    projectSelect.addEventListener('change', function () {
+      currentProjectId = this.value || null;
+      refreshAll();
+    });
+
+    /* ── Tabs ── */
+    document.querySelectorAll('.att-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        document.querySelectorAll('.att-tab').forEach(function (t) {
+          t.classList.remove('active');
+          t.setAttribute('aria-selected', 'false');
+        });
+        document.querySelectorAll('.att-panel').forEach(function (p) { p.classList.remove('active'); });
+        this.classList.add('active');
+        this.setAttribute('aria-selected', 'true');
+        document.getElementById('panel-' + this.dataset.tab).classList.add('active');
+        refreshAll();
+      });
+    });
+
+    /* ════ TODAY PANEL ════ */
+    function refreshToday() {
+      var todayContent = document.getElementById('todayContent');
+      var noProject    = document.getElementById('noProjectToday');
+      if (!currentProjectId) {
+        todayContent.style.display = 'none';
+        noProject.style.display = 'block';
+        return;
+      }
+      noProject.style.display = 'none';
+      todayContent.style.display = 'block';
+
+      var todayAll   = store.Records.todayRecords(currentProjectId);
+      var onSiteNow  = store.Records.onSite(currentProjectId);
+      var forgotten  = store.Records.forgottenCheckouts().filter(function (r) { return r.projectId === currentProjectId; });
+      var checkedOut = todayAll.filter(function (r) { return r.status !== 'active'; });
+      var totalHours = todayAll.reduce(function (sum, r) { return sum + (r.recordedSiteHours || 0); }, 0);
+
+      document.getElementById('statOnSite').textContent    = onSiteNow.length;
+      document.getElementById('statCheckedOut').textContent = checkedOut.length;
+      document.getElementById('statTotal').textContent     = todayAll.length + forgotten.length;
+      document.getElementById('statHours').textContent     = totalHours.toFixed(1);
+
+      /* Forgotten checkouts */
+      var forgottenBanner = document.getElementById('forgottenBanner');
+      var forgottenList   = document.getElementById('forgottenList');
+      forgottenList.innerHTML = '';
+      if (forgotten.length) {
+        forgottenBanner.style.display = 'block';
+        forgotten.forEach(function (r) {
+          var li = document.createElement('li');
+          li.className = 'forgotten-item';
+          li.innerHTML =
+            '<div>' +
+              '<div class="item-name">' + escHtml(r.workerName) + ' <span class="badge badge--yellow">Checkout Required</span></div>' +
+              '<div class="item-meta">Signed in: ' + fmtDate(r.checkinAt) + '</div>' +
+              '<div class="item-meta">' + escHtml(r.company) + ' &bull; ' + escHtml(r.trade) + '</div>' +
+            '</div>' +
+            '<button class="btn-admin-out" data-id="' + r.id + '" data-mode="forgotten">Close Record</button>';
+          forgottenList.appendChild(li);
+        });
+      } else {
+        forgottenBanner.style.display = 'none';
+      }
+
+      /* Currently on site */
+      var onsiteList = document.getElementById('onsiteList');
+      onsiteList.innerHTML = '';
+      if (!onSiteNow.length) {
+        onsiteList.innerHTML = '<li style="color:var(--stone);font-size:0.85rem;padding:12px 0;">No one currently on site.</li>';
+      } else {
+        onSiteNow.forEach(function (r) {
+          var li = document.createElement('li');
+          li.className = 'onsite-item';
+          li.innerHTML =
+            '<div>' +
+              '<div class="item-name">' + escHtml(r.workerName) + ' <span class="badge badge--green">On Site</span></div>' +
+              '<div class="item-meta">' + escHtml(r.company) + ' &bull; ' + escHtml(r.trade) + ' &bull; ' + escHtml(r.workerType) + '</div>' +
+              '<div class="item-time">In: ' + fmtDate(r.checkinAt) + '</div>' +
+            '</div>' +
+            '<button class="btn-admin-out" data-id="' + r.id + '" data-mode="admin">Sign Out</button>';
+          li.querySelector('.btn-admin-out').addEventListener('click', function () {
+            openAdminCheckout(r.id, r.workerName);
+          });
+          onsiteList.appendChild(li);
+        });
+      }
+
+      /* Checked out today */
+      var checkedOutList = document.getElementById('checkedOutList');
+      checkedOutList.innerHTML = '';
+      if (!checkedOut.length) {
+        checkedOutList.innerHTML = '<li style="color:var(--stone);font-size:0.85rem;padding:12px 0;">No check-outs recorded today.</li>';
+      } else {
+        checkedOut.forEach(function (r) {
+          var badgeClass = r.status === 'admin_checkout' ? 'badge--coral' : r.status === 'corrected' ? 'badge--yellow' : 'badge--stone';
+          var badgeText  = r.status === 'admin_checkout' ? 'Admin Sign-Out' : r.status === 'corrected' ? 'Corrected' : 'Checked Out';
+          var li = document.createElement('li');
+          li.className = 'onsite-item checked-out-item';
+          li.innerHTML =
+            '<div>' +
+              '<div class="item-name">' + escHtml(r.workerName) + ' <span class="badge ' + badgeClass + '">' + badgeText + '</span></div>' +
+              '<div class="item-meta">' + escHtml(r.company) + ' &bull; ' + escHtml(r.trade) + '</div>' +
+              '<div class="item-time">In: ' + fmtDate(r.checkinAt) + ' &bull; Out: ' + fmtDate(r.checkoutAt) + '</div>' +
+            '</div>' +
+            '<div class="item-time" style="font-weight:600;">' + fmtHours(r.recordedSiteHours) + '</div>';
+          checkedOutList.appendChild(li);
+        });
+      }
+
+      /* Wire forgotten close buttons */
+      forgottenList.querySelectorAll('[data-mode="forgotten"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          openForgottenModal(this.dataset.id);
+        });
+      });
+    }
+
+    /* ════ WORKFORCE PANEL ════ */
+    function refreshWorkforce() {
+      var wfContent  = document.getElementById('wfContent');
+      var noProject  = document.getElementById('noProjectWF');
+      if (!currentProjectId) {
+        wfContent.style.display = 'none';
+        noProject.style.display = 'block';
+        return;
+      }
+      noProject.style.display = 'none';
+      wfContent.style.display = 'block';
+
+      var register = store.Records.workforceRegister(currentProjectId);
+      var tbody = document.getElementById('wfTableBody');
+      tbody.innerHTML = '';
+
+      if (!register.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--stone);padding:24px;">No attendance recorded for this project yet.</td></tr>';
+        return;
+      }
+
+      register.forEach(function (w) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td><strong>' + escHtml(w.workerName) + '</strong></td>' +
+          '<td>' + escHtml(w.company) + '</td>' +
+          '<td>' + escHtml(w.trade) + '</td>' +
+          '<td><span class="badge badge--stone">' + escHtml(w.workerType) + '</span></td>' +
+          '<td>' + w.visitCount + '</td>' +
+          '<td><strong>' + w.totalSiteHours.toFixed(2) + ' h</strong></td>' +
+          '<td>' + fmtDate(w.lastAttendance) + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ════ REPORTS PANEL ════ */
+    function refreshReports() {
+      var project = currentProjectId ? store.Projects.get(currentProjectId) : null;
+      var siteName = project ? project.name : '—';
+      var siteAddr = project ? (project.address || '') : '';
+
+      document.getElementById('qrSiteName').textContent = siteName;
+      document.getElementById('qrSiteAddr').textContent = siteAddr;
+
+      if (currentProjectId) {
+        renderQR(currentProjectId, siteName);
+      } else {
+        var ctx = document.getElementById('qrCanvas').getContext('2d');
+        ctx.clearRect(0, 0, 220, 220);
+        document.getElementById('qrUrl').textContent = '';
+      }
+    }
+
+    /* ════ QR Generator ════ */
+    /* Lightweight QR encoder using qrcode-generator (bundled inline) */
+    /* We use a minimal implementation — no external CDN */
+    function renderQR(projectId, siteName) {
+      var url = window.location.origin + window.location.pathname.replace('attendance.html', '') + 'checkin.html?p=' + projectId;
+      document.getElementById('qrUrl').textContent = url;
+
+      var canvas = document.getElementById('qrCanvas');
+      try {
+        var qr = qrcode(0, 'M');
+        qr.addData(url);
+        qr.make();
+        var cellSize = Math.floor(220 / qr.getModuleCount());
+        canvas.width = canvas.height = cellSize * qr.getModuleCount();
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#000000';
+        for (var row = 0; row < qr.getModuleCount(); row++) {
+          for (var col = 0; col < qr.getModuleCount(); col++) {
+            if (qr.isDark(row, col)) {
+              ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+            }
+          }
+        }
+      } catch (e) {
+        var ctx2 = canvas.getContext('2d');
+        ctx2.fillStyle = '#F0EBE2';
+        ctx2.fillRect(0, 0, 220, 220);
+        ctx2.fillStyle = '#888';
+        ctx2.font = '13px sans-serif';
+        ctx2.textAlign = 'center';
+        ctx2.fillText('QR library loading…', 110, 110);
+      }
+    }
+
+    document.getElementById('btnPrintQR').addEventListener('click', function () {
+      if (!currentProjectId) { alert('Please select a project first.'); return; }
+      var project = store.Projects.get(currentProjectId);
+      var canvas  = document.getElementById('qrCanvas');
+      var url     = document.getElementById('qrUrl').textContent;
+      var win = window.open('', '_blank');
+      win.document.write(
+        '<!DOCTYPE html><html><head><title>QR Sign-In — ' + escHtml(project.name) + '</title>' +
+        '<style>body{font-family:sans-serif;text-align:center;padding:40px;} h1{font-size:1.6rem;} p{color:#666;margin:6px 0;} img{border:1px solid #ddd;border-radius:6px;margin:20px 0;} .url{font-size:0.7rem;color:#888;word-break:break-all;max-width:300px;margin:0 auto;} .note{font-size:0.75rem;color:#aaa;margin-top:30px;border-top:1px solid #eee;padding-top:16px;}</style>' +
+        '</head><body>' +
+        '<h1>' + escHtml(project.name) + '</h1>' +
+        '<p>Scan to sign in to site</p>' +
+        (project.address ? '<p style="font-size:0.85rem;">' + escHtml(project.address) + '</p>' : '') +
+        '<img src="' + canvas.toDataURL() + '" width="220" height="220" />' +
+        '<div class="url">' + escHtml(url) + '</div>' +
+        '<div class="note">BIK Solutions Site Sign-In &amp; Workforce Register<br>No app required — scan with your phone camera.</div>' +
+        '</body></html>'
+      );
+      win.document.close();
+      win.print();
+    });
+
+    document.getElementById('btnDailyCSV').addEventListener('click', function () {
+      if (!currentProjectId) { alert('Please select a project first.'); return; }
+      store.CSV.dailyAttendance(currentProjectId);
+    });
+    document.getElementById('btnWorkforceCSV').addEventListener('click', function () {
+      if (!currentProjectId) { alert('Please select a project first.'); return; }
+      store.CSV.workforce(currentProjectId);
+    });
+    document.getElementById('btnPrintDaily').addEventListener('click', function () {
+      window.print();
+    });
+
+    /* ════ Emergency Roll Call ════ */
+    var emergencyModal = document.getElementById('emergencyModal');
+
+    document.getElementById('emergencyBtn').addEventListener('click', function () {
+      populateRollCall();
+      emergencyModal.classList.add('open');
+    });
+    document.getElementById('emergencyClose').addEventListener('click', function () {
+      emergencyModal.classList.remove('open');
+    });
+    document.getElementById('rollCallRefresh').addEventListener('click', populateRollCall);
+    document.querySelector('#emergencyModal .btn-modal-print').addEventListener('click', function () {
+      window.print();
+    });
+    emergencyModal.addEventListener('click', function (e) {
+      if (e.target === emergencyModal) emergencyModal.classList.remove('open');
+    });
+
+    function populateRollCall() {
+      var onSite = currentProjectId
+        ? store.Records.onSite(currentProjectId)
+        : store.Records.active();
+
+      var project = currentProjectId ? store.Projects.get(currentProjectId) : null;
+
+      document.getElementById('rollCallCount').textContent = onSite.length;
+      var list = document.getElementById('rollCallList');
+      list.innerHTML = '';
+
+      if (!onSite.length) {
+        list.innerHTML = '<li style="text-align:center;color:#888;padding:24px;">No workers currently recorded as on site.</li>';
+        return;
+      }
+
+      onSite.forEach(function (r) {
+        var li = document.createElement('li');
+        li.className = 'roll-call-item';
+        li.innerHTML =
+          '<div>' +
+            '<div class="rc-name">' + escHtml(r.workerName) + '</div>' +
+            '<div class="rc-meta">' + escHtml(r.company) + ' &bull; ' + escHtml(r.trade) + '</div>' +
+          '</div>' +
+          '<div class="rc-time">In: ' + store.formatDate(r.checkinAt) + '</div>';
+        list.appendChild(li);
+      });
+    }
+
+    /* ════ Admin manual checkout ════ */
+    function openAdminCheckout(id, name) {
+      pendingAdminCheckoutId = id;
+      document.getElementById('adminCheckoutName').textContent = 'Worker: ' + name;
+      document.getElementById('adminCheckoutNote').value = '';
+      document.getElementById('adminCheckoutModal').classList.add('open');
+    }
+
+    document.getElementById('adminCheckoutConfirm').addEventListener('click', function () {
+      var note = document.getElementById('adminCheckoutNote').value.trim();
+      if (!note) { alert('A correction note is required.'); return; }
+      store.Records.adminCheckout(pendingAdminCheckoutId, note);
+      document.getElementById('adminCheckoutModal').classList.remove('open');
+      refreshAll();
+    });
+    document.getElementById('adminCheckoutCancel').addEventListener('click', function () {
+      document.getElementById('adminCheckoutModal').classList.remove('open');
+    });
+    document.getElementById('adminCheckoutModal').addEventListener('click', function (e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+
+    /* ════ Forgotten checkout modal ════ */
+    function openForgottenModal(id) {
+      pendingForgottenId = id;
+      var record = store.Records.get(id);
+      document.getElementById('forgottenWorkerName').textContent =
+        'Worker: ' + record.workerName + ' (signed in ' + store.formatDate(record.checkinAt) + ')';
+      document.getElementById('forgottenNote').value = '';
+      /* Default checkout to end of checkin day at 17:00 */
+      var d = new Date(record.checkinAt);
+      d.setHours(17, 0, 0, 0);
+      document.getElementById('forgottenCheckoutTime').value = d.toISOString().slice(0, 16);
+      document.getElementById('forgottenModal').classList.add('open');
+    }
+
+    document.getElementById('forgottenConfirm').addEventListener('click', function () {
+      var note = document.getElementById('forgottenNote').value.trim();
+      var time = document.getElementById('forgottenCheckoutTime').value;
+      if (!note) { alert('A correction note is required.'); return; }
+      if (!time) { alert('Please enter the estimated check-out time.'); return; }
+      store.Records.manualClose(pendingForgottenId, new Date(time).toISOString(), note);
+      document.getElementById('forgottenModal').classList.remove('open');
+      refreshAll();
+    });
+    document.getElementById('forgottenCancel').addEventListener('click', function () {
+      document.getElementById('forgottenModal').classList.remove('open');
+    });
+    document.getElementById('forgottenModal').addEventListener('click', function (e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+
+    /* ════ New project modal ════ */
+    document.getElementById('newProjectBtn').addEventListener('click', function () {
+      document.getElementById('npName').value = '';
+      document.getElementById('npAddress').value = '';
+      document.getElementById('newProjectModal').classList.add('open');
+      setTimeout(function () { document.getElementById('npName').focus(); }, 50);
+    });
+    document.getElementById('cancelNewProjectBtn').addEventListener('click', function () {
+      document.getElementById('newProjectModal').classList.remove('open');
+    });
+    document.getElementById('newProjectModal').addEventListener('click', function (e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+    document.getElementById('createProjectBtn').addEventListener('click', function () {
+      var name = document.getElementById('npName').value.trim();
+      if (!name) { alert('Please enter a project name.'); return; }
+      var addr = document.getElementById('npAddress').value.trim();
+      var p = store.Projects.create(name, addr);
+      document.getElementById('newProjectModal').classList.remove('open');
+      refreshProjectSelector();
+      projectSelect.value = p.id;
+      currentProjectId = p.id;
+      refreshAll();
+    });
+
+    /* ════ Sample data ════ */
+    document.getElementById('btnAddSample').addEventListener('click', function () {
+      if (!currentProjectId) { alert('Please select a project first.'); return; }
+      if (!confirm('Add sample attendance records to this project?')) return;
+
+      var names = [
+        { name: 'Jake Thompson', company: 'T&T Electrical', type: 'Subcontractor', trade: 'Electrician' },
+        { name: 'Maria Santos',  company: 'BIK Solutions',  type: 'Employee',      trade: 'Site Manager' },
+        { name: 'Connor Walsh',  company: 'Walsh Concreting',type:'Contractor',    trade: 'Concreter'    },
+        { name: 'Lena Park',     company: 'Park Interiors', type: 'Subcontractor', trade: 'Painter'      },
+        { name: 'Site Inspector',company: 'Gold Coast CC',  type: 'Inspector / Consultant', trade: 'Building Inspector' },
+      ];
+
+      names.forEach(function (w) {
+        var r = store.Records.checkin({
+          projectId  : currentProjectId,
+          workerName : w.name,
+          company    : w.company,
+          workerType : w.type,
+          trade      : w.trade,
+          isSample   : true,
+        });
+        /* Check out most of them */
+        if (w.name !== 'Maria Santos') {
+          store.Records.checkout(r.id);
+        }
+      });
+
+      refreshAll();
+    });
+
+    document.getElementById('btnClearSample').addEventListener('click', function () {
+      if (!confirm('Remove all sample projects and attendance records? Real data will not be affected.')) return;
+      store.Projects.clearSamples();
+      refreshProjectSelector();
+      if (currentProjectId && !store.Projects.get(currentProjectId)) {
+        currentProjectId = null;
+        projectSelect.value = '';
+      }
+      refreshAll();
+    });
+
+    /* ════ Master refresh ════ */
+    function refreshAll() {
+      refreshToday();
+      refreshWorkforce();
+      refreshReports();
+    }
+
+    /* ── Init ── */
+    refreshProjectSelector();
+    refreshAll();
+
+  }());
+  </script>
+
+</body>
+</html>
