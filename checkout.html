@@ -279,7 +279,7 @@
 
       if (record.status !== 'active') {
         infoAlert.innerHTML =
-          '<strong>' + record.workerName + '</strong> is already signed out from this site' +
+          '<strong>' + escHtml(record.workerName) + '</strong> is already signed out from this site' +
           (record.checkoutAt ? ' at ' + store.formatDate(record.checkoutAt) + '.' : '.');
         infoAlert.classList.add('show');
         // Show hours summary below

@@ -185,6 +185,7 @@
       var checkinMs = new Date(list[idx].checkinAt).getTime();
       var checkoutMs = new Date(t).getTime();
       var hrs = Math.round(((checkoutMs - checkinMs) / 3600000) * 100) / 100;
+      if (hrs < 0) hrs = 0;
 
       list[idx].checkoutAt = t;
       list[idx].status = 'completed';
