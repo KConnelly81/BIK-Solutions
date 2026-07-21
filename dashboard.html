@@ -6,54 +6,55 @@
   <meta name="description" content="BIK Business Toolkit — professional document tools for Australian builders and tradies." />
   <meta name="robots" content="noindex" />
   <title>Dashboard — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/bik-design-system.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
   <style>
     /* ── Founding Builder Banner ── */
     .founding-banner {
-      background: linear-gradient(135deg, #252320 0%, #3a3835 100%);
-      border-radius: 10px;
-      margin: 0 0 20px;
+      background: linear-gradient(135deg, var(--bik-navy) 0%, var(--bik-navy-mid) 100%);
+      border-radius: var(--bik-radius-lg);
+      margin: 0 0 var(--bik-space-5);
     }
     .founding-banner-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      padding: 16px 20px;
+      gap: var(--bik-space-4);
+      padding: var(--bik-space-4) var(--bik-space-5);
       flex-wrap: wrap;
     }
     .founding-banner-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: var(--bik-space-3);
       flex-wrap: wrap;
-      color: #fff;
-      font-size: 0.84rem;
+      color: var(--bik-text-on-dark);
+      font-size: var(--bik-text-sm);
       line-height: 1.4;
     }
     .founding-badge {
-      background: #D85A30;
-      color: #fff;
-      font-size: 0.65rem;
-      font-weight: 800;
+      background: var(--bik-orange);
+      color: var(--bik-text-on-dark);
+      font-size: var(--bik-text-2xs);
+      font-weight: 700;
       letter-spacing: 0.07em;
       text-transform: uppercase;
-      padding: 4px 10px;
+      padding: 3px 10px;
       border-radius: 20px;
       white-space: nowrap;
       flex-shrink: 0;
     }
-    .founding-desc { color: rgba(255,255,255,0.65); font-size: 0.78rem; }
+    .founding-desc { color: var(--bik-text-on-dark-muted); font-size: var(--bik-text-xs); }
     .founding-banner-right {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: var(--bik-space-3);
       flex-shrink: 0;
     }
     .founding-learn-link {
-      color: #D85A30;
-      font-size: 0.8rem;
+      color: var(--bik-orange);
+      font-size: var(--bik-text-sm);
       font-weight: 600;
       white-space: nowrap;
     }
@@ -61,53 +62,54 @@
     .founding-dismiss {
       background: none;
       border: none;
-      color: rgba(255,255,255,0.4);
+      color: var(--bik-text-on-dark-muted);
       font-size: 1rem;
       cursor: pointer;
-      padding: 4px;
+      padding: var(--bik-space-1);
       line-height: 1;
     }
-    .founding-dismiss:hover { color: rgba(255,255,255,0.8); }
+    .founding-dismiss:hover { color: var(--bik-text-on-dark); }
 
     /* ── Today's Priorities ── */
-    .priorities-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+    .priorities-list { display: flex; flex-direction: column; gap: var(--bik-space-2); margin-bottom: var(--bik-space-6); }
     .priority-row {
       display: flex;
       align-items: center;
-      gap: 12px;
-      background: #fff;
-      border: 1px solid #e8e4de;
-      border-left: 4px solid #e8e4de;
-      border-radius: 8px;
-      padding: 12px 16px;
+      gap: var(--bik-space-3);
+      background: var(--bik-surface);
+      border: 1px solid var(--bik-border);
+      border-left: 4px solid var(--bik-border);
+      border-radius: var(--bik-radius-md);
+      padding: var(--bik-space-3) var(--bik-space-4);
     }
-    .priority-row--critical { border-left-color: #c0392b; }
-    .priority-row--warning  { border-left-color: #e67e22; }
+    .priority-row--critical { border-left-color: var(--bik-danger); }
+    .priority-row--warning  { border-left-color: var(--bik-warning); }
     .priority-icon { font-size: 0.9rem; flex-shrink: 0; }
     .priority-body { flex: 1; min-width: 0; }
-    .priority-headline { font-size: 0.84rem; font-weight: 600; color: #252320; }
-    .priority-project  { font-size: 0.76rem; color: #888; margin-top: 2px; }
+    .priority-headline { font-size: var(--bik-text-sm); font-weight: 600; color: var(--bik-text); }
+    .priority-project  { font-size: var(--bik-text-xs); color: var(--bik-text-muted); margin-top: 2px; }
     .priority-action {
       white-space: nowrap;
-      font-size: 0.78rem;
+      font-size: var(--bik-text-xs);
       font-weight: 600;
-      color: #D85A30;
-      border: 1.5px solid #D85A30;
-      border-radius: 5px;
+      color: var(--bik-orange);
+      border: 1.5px solid var(--bik-orange);
+      border-radius: var(--bik-radius-sm);
       padding: 5px 10px;
       flex-shrink: 0;
       transition: all 0.12s;
     }
-    .priority-action:hover { background: #D85A30; color: #fff; }
+    .priority-action:hover { background: var(--bik-orange); color: #fff; }
 
     /* ── Value Metrics Bar ── */
     .value-metrics-bar {
       display: flex;
       align-items: center;
-      background: #f5f0e8;
-      border-radius: 8px;
-      padding: 14px 24px;
-      margin-bottom: 24px;
+      background: var(--bik-surface-raised);
+      border: 1px solid var(--bik-border);
+      border-radius: var(--bik-radius-md);
+      padding: var(--bik-space-4) var(--bik-space-6);
+      margin-bottom: var(--bik-space-6);
       gap: 0;
     }
     .vmb-stat {
@@ -121,28 +123,39 @@
     .vmb-num {
       font-size: 1.35rem;
       font-weight: 800;
-      color: #252320;
+      color: var(--bik-text);
       line-height: 1;
       margin-bottom: 4px;
     }
-    .vmb-label { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.04em; }
+    .vmb-label { font-size: var(--bik-text-xs); color: var(--bik-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
     .vmb-divider {
       width: 1px; height: 32px;
-      background: #ddd;
-      margin: 0 20px;
+      background: var(--bik-border);
+      margin: 0 var(--bik-space-5);
       flex-shrink: 0;
     }
     .vmb-detail-link {
-      font-size: 0.8rem;
+      font-size: var(--bik-text-sm);
       font-weight: 600;
-      color: #D85A30;
+      color: var(--bik-orange);
       white-space: nowrap;
     }
     .vmb-detail-link:hover { text-decoration: underline; }
 
+    /* ── Tool group headings ── */
+    .tools-group { margin-bottom: var(--bik-space-6); }
+    .tools-group-label {
+      font-size: var(--bik-text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--bik-text-muted);
+      margin-bottom: var(--bik-space-3);
+    }
+
     @media (max-width: 600px) {
       .vmb-divider--hide-sm { display: none; }
-      .founding-banner-inner { padding: 14px 16px; }
+      .founding-banner-inner { padding: var(--bik-space-3) var(--bik-space-4); }
     }
   </style>
 </head>
@@ -151,25 +164,29 @@
 <div class="dash-shell">
 
   <!-- ====== HEADER ====== -->
-  <header class="dash-header" role="banner">
-    <div class="dash-header-inner">
-      <div class="dash-logo">
-        <div class="logo-mark" aria-hidden="true"><span>B</span></div>
-        <div>
-          <div class="dash-logo-name">BIK Business Toolkit</div>
-          <div class="dash-logo-tag">Beyond Industry Knowledge</div>
-        </div>
+  <header class="bik-app-header" role="banner">
+    <a href="dashboard.html" class="bik-app-header-logo">
+      <div class="bik-logo-mark" aria-hidden="true">B</div>
+      <div class="bik-logo-text">
+        <span class="bik-logo-name">BIK Business Toolkit</span>
+        <span class="bik-logo-tag">Beyond Industry Knowledge</span>
       </div>
-      <div class="dash-header-actions">
-        <button class="dash-btn dash-btn--ghost" id="btn-new-project" type="button">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          <span>New Project</span>
-        </button>
-        <button class="dash-btn dash-btn--ghost" id="btn-profile" type="button" title="Builder profile settings">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Profile</span>
-        </button>
-      </div>
+    </a>
+    <nav class="bik-app-nav" aria-label="Main navigation">
+      <a href="dashboard.html" class="bik-app-nav-link active" aria-current="page">Dashboard</a>
+      <a href="dashboard.html#health-section" class="bik-app-nav-link">Projects</a>
+      <a href="attendance.html" class="bik-app-nav-link">Site</a>
+      <a href="toolkit.html" class="bik-app-nav-link">Tools</a>
+    </nav>
+    <div class="bik-app-header-spacer"></div>
+    <div class="bik-app-header-actions">
+      <button class="bik-btn bik-btn--primary bik-btn--sm" id="btn-new-project" type="button">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Project
+      </button>
+      <button class="bik-btn bik-btn--ghost-dark bik-btn--icon" id="btn-profile" type="button" aria-label="Builder profile settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
     </div>
   </header>
 
@@ -178,7 +195,7 @@
 
     <!-- Hero -->
     <div class="dash-hero">
-      <h1 class="dash-hero-title" id="hero-title">Good day, builder.</h1>
+      <h1 class="dash-hero-title bik-page-title" id="hero-title">Good day, builder.</h1>
       <p class="dash-hero-sub" id="hero-sub">Your professional document toolkit — built for Australian builders and tradies.</p>
     </div>
 
@@ -250,9 +267,9 @@
       <div class="dash-section-header">
         <h2 class="dash-section-title" id="health-heading">Project Health</h2>
         <div class="health-filter" role="group" aria-label="Filter projects">
-          <button class="hf-btn hf-btn--active" data-filter="all"    type="button">All</button>
-          <button class="hf-btn" data-filter="attention" type="button">Needs attention</button>
-          <button class="hf-btn" data-filter="healthy"   type="button">Healthy</button>
+          <button class="hf-btn hf-btn--active" data-filter="all"       type="button">All</button>
+          <button class="hf-btn"                data-filter="attention" type="button">Needs attention</button>
+          <button class="hf-btn"                data-filter="healthy"   type="button">Healthy</button>
         </div>
       </div>
       <div id="health-grid" class="health-grid">
@@ -268,8 +285,8 @@
         <p class="empty-start-sub">Spend less time on paperwork and more time building.</p>
         <p class="empty-start-body">Create your first project to get started, or explore sample projects to see how BIK works before adding your own jobs.</p>
         <div class="empty-start-actions">
-          <button class="dash-btn dash-btn--coral dash-btn--lg" id="btn-new-project-empty" type="button">+ Create Your First Project</button>
-          <button class="dash-btn dash-btn--outline dash-btn--lg" id="btn-explore-samples" type="button">Explore Sample Projects</button>
+          <button class="bik-btn bik-btn--primary bik-btn--lg" id="btn-new-project-empty" type="button">+ Create Your First Project</button>
+          <button class="bik-btn bik-btn--ghost bik-btn--lg" id="btn-explore-samples" type="button">Explore Sample Projects</button>
         </div>
         <p class="empty-start-hint">Sample projects are stored only in this browser and can be removed at any time.</p>
         <p class="empty-start-privacy">Your projects stay in this browser during the beta. Cloud accounts and secure backups are coming soon.</p>
@@ -284,8 +301,8 @@
           <p>These example projects are included so you can explore BIK's features. They are only stored in this browser and are not shared with anyone.</p>
         </div>
         <div class="sample-banner-actions">
-          <button id="btn-continue-exploring" class="dash-btn dash-btn--ghost" type="button">Continue Exploring</button>
-          <button id="btn-clear-samples" class="dash-btn dash-btn--outline sample-banner-clear" type="button">Clear Sample Projects</button>
+          <button id="btn-continue-exploring" class="bik-btn bik-btn--ghost" type="button">Continue Exploring</button>
+          <button id="btn-clear-samples" class="bik-btn bik-btn--ghost sample-banner-clear" type="button">Clear Sample Projects</button>
         </div>
       </div>
     </div>
@@ -293,239 +310,277 @@
     <!-- ── Tools (always shown) ── -->
     <section class="dash-section" aria-labelledby="tools-heading">
       <h2 class="dash-section-title" id="tools-heading">Tools</h2>
-      <div class="dash-tools-grid" id="tools-grid">
+      <div id="tools-grid">
 
-        <a href="variation-generator.html" class="tool-card tool-card--active" data-tool="variation-notice">
-          <div class="tool-card-icon" aria-hidden="true">📋</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Variation Notice</div>
-            <div class="tool-card-desc">Document scope changes, cost impacts, and time extensions.</div>
-            <div class="tool-card-tags">
-              <span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span><span class="tool-tag">Approval</span>
+        <!-- Site & Safety -->
+        <div class="tools-group">
+          <div class="tools-group-label">Site &amp; Safety</div>
+          <div class="dash-tools-grid">
+
+            <a href="attendance.html" class="tool-card tool-card--active" data-tool="site-attendance">
+              <div class="tool-card-icon" aria-hidden="true">👷</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Site Attendance</div>
+                <div class="tool-card-desc">Track who is on site, manage QR check-ins, recorded site hours and workforce attendance.</div>
+                <div class="tool-card-tags">
+                  <span class="tool-tag">QR Sign-In</span><span class="tool-tag">Workforce Register</span>
+                </div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="site-diary.html" class="tool-card tool-card--active" data-tool="site-diary">
+              <div class="tool-card-icon" aria-hidden="true">📅</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Site Diary</div>
+                <div class="tool-card-desc">Daily records of weather, workforce, works, incidents. Your best defence in a dispute.</div>
+                <div class="tool-card-tags">
+                  <span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span><span class="tool-tag">Daily records</span>
+                </div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="toolbox-talk.html" class="tool-card tool-card--active" data-tool="toolbox-talk">
+              <div class="tool-card-icon" aria-hidden="true">🎯</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Toolbox Talk</div>
+                <div class="tool-card-desc">Safety briefing record with agenda, topics covered, and attendance register.</div>
+                <div class="tool-card-tags"><span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span></div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="inspection-checklist.html" class="tool-card tool-card--active" data-tool="inspection-checklist">
+              <div class="tool-card-icon" aria-hidden="true">🔎</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Inspection Checklist</div>
+                <div class="tool-card-desc">Stage-based inspection record from slab through to final completion.</div>
+                <div class="tool-card-tags"><span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span></div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="incident-report.html" class="tool-card tool-card--active" data-tool="incident-report">
+              <div class="tool-card-icon" aria-hidden="true">🚑</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Incident Report <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
+                <div class="tool-card-desc">Workplace incident record. Serious incidents require separate immediate notification to the WHS regulator.</div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <div class="tool-card tool-card--soon">
+              <div class="tool-card-icon" aria-hidden="true">⚠️</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">SWMS <span class="soon-badge">Review in progress</span></div>
+                <div class="tool-card-desc">Safe Work Method Statement — under WHS professional review before release.</div>
+              </div>
             </div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
 
-        <a href="quote-builder.html" class="tool-card tool-card--active" data-tool="quote-builder">
-          <div class="tool-card-icon" aria-hidden="true">💰</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Quote Builder</div>
-            <div class="tool-card-desc">Professional quotes with line items, GST calculations, and acceptance signatures.</div>
-            <div class="tool-card-tags">
-              <span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span><span class="tool-tag">GST</span>
-            </div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="scope-of-works.html" class="tool-card tool-card--active" data-tool="scope-of-works">
-          <div class="tool-card-icon" aria-hidden="true">📝</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Scope of Works</div>
-            <div class="tool-card-desc">Define exactly what is — and isn't — in scope. AI Writer expands rough notes into professional language.</div>
-            <div class="tool-card-tags">
-              <span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span>
-            </div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="site-diary.html" class="tool-card tool-card--active" data-tool="site-diary">
-          <div class="tool-card-icon" aria-hidden="true">📅</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Site Diary</div>
-            <div class="tool-card-desc">Daily records of weather, workforce, works, incidents. Your best defence in a dispute.</div>
-            <div class="tool-card-tags">
-              <span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span><span class="tool-tag">Daily records</span>
-            </div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="defect-report.html" class="tool-card tool-card--active" data-tool="defect-report">
-          <div class="tool-card-icon" aria-hidden="true">🔍</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Defect Report</div>
-            <div class="tool-card-desc">Document defects with severity, location, and recommended action.</div>
-            <div class="tool-card-tags">
-              <span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span><span class="tool-tag">Severity rating</span>
-            </div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <!-- ── Controlled Beta tools ── -->
-        <a href="progress-claim.html" class="tool-card tool-card--active" data-tool="progress-claim">
-          <div class="tool-card-icon" aria-hidden="true">🧾</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Progress Claim <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
-            <div class="tool-card-desc">Progress claims with schedule of values and retention. Verify your state's applicable security of payment legislation before issuing.</div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="toolbox-talk.html" class="tool-card tool-card--active" data-tool="toolbox-talk">
-          <div class="tool-card-icon" aria-hidden="true">🎯</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Toolbox Talk</div>
-            <div class="tool-card-desc">Safety briefing record with agenda, topics covered, and attendance register.</div>
-            <div class="tool-card-tags"><span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span></div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="payment-reminder.html" class="tool-card tool-card--active" data-tool="payment-reminder">
-          <div class="tool-card-icon" aria-hidden="true">📬</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Payment Reminder <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
-            <div class="tool-card-desc">Overdue payment letters — friendly, firm, and final notice levels.</div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="practical-completion.html" class="tool-card tool-card--active" data-tool="practical-completion">
-          <div class="tool-card-icon" aria-hidden="true">🔒</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Practical Completion Notice <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
-            <div class="tool-card-desc">Formal notice of practical completion with defects liability period and handover details.</div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="handover-checklist.html" class="tool-card tool-card--active" data-tool="handover-checklist">
-          <div class="tool-card-icon" aria-hidden="true">🏠</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Handover Checklist</div>
-            <div class="tool-card-desc">Structured handover record — keys, manuals, warranties, utilities, and sign-off.</div>
-            <div class="tool-card-tags"><span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span></div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="instruction-to-proceed.html" class="tool-card tool-card--active" data-tool="instruction-to-proceed">
-          <div class="tool-card-icon" aria-hidden="true">📐</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Instruction to Proceed <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
-            <div class="tool-card-desc">Written authorisation for a subcontractor to commence or continue works.</div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="non-conformance-report.html" class="tool-card tool-card--active" data-tool="non-conformance-report">
-          <div class="tool-card-icon" aria-hidden="true">💧</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Non-Conformance Report</div>
-            <div class="tool-card-desc">Document work, materials, or design that does not meet specification.</div>
-            <div class="tool-card-tags"><span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span></div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="incident-report.html" class="tool-card tool-card--active" data-tool="incident-report">
-          <div class="tool-card-icon" aria-hidden="true">🚑</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Incident Report <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
-            <div class="tool-card-desc">Workplace incident record. Serious incidents require separate immediate notification to the WHS regulator.</div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="eot-claim.html" class="tool-card tool-card--active" data-tool="eot-claim">
-          <div class="tool-card-icon" aria-hidden="true">🕐</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Extension of Time Claim <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
-            <div class="tool-card-desc">Formal EOT claim with cause, days requested, and programme impact. Check contract notice requirements.</div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="delay-notice.html" class="tool-card tool-card--active" data-tool="delay-notice">
-          <div class="tool-card-icon" aria-hidden="true">🏗️</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Delay Notice <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
-            <div class="tool-card-desc">Formal notice of a delaying event. Check your contract's notice requirements and deadlines.</div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <a href="inspection-checklist.html" class="tool-card tool-card--active" data-tool="inspection-checklist">
-          <div class="tool-card-icon" aria-hidden="true">🔎</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Inspection Checklist</div>
-            <div class="tool-card-desc">Stage-based inspection record from slab through to final completion.</div>
-            <div class="tool-card-tags"><span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span></div>
-          </div>
-          <div class="tool-card-arrow" aria-hidden="true">→</div>
-        </a>
-
-        <!-- ── On hold — professional review in progress ── -->
-        <div class="tool-card tool-card--soon">
-          <div class="tool-card-icon" aria-hidden="true">⚠️</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">SWMS <span class="soon-badge">Review in progress</span></div>
-            <div class="tool-card-desc">Safe Work Method Statement — under WHS professional review before release.</div>
           </div>
         </div>
 
-        <div class="tool-card tool-card--soon">
-          <div class="tool-card-icon" aria-hidden="true">📮</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Notice to Show Cause <span class="soon-badge">Review in progress</span></div>
-            <div class="tool-card-desc">Under construction law review before release.</div>
+        <!-- Documents & Claims -->
+        <div class="tools-group">
+          <div class="tools-group-label">Documents &amp; Claims</div>
+          <div class="dash-tools-grid">
+
+            <a href="variation-generator.html" class="tool-card tool-card--active" data-tool="variation-notice">
+              <div class="tool-card-icon" aria-hidden="true">📋</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Variation Notice</div>
+                <div class="tool-card-desc">Document scope changes, cost impacts, and time extensions.</div>
+                <div class="tool-card-tags">
+                  <span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span><span class="tool-tag">Approval</span>
+                </div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="quote-builder.html" class="tool-card tool-card--active" data-tool="quote-builder">
+              <div class="tool-card-icon" aria-hidden="true">💰</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Quote Builder</div>
+                <div class="tool-card-desc">Professional quotes with line items, GST calculations, and acceptance signatures.</div>
+                <div class="tool-card-tags">
+                  <span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span><span class="tool-tag">GST</span>
+                </div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="scope-of-works.html" class="tool-card tool-card--active" data-tool="scope-of-works">
+              <div class="tool-card-icon" aria-hidden="true">📝</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Scope of Works</div>
+                <div class="tool-card-desc">Define exactly what is — and isn't — in scope. AI Writer expands rough notes into professional language.</div>
+                <div class="tool-card-tags">
+                  <span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span>
+                </div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="defect-report.html" class="tool-card tool-card--active" data-tool="defect-report">
+              <div class="tool-card-icon" aria-hidden="true">🔍</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Defect Report</div>
+                <div class="tool-card-desc">Document defects with severity, location, and recommended action.</div>
+                <div class="tool-card-tags">
+                  <span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span><span class="tool-tag">Severity rating</span>
+                </div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="non-conformance-report.html" class="tool-card tool-card--active" data-tool="non-conformance-report">
+              <div class="tool-card-icon" aria-hidden="true">💧</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Non-Conformance Report</div>
+                <div class="tool-card-desc">Document work, materials, or design that does not meet specification.</div>
+                <div class="tool-card-tags"><span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span></div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="progress-claim.html" class="tool-card tool-card--active" data-tool="progress-claim">
+              <div class="tool-card-icon" aria-hidden="true">🧾</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Progress Claim <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
+                <div class="tool-card-desc">Progress claims with schedule of values and retention. Verify your state's applicable security of payment legislation before issuing.</div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="payment-reminder.html" class="tool-card tool-card--active" data-tool="payment-reminder">
+              <div class="tool-card-icon" aria-hidden="true">📬</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Payment Reminder <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
+                <div class="tool-card-desc">Overdue payment letters — friendly, firm, and final notice levels.</div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="eot-claim.html" class="tool-card tool-card--active" data-tool="eot-claim">
+              <div class="tool-card-icon" aria-hidden="true">🕐</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Extension of Time Claim <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
+                <div class="tool-card-desc">Formal EOT claim with cause, days requested, and programme impact. Check contract notice requirements.</div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="delay-notice.html" class="tool-card tool-card--active" data-tool="delay-notice">
+              <div class="tool-card-icon" aria-hidden="true">🏗️</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Delay Notice <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
+                <div class="tool-card-desc">Formal notice of a delaying event. Check your contract's notice requirements and deadlines.</div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="instruction-to-proceed.html" class="tool-card tool-card--active" data-tool="instruction-to-proceed">
+              <div class="tool-card-icon" aria-hidden="true">📐</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Instruction to Proceed <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
+                <div class="tool-card-desc">Written authorisation for a subcontractor to commence or continue works.</div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
           </div>
         </div>
 
-        <div class="tool-card tool-card--soon">
-          <div class="tool-card-icon" aria-hidden="true">🚫</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Contract Termination Notice <span class="soon-badge">Review in progress</span></div>
-            <div class="tool-card-desc">Under construction law review before release.</div>
+        <!-- Contracts & Completion -->
+        <div class="tools-group">
+          <div class="tools-group-label">Contracts &amp; Completion</div>
+          <div class="dash-tools-grid">
+
+            <a href="practical-completion.html" class="tool-card tool-card--active" data-tool="practical-completion">
+              <div class="tool-card-icon" aria-hidden="true">🔒</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Practical Completion Notice <span class="tool-tag" style="background:#e67e22;color:#fff;border-color:transparent">Controlled Beta</span></div>
+                <div class="tool-card-desc">Formal notice of practical completion with defects liability period and handover details.</div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <a href="handover-checklist.html" class="tool-card tool-card--active" data-tool="handover-checklist">
+              <div class="tool-card-icon" aria-hidden="true">🏠</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Handover Checklist</div>
+                <div class="tool-card-desc">Structured handover record — keys, manuals, warranties, utilities, and sign-off.</div>
+                <div class="tool-card-tags"><span class="tool-tag">PDF</span><span class="tool-tag">AI Writer</span></div>
+              </div>
+              <div class="tool-card-arrow" aria-hidden="true">→</div>
+            </a>
+
+            <div class="tool-card tool-card--soon">
+              <div class="tool-card-icon" aria-hidden="true">📋</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Subcontractor Agreement <span class="soon-badge">Review in progress</span></div>
+                <div class="tool-card-desc">Under construction law review before release.</div>
+              </div>
+            </div>
+
+            <div class="tool-card tool-card--soon">
+              <div class="tool-card-icon" aria-hidden="true">📮</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Notice to Show Cause <span class="soon-badge">Review in progress</span></div>
+                <div class="tool-card-desc">Under construction law review before release.</div>
+              </div>
+            </div>
+
+            <div class="tool-card tool-card--soon">
+              <div class="tool-card-icon" aria-hidden="true">🚫</div>
+              <div class="tool-card-body">
+                <div class="tool-card-name">Contract Termination Notice <span class="soon-badge">Review in progress</span></div>
+                <div class="tool-card-desc">Under construction law review before release.</div>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <div class="tool-card tool-card--soon">
-          <div class="tool-card-icon" aria-hidden="true">📋</div>
-          <div class="tool-card-body">
-            <div class="tool-card-name">Subcontractor Agreement <span class="soon-badge">Review in progress</span></div>
-            <div class="tool-card-desc">Under construction law review before release.</div>
-          </div>
-        </div>
-
-      </div>
+      </div><!-- /#tools-grid -->
     </section>
 
   </main>
 
   <!-- ====== PROFILE MODAL ====== -->
-  <div class="modal-overlay" id="profile-overlay" hidden aria-modal="true" role="dialog" aria-label="Builder Profile">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h2 class="modal-title">Builder Profile</h2>
-        <button class="modal-close" id="btn-profile-close" type="button" aria-label="Close">✕</button>
+  <div class="bik-modal-overlay" id="profile-overlay" hidden aria-modal="true" role="dialog" aria-label="Builder Profile">
+    <div class="bik-modal">
+      <div class="bik-modal-header">
+        <h2 class="bik-modal-title">Builder Profile</h2>
+        <button class="bik-modal-close" id="btn-profile-close" type="button" aria-label="Close">✕</button>
       </div>
-      <p class="modal-intro">Your profile is saved on this device and auto-fills across all tools. Nothing is sent to a server.</p>
-      <div class="profile-fields" id="profile-fields"></div>
-      <div class="modal-actions">
-        <button class="dash-btn dash-btn--coral" id="btn-profile-save" type="button">Save profile</button>
-        <button class="dash-btn dash-btn--ghost-dark" id="btn-profile-cancel" type="button">Cancel</button>
+      <div class="bik-modal-body">
+        <p class="modal-intro">Your profile is saved on this device and auto-fills across all tools. Nothing is sent to a server.</p>
+        <div class="profile-fields" id="profile-fields"></div>
+      </div>
+      <div class="bik-modal-footer">
+        <button class="bik-btn bik-btn--ghost" id="btn-profile-cancel" type="button">Cancel</button>
+        <button class="bik-btn bik-btn--primary" id="btn-profile-save" type="button">Save profile</button>
       </div>
     </div>
   </div>
 
   <!-- ====== PROJECT MODAL ====== -->
-  <div class="modal-overlay" id="project-overlay" hidden aria-modal="true" role="dialog" aria-label="Project">
-    <div class="modal-box modal-box--wide">
-      <div class="modal-header">
-        <h2 class="modal-title" id="project-modal-title">New Project</h2>
-        <button class="modal-close" id="btn-project-close" type="button" aria-label="Close">✕</button>
+  <div class="bik-modal-overlay" id="project-overlay" hidden aria-modal="true" role="dialog" aria-label="Project">
+    <div class="bik-modal bik-modal--wide">
+      <div class="bik-modal-header">
+        <h2 class="bik-modal-title" id="project-modal-title">New Project</h2>
+        <button class="bik-modal-close" id="btn-project-close" type="button" aria-label="Close">✕</button>
       </div>
-      <div id="project-modal-fields" class="project-modal-fields"></div>
-      <div class="modal-actions" style="justify-content:space-between">
-        <button class="dash-btn dash-btn--danger" id="btn-project-delete" type="button" hidden>Delete project</button>
+      <div class="bik-modal-body">
+        <div id="project-modal-fields" class="project-modal-fields"></div>
+      </div>
+      <div class="bik-modal-footer" style="justify-content:space-between">
+        <button class="bik-btn bik-btn--danger" id="btn-project-delete" type="button" hidden>Delete project</button>
         <div style="display:flex;gap:8px;margin-left:auto">
-          <button class="dash-btn dash-btn--ghost-dark" id="btn-project-cancel" type="button">Cancel</button>
-          <button class="dash-btn dash-btn--coral" id="btn-project-save" type="button">Save project</button>
+          <button class="bik-btn bik-btn--ghost" id="btn-project-cancel" type="button">Cancel</button>
+          <button class="bik-btn bik-btn--primary" id="btn-project-save" type="button">Save project</button>
         </div>
       </div>
     </div>
