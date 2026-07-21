@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex" />
   <title>Project — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/bik-design-system.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/project.css" />
@@ -14,26 +15,26 @@
 <div class="dash-shell">
 
   <!-- ====== HEADER ====== -->
-  <header class="dash-header" role="banner">
-    <div class="dash-header-inner">
-      <div class="dash-logo">
-        <a href="dashboard.html" class="proj-back-link" aria-label="Back to dashboard">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
-        </a>
-        <div class="dash-logo-mark-link" aria-hidden="true">
-          <div class="logo-mark"><span>B</span></div>
-        </div>
-        <div>
-          <div class="dash-logo-name">BIK Business Toolkit</div>
-          <div class="dash-logo-tag">Beyond Industry Knowledge</div>
-        </div>
+  <header class="bik-app-header" role="banner">
+    <a href="dashboard.html" class="bik-app-header-logo" aria-label="Back to dashboard">
+      <div class="bik-logo-mark" aria-hidden="true">B</div>
+      <div class="bik-logo-text">
+        <span class="bik-logo-name">BIK Business Toolkit</span>
+        <span class="bik-logo-tag">Beyond Industry Knowledge</span>
       </div>
-      <div class="dash-header-actions">
-        <button class="dash-btn dash-btn--ghost" id="btn-edit-project" type="button">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          <span>Edit Project</span>
-        </button>
-      </div>
+    </a>
+    <nav class="bik-app-nav" aria-label="Main navigation">
+      <a href="dashboard.html" class="bik-app-nav-link">Dashboard</a>
+      <a href="dashboard.html#health-section" class="bik-app-nav-link">Projects</a>
+      <a href="attendance.html" class="bik-app-nav-link">Site</a>
+      <a href="toolkit.html" class="bik-app-nav-link">Tools</a>
+    </nav>
+    <div class="bik-app-header-spacer"></div>
+    <div class="bik-app-header-actions">
+      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-edit-project" type="button">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit Project
+      </button>
     </div>
   </header>
 
@@ -46,7 +47,7 @@
         <div class="proj-empty-icon">📁</div>
         <h2>Project not found</h2>
         <p>This project may have been deleted, or the link is incorrect.</p>
-        <a href="dashboard.html" class="dash-btn dash-btn--coral" style="margin-top:16px;text-decoration:none">Back to dashboard</a>
+        <a href="dashboard.html" class="bik-btn bik-btn--primary" style="margin-top:16px;text-decoration:none">Back to dashboard</a>
       </div>
     </div>
 
@@ -123,13 +124,13 @@
         <h2 class="proj-col-heading">Site Attendance</h2>
         <div id="att-today-strip" style="margin-bottom:12px"></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <a id="att-open-link" href="attendance.html" class="dash-btn dash-btn--ghost-dark" style="font-size:0.78rem;text-decoration:none">
+          <a id="att-open-link" href="attendance.html" class="bik-btn bik-btn--ghost-dark bik-btn--sm" style="text-decoration:none">
             👷 Open Attendance Dashboard
           </a>
-          <button id="att-qr-btn" class="dash-btn dash-btn--ghost-dark" style="font-size:0.78rem">
+          <button id="att-qr-btn" class="bik-btn bik-btn--ghost-dark bik-btn--sm">
             📱 Show QR Code
           </button>
-          <button id="att-qr-print-btn" class="dash-btn dash-btn--ghost-dark" style="font-size:0.78rem">
+          <button id="att-qr-print-btn" class="bik-btn bik-btn--ghost-dark bik-btn--sm">
             🖨️ Print QR Sign
           </button>
         </div>
@@ -200,18 +201,20 @@
   </main>
 
   <!-- ====== PROJECT MODAL (edit) ====== -->
-  <div class="modal-overlay" id="project-overlay" hidden aria-modal="true" role="dialog" aria-label="Edit Project">
-    <div class="modal-box modal-box--wide">
-      <div class="modal-header">
-        <h2 class="modal-title">Edit Project</h2>
-        <button class="modal-close" id="btn-project-close" type="button" aria-label="Close">✕</button>
+  <div class="bik-modal-overlay" id="project-overlay" hidden aria-modal="true" role="dialog" aria-label="Edit Project">
+    <div class="bik-modal bik-modal--wide">
+      <div class="bik-modal-header">
+        <h2 class="bik-modal-title">Edit Project</h2>
+        <button class="bik-modal-close" id="btn-project-close" type="button" aria-label="Close">✕</button>
       </div>
-      <div id="project-modal-fields" class="project-modal-fields"></div>
-      <div class="modal-actions" style="justify-content:space-between">
-        <button class="dash-btn dash-btn--danger" id="btn-project-delete" type="button">Delete project</button>
+      <div class="bik-modal-body">
+        <div id="project-modal-fields" class="project-modal-fields"></div>
+      </div>
+      <div class="bik-modal-footer" style="justify-content:space-between">
+        <button class="bik-btn bik-btn--danger" id="btn-project-delete" type="button">Delete project</button>
         <div style="display:flex;gap:8px;margin-left:auto">
-          <button class="dash-btn dash-btn--ghost-dark" id="btn-project-cancel" type="button">Cancel</button>
-          <button class="dash-btn dash-btn--coral" id="btn-project-save" type="button">Save project</button>
+          <button class="bik-btn bik-btn--ghost" id="btn-project-cancel" type="button">Cancel</button>
+          <button class="bik-btn bik-btn--primary" id="btn-project-save" type="button">Save project</button>
         </div>
       </div>
     </div>
