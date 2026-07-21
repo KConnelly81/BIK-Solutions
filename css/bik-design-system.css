@@ -1,0 +1,1196 @@
+/* ============================================================
+   BIK DESIGN SYSTEM
+   css/bik-design-system.css
+
+   Load BEFORE styles.css and any page-specific CSS.
+   Defines tokens, base resets, and shared components used
+   across every page of the BIK platform.
+   ============================================================ */
+
+/* ============================================================
+   1. DESIGN TOKENS
+   ============================================================ */
+
+:root {
+
+  /* ── Brand colours ── */
+  --bik-navy:          #1E2333;
+  --bik-navy-dark:     #14182A;
+  --bik-navy-mid:      #2B3147;
+  --bik-orange:        #D85A30;
+  --bik-orange-dark:   #BF4E27;
+  --bik-orange-light:  rgba(216,90,48,0.10);
+
+  /* ── Semantic / state ── */
+  --bik-success:       #1E7A30;
+  --bik-success-bg:    #E8F5EB;
+  --bik-warning:       #A85A00;
+  --bik-warning-bg:    #FEF3E8;
+  --bik-danger:        #B91C1C;
+  --bik-danger-bg:     #FEE2E2;
+  --bik-info:          #1D4ED8;
+  --bik-info-bg:       #DBEAFE;
+
+  /* ── Surfaces ── */
+  --bik-background:    #F2F0EC;   /* page background — warm off-white */
+  --bik-surface:       #FFFFFF;   /* card / panel surface */
+  --bik-surface-raised:#FAFAF8;   /* slightly elevated surface */
+  --bik-surface-sunken:#EEECE8;   /* inset / recessed area */
+
+  /* ── Borders ── */
+  --bik-border:        rgba(28,28,26,0.10);
+  --bik-border-strong: rgba(28,28,26,0.20);
+  --bik-border-focus:  var(--bik-orange);
+
+  /* ── Text ── */
+  --bik-text:          #1A1A18;
+  --bik-text-secondary:#555551;
+  --bik-text-muted:    #888782;
+  --bik-text-placeholder:#AEACA7;
+  --bik-text-on-dark:  #FFFFFF;
+  --bik-text-on-dark-muted: rgba(255,255,255,0.55);
+
+  /* ── Legacy aliases (kept for backwards compat with styles.css) ── */
+  --charcoal:   #252320;
+  --coral:      #D85A30;
+  --cream:      #F5F0E8;
+  --stone:      #888780;
+  --dark-stone: #3A3835;
+  /* Fix the silent bug — --border was referenced but never defined */
+  --border:     rgba(28,28,26,0.12);
+
+  /* ── Typography ── */
+  --bik-font:          'Inter', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --bik-font-size-base: 1rem;      /* 16px */
+
+  /* Type scale */
+  --bik-text-2xs:  0.688rem;  /* 11px */
+  --bik-text-xs:   0.75rem;   /* 12px */
+  --bik-text-sm:   0.813rem;  /* 13px */
+  --bik-text-md:   0.875rem;  /* 14px — body */
+  --bik-text-base: 1rem;      /* 16px */
+  --bik-text-lg:   1.125rem;  /* 18px */
+  --bik-text-xl:   1.25rem;   /* 20px */
+  --bik-text-2xl:  1.5rem;    /* 24px */
+  --bik-text-3xl:  1.875rem;  /* 30px */
+  --bik-text-4xl:  2.25rem;   /* 36px */
+
+  /* Line heights */
+  --bik-leading-tight:  1.25;
+  --bik-leading-snug:   1.4;
+  --bik-leading-normal: 1.6;
+  --bik-leading-loose:  1.75;
+
+  /* Font weights */
+  --bik-weight-normal:  400;
+  --bik-weight-medium:  500;
+  --bik-weight-semibold:600;
+  --bik-weight-bold:    700;
+
+  /* ── Spacing scale ── */
+  --bik-space-1:   4px;
+  --bik-space-2:   8px;
+  --bik-space-3:   12px;
+  --bik-space-4:   16px;
+  --bik-space-5:   20px;
+  --bik-space-6:   24px;
+  --bik-space-8:   32px;
+  --bik-space-10:  40px;
+  --bik-space-12:  48px;
+  --bik-space-16:  64px;
+
+  /* ── Radius ── */
+  --bik-radius-sm:  4px;
+  --bik-radius-md:  8px;
+  --bik-radius-lg:  12px;
+  --bik-radius-xl:  16px;
+  --bik-radius-pill:999px;
+
+  /* ── Shadow ── */
+  --bik-shadow-sm:  0 1px 3px rgba(0,0,0,0.08);
+  --bik-shadow-md:  0 4px 12px rgba(0,0,0,0.10);
+  --bik-shadow-lg:  0 8px 28px rgba(0,0,0,0.12);
+  --bik-shadow-xl:  0 16px 48px rgba(0,0,0,0.16);
+
+  /* ── Transition ── */
+  --bik-transition:      0.15s ease;
+  --bik-transition-slow: 0.25s ease;
+
+  /* ── Z-index scale ── */
+  --bik-z-base:    0;
+  --bik-z-raised:  10;
+  --bik-z-sticky:  100;
+  --bik-z-overlay: 500;
+  --bik-z-modal:   1000;
+  --bik-z-toast:   9999;
+}
+
+
+/* ============================================================
+   2. WEB FONT — Inter
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Fallback: if font fails to load (offline/blocked), the system
+   stack still looks reasonable on all platforms. */
+
+
+/* ============================================================
+   3. BASE RESET ADDITIONS
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--bik-font);
+  font-size: var(--bik-text-md);
+  line-height: var(--bik-leading-normal);
+  color: var(--bik-text);
+  background: var(--bik-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Screen-reader utility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Consistent focus ring */
+:focus-visible {
+  outline: 2px solid var(--bik-orange);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Remove focus ring when not keyboard-navigating */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+
+/* ============================================================
+   4. TYPOGRAPHY UTILITIES
+   ============================================================ */
+
+.bik-page-title {
+  font-size: var(--bik-text-3xl);
+  font-weight: var(--bik-weight-bold);
+  line-height: var(--bik-leading-tight);
+  letter-spacing: -0.02em;
+  color: var(--bik-text);
+}
+
+.bik-section-title {
+  font-size: var(--bik-text-xl);
+  font-weight: var(--bik-weight-semibold);
+  line-height: var(--bik-leading-snug);
+  color: var(--bik-text);
+}
+
+.bik-card-title {
+  font-size: var(--bik-text-base);
+  font-weight: var(--bik-weight-semibold);
+  line-height: var(--bik-leading-snug);
+  color: var(--bik-text);
+}
+
+.bik-body {
+  font-size: var(--bik-text-md);
+  line-height: var(--bik-leading-normal);
+  color: var(--bik-text);
+}
+
+.bik-body-sm {
+  font-size: var(--bik-text-sm);
+  line-height: var(--bik-leading-normal);
+  color: var(--bik-text-secondary);
+}
+
+.bik-meta {
+  font-size: var(--bik-text-xs);
+  line-height: var(--bik-leading-snug);
+  color: var(--bik-text-muted);
+}
+
+.bik-label {
+  font-size: var(--bik-text-xs);
+  font-weight: var(--bik-weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bik-text-muted);
+}
+
+.bik-eyebrow {
+  font-size: var(--bik-text-2xs);
+  font-weight: var(--bik-weight-semibold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bik-orange);
+}
+
+.bik-text-muted  { color: var(--bik-text-muted); }
+.bik-text-orange { color: var(--bik-orange); }
+.bik-text-success { color: var(--bik-success); }
+.bik-text-warning { color: var(--bik-warning); }
+.bik-text-danger  { color: var(--bik-danger); }
+
+
+/* ============================================================
+   5. BUTTONS
+   ============================================================ */
+
+/*
+  Canonical button system.
+  Usage:
+    <button class="bik-btn bik-btn--primary">Save</button>
+    <button class="bik-btn bik-btn--secondary">Cancel</button>
+    <button class="bik-btn bik-btn--ghost">View</button>
+    <button class="bik-btn bik-btn--danger">Delete</button>
+    <button class="bik-btn bik-btn--primary bik-btn--sm">Small</button>
+*/
+
+.bik-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bik-space-2);
+  padding: 10px var(--bik-space-4);
+  min-height: 40px;
+  font-family: var(--bik-font);
+  font-size: var(--bik-text-sm);
+  font-weight: var(--bik-weight-semibold);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  border-radius: var(--bik-radius-md);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--bik-transition),
+    color var(--bik-transition),
+    border-color var(--bik-transition),
+    box-shadow var(--bik-transition),
+    opacity var(--bik-transition);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.bik-btn:disabled,
+.bik-btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Sizes */
+.bik-btn--sm {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: var(--bik-text-xs);
+  border-radius: var(--bik-radius-sm);
+}
+
+.bik-btn--lg {
+  min-height: 48px;
+  padding: 13px var(--bik-space-6);
+  font-size: var(--bik-text-base);
+}
+
+/* Primary — orange, the one most-important CTA */
+.bik-btn--primary {
+  background: var(--bik-orange);
+  color: #fff;
+  border-color: var(--bik-orange);
+}
+.bik-btn--primary:hover:not(:disabled) {
+  background: var(--bik-orange-dark);
+  border-color: var(--bik-orange-dark);
+}
+.bik-btn--primary:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Secondary — navy/charcoal fill */
+.bik-btn--secondary {
+  background: var(--bik-navy);
+  color: #fff;
+  border-color: var(--bik-navy);
+}
+.bik-btn--secondary:hover:not(:disabled) {
+  background: var(--bik-navy-dark);
+  border-color: var(--bik-navy-dark);
+}
+
+/* Ghost — outline only on light background */
+.bik-btn--ghost {
+  background: transparent;
+  color: var(--bik-text-secondary);
+  border-color: var(--bik-border-strong);
+}
+.bik-btn--ghost:hover:not(:disabled) {
+  background: var(--bik-surface-sunken);
+  border-color: rgba(28,28,26,0.3);
+  color: var(--bik-text);
+}
+
+/* Ghost dark — outline on dark/navy background */
+.bik-btn--ghost-dark {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.85);
+  border-color: rgba(255,255,255,0.15);
+}
+.bik-btn--ghost-dark:hover:not(:disabled) {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.25);
+}
+
+/* Tertiary — text-only */
+.bik-btn--tertiary {
+  background: transparent;
+  color: var(--bik-orange);
+  border-color: transparent;
+  padding-inline: var(--bik-space-2);
+}
+.bik-btn--tertiary:hover:not(:disabled) {
+  background: var(--bik-orange-light);
+}
+
+/* Danger */
+.bik-btn--danger {
+  background: transparent;
+  color: var(--bik-danger);
+  border-color: var(--bik-danger);
+}
+.bik-btn--danger:hover:not(:disabled) {
+  background: var(--bik-danger-bg);
+}
+
+/* Icon-only button */
+.bik-btn--icon {
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--bik-radius-md);
+}
+.bik-btn--icon.bik-btn--sm {
+  width: 28px;
+  height: 28px;
+  font-size: 0.85rem;
+}
+
+
+/* ============================================================
+   6. CARDS
+   ============================================================ */
+
+.bik-card {
+  background: var(--bik-surface);
+  border: 1px solid var(--bik-border);
+  border-radius: var(--bik-radius-lg);
+  overflow: hidden;
+}
+
+/* Clickable variant — adds hover/lift */
+a.bik-card,
+button.bik-card,
+.bik-card--clickable {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    box-shadow var(--bik-transition),
+    transform var(--bik-transition),
+    border-color var(--bik-transition);
+}
+a.bik-card:hover,
+button.bik-card:hover,
+.bik-card--clickable:hover {
+  box-shadow: var(--bik-shadow-md);
+  border-color: rgba(216,90,48,0.25);
+  transform: translateY(-2px);
+}
+
+/* Padding utilities for card body */
+.bik-card-body       { padding: var(--bik-space-5) var(--bik-space-5); }
+.bik-card-body--lg   { padding: var(--bik-space-6) var(--bik-space-6); }
+.bik-card-body--sm   { padding: var(--bik-space-3) var(--bik-space-4); }
+
+/* Card header / footer divider lines */
+.bik-card-header {
+  padding: var(--bik-space-4) var(--bik-space-5);
+  border-bottom: 1px solid var(--bik-border);
+  background: var(--bik-surface-raised);
+}
+
+.bik-card-footer {
+  padding: var(--bik-space-3) var(--bik-space-5);
+  border-top: 1px solid var(--bik-border);
+  background: var(--bik-surface-raised);
+}
+
+/* Accent / status left border */
+.bik-card--success  { border-left: 3px solid var(--bik-success); }
+.bik-card--warning  { border-left: 3px solid #E67E22; }
+.bik-card--danger   { border-left: 3px solid var(--bik-danger); }
+.bik-card--orange   { border-left: 3px solid var(--bik-orange); }
+
+
+/* ============================================================
+   7. STATUS PILLS
+   ============================================================ */
+
+/*
+  Usage:
+    <span class="bik-status bik-status--active">Active</span>
+    <span class="bik-status bik-status--draft">Draft</span>
+*/
+
+.bik-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bik-space-1);
+  padding: 2px 8px;
+  border-radius: var(--bik-radius-pill);
+  font-size: var(--bik-text-2xs);
+  font-weight: var(--bik-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Dot prefix */
+.bik-status::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bik-status--active    { background: var(--bik-success-bg); color: var(--bik-success); }
+.bik-status--active::before   { background: var(--bik-success); }
+
+.bik-status--draft     { background: rgba(28,28,26,0.06); color: var(--bik-text-muted); }
+.bik-status--draft::before    { background: var(--bik-text-placeholder); }
+
+.bik-status--sent      { background: #DBEAFE; color: #1D4ED8; }
+.bik-status--sent::before     { background: #1D4ED8; }
+
+.bik-status--approved  { background: var(--bik-success-bg); color: var(--bik-success); }
+.bik-status--approved::before { background: var(--bik-success); }
+
+.bik-status--awaiting  { background: var(--bik-warning-bg); color: var(--bik-warning); }
+.bik-status--awaiting::before { background: #E67E22; }
+
+.bik-status--overdue   { background: var(--bik-danger-bg); color: var(--bik-danger); }
+.bik-status--overdue::before  { background: var(--bik-danger); }
+
+.bik-status--attention { background: var(--bik-warning-bg); color: var(--bik-warning); }
+.bik-status--attention::before { background: #E67E22; }
+
+.bik-status--completed { background: rgba(28,28,26,0.06); color: var(--bik-text-secondary); }
+.bik-status--completed::before { background: var(--bik-text-muted); }
+
+.bik-status--on-hold   { background: rgba(28,28,26,0.06); color: var(--bik-text-muted); }
+.bik-status--on-hold::before  { background: var(--bik-text-placeholder); }
+
+.bik-status--rejected  { background: var(--bik-danger-bg); color: var(--bik-danger); }
+.bik-status--rejected::before { background: var(--bik-danger); }
+
+/* No dot variant */
+.bik-status--no-dot::before { display: none; }
+
+
+/* ============================================================
+   8. FORM CONTROLS
+   ============================================================ */
+
+.bik-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--bik-space-1);
+}
+
+.bik-label-text {
+  font-size: var(--bik-text-xs);
+  font-weight: var(--bik-weight-semibold);
+  color: var(--bik-text-secondary);
+  line-height: var(--bik-leading-snug);
+}
+
+.bik-label-text .required {
+  color: var(--bik-orange);
+  margin-left: 2px;
+}
+
+.bik-input,
+.bik-select,
+.bik-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  min-height: 40px;
+  font-family: var(--bik-font);
+  font-size: var(--bik-text-md);
+  color: var(--bik-text);
+  background: var(--bik-surface);
+  border: 1.5px solid var(--bik-border-strong);
+  border-radius: var(--bik-radius-md);
+  transition: border-color var(--bik-transition), box-shadow var(--bik-transition);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.bik-input::placeholder,
+.bik-textarea::placeholder {
+  color: var(--bik-text-placeholder);
+}
+
+.bik-input:hover,
+.bik-select:hover,
+.bik-textarea:hover {
+  border-color: rgba(28,28,26,0.30);
+}
+
+.bik-input:focus,
+.bik-select:focus,
+.bik-textarea:focus {
+  outline: none;
+  border-color: var(--bik-orange);
+  box-shadow: 0 0 0 3px rgba(216,90,48,0.12);
+}
+
+.bik-input.error,
+.bik-select.error,
+.bik-textarea.error {
+  border-color: var(--bik-danger);
+  box-shadow: 0 0 0 3px rgba(185,28,28,0.10);
+}
+
+.bik-textarea {
+  resize: vertical;
+  min-height: 88px;
+  line-height: var(--bik-leading-normal);
+}
+
+.bik-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4 6 8 10 12 6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+.bik-field-hint {
+  font-size: var(--bik-text-2xs);
+  color: var(--bik-text-muted);
+  line-height: var(--bik-leading-snug);
+}
+
+.bik-field-error {
+  font-size: var(--bik-text-2xs);
+  color: var(--bik-danger);
+  display: none;
+  align-items: center;
+  gap: var(--bik-space-1);
+}
+
+.bik-field-error.visible { display: flex; }
+
+
+/* ============================================================
+   9. MODAL
+   ============================================================ */
+
+.bik-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20,24,42,0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: var(--bik-z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--bik-space-5);
+}
+
+.bik-modal-overlay[hidden] { display: none; }
+
+.bik-modal {
+  background: var(--bik-surface);
+  border-radius: var(--bik-radius-xl);
+  box-shadow: var(--bik-shadow-xl);
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.bik-modal--wide  { max-width: 640px; }
+.bik-modal--narrow { max-width: 380px; }
+
+.bik-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--bik-space-5) var(--bik-space-6);
+  border-bottom: 1px solid var(--bik-border);
+  flex-shrink: 0;
+}
+
+.bik-modal-title {
+  font-size: var(--bik-text-base);
+  font-weight: var(--bik-weight-bold);
+  color: var(--bik-text);
+  margin: 0;
+}
+
+.bik-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--bik-text-muted);
+  font-size: 1.1rem;
+  padding: var(--bik-space-1) var(--bik-space-2);
+  border-radius: var(--bik-radius-sm);
+  line-height: 1;
+  transition: color var(--bik-transition), background var(--bik-transition);
+}
+.bik-modal-close:hover { color: var(--bik-text); background: var(--bik-surface-sunken); }
+
+.bik-modal-body {
+  padding: var(--bik-space-5) var(--bik-space-6);
+  flex: 1;
+}
+
+.bik-modal-footer {
+  display: flex;
+  gap: var(--bik-space-2);
+  padding: var(--bik-space-4) var(--bik-space-6);
+  border-top: 1px solid var(--bik-border);
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+
+/* ============================================================
+   10. TOAST NOTIFICATIONS
+   ============================================================ */
+
+.bik-toast-region {
+  position: fixed;
+  bottom: var(--bik-space-6);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--bik-z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--bik-space-2);
+  align-items: center;
+  pointer-events: none;
+}
+
+.bik-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--bik-space-3);
+  padding: var(--bik-space-3) var(--bik-space-5);
+  background: var(--bik-navy);
+  color: #fff;
+  border-radius: var(--bik-radius-pill);
+  font-size: var(--bik-text-sm);
+  font-weight: var(--bik-weight-medium);
+  box-shadow: var(--bik-shadow-lg);
+  white-space: nowrap;
+  max-width: 90vw;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.bik-toast.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.bik-toast--success { background: var(--bik-success); }
+.bik-toast--warning { background: #C05A00; }
+.bik-toast--danger  { background: var(--bik-danger); }
+
+
+/* ============================================================
+   11. APP SHELL / NAVIGATION
+   ============================================================ */
+
+/*
+  Shared charcoal app header used by dashboard, project,
+  attendance, and document tools.
+*/
+
+.bik-app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--bik-z-sticky);
+  height: 56px;
+  background: var(--bik-navy);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--bik-space-5);
+  gap: var(--bik-space-3);
+  flex-shrink: 0;
+}
+
+.bik-app-header-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--bik-space-3);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.bik-logo-mark {
+  width: 32px;
+  height: 32px;
+  background: var(--bik-orange);
+  border-radius: var(--bik-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: var(--bik-weight-bold);
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+.bik-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.bik-logo-name {
+  font-size: var(--bik-text-sm);
+  font-weight: var(--bik-weight-bold);
+  color: #fff;
+  letter-spacing: -0.01em;
+}
+
+.bik-logo-tag {
+  font-size: var(--bik-text-2xs);
+  color: var(--bik-text-on-dark-muted);
+  letter-spacing: 0.04em;
+}
+
+/* App nav links (horizontal, inside header) */
+.bik-app-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--bik-space-1);
+  flex: 1;
+  padding-left: var(--bik-space-4);
+}
+
+.bik-app-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bik-space-1);
+  padding: 5px 10px;
+  border-radius: var(--bik-radius-md);
+  font-size: var(--bik-text-sm);
+  font-weight: var(--bik-weight-medium);
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  transition: color var(--bik-transition), background var(--bik-transition);
+  white-space: nowrap;
+}
+
+.bik-app-nav-link:hover {
+  color: rgba(255,255,255,0.9);
+  background: rgba(255,255,255,0.07);
+}
+
+.bik-app-nav-link.active,
+.bik-app-nav-link[aria-current="page"] {
+  color: #fff;
+  background: rgba(255,255,255,0.12);
+}
+
+.bik-app-header-spacer { flex: 1; }
+
+.bik-app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--bik-space-2);
+  flex-shrink: 0;
+}
+
+
+/* ============================================================
+   12. METRIC / STAT CARDS
+   ============================================================ */
+
+.bik-metric-strip {
+  display: flex;
+  background: var(--bik-surface);
+  border: 1px solid var(--bik-border);
+  border-radius: var(--bik-radius-lg);
+  overflow: hidden;
+}
+
+.bik-metric {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--bik-space-4) var(--bik-space-5);
+  gap: var(--bik-space-1);
+  text-align: center;
+}
+
+.bik-metric + .bik-metric {
+  border-left: 1px solid var(--bik-border);
+}
+
+.bik-metric-value {
+  font-size: var(--bik-text-2xl);
+  font-weight: var(--bik-weight-bold);
+  color: var(--bik-text);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.bik-metric-label {
+  font-size: var(--bik-text-xs);
+  color: var(--bik-text-muted);
+  font-weight: var(--bik-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bik-metric--success .bik-metric-value { color: var(--bik-success); }
+.bik-metric--warning .bik-metric-value { color: var(--bik-warning); }
+.bik-metric--danger  .bik-metric-value { color: var(--bik-danger); }
+.bik-metric--orange  .bik-metric-value { color: var(--bik-orange); }
+
+
+/* ============================================================
+   13. EMPTY STATES
+   ============================================================ */
+
+.bik-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--bik-space-12) var(--bik-space-8);
+  background: var(--bik-surface);
+  border: 1px solid var(--bik-border);
+  border-radius: var(--bik-radius-lg);
+}
+
+.bik-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--bik-space-4);
+  opacity: 0.5;
+}
+
+.bik-empty-title {
+  font-size: var(--bik-text-base);
+  font-weight: var(--bik-weight-semibold);
+  color: var(--bik-text);
+  margin: 0 0 var(--bik-space-2);
+}
+
+.bik-empty-body {
+  font-size: var(--bik-text-sm);
+  color: var(--bik-text-muted);
+  line-height: var(--bik-leading-normal);
+  max-width: 360px;
+  margin: 0 0 var(--bik-space-5);
+}
+
+.bik-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--bik-space-3);
+  justify-content: center;
+}
+
+
+/* ============================================================
+   14. LOADING / SPINNER
+   ============================================================ */
+
+@keyframes bik-spin {
+  to { transform: rotate(360deg); }
+}
+
+.bik-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(28,28,26,0.12);
+  border-top-color: var(--bik-orange);
+  border-radius: 50%;
+  animation: bik-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
+.bik-spinner--sm {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+.bik-spinner--lg {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+.bik-spinner--light {
+  border-color: rgba(255,255,255,0.2);
+  border-top-color: #fff;
+}
+
+/* Full-area loading overlay */
+.bik-loading-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--bik-space-3);
+  padding: var(--bik-space-12);
+  color: var(--bik-text-muted);
+  font-size: var(--bik-text-sm);
+}
+
+
+/* ============================================================
+   15. TABS
+   ============================================================ */
+
+.bik-tabs {
+  display: flex;
+  gap: var(--bik-space-1);
+  border-bottom: 1px solid var(--bik-border);
+  padding-bottom: 0;
+}
+
+.bik-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bik-space-2);
+  padding: 8px var(--bik-space-4);
+  font-size: var(--bik-text-sm);
+  font-weight: var(--bik-weight-medium);
+  color: var(--bik-text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color var(--bik-transition), border-color var(--bik-transition);
+  white-space: nowrap;
+  font-family: var(--bik-font);
+  border-radius: var(--bik-radius-sm) var(--bik-radius-sm) 0 0;
+  text-decoration: none;
+}
+
+.bik-tab:hover {
+  color: var(--bik-text);
+  background: rgba(28,28,26,0.03);
+}
+
+.bik-tab.active,
+.bik-tab[aria-selected="true"] {
+  color: var(--bik-orange);
+  border-bottom-color: var(--bik-orange);
+  font-weight: var(--bik-weight-semibold);
+}
+
+.bik-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: rgba(28,28,26,0.08);
+  border-radius: var(--bik-radius-pill);
+  font-size: var(--bik-text-2xs);
+  font-weight: var(--bik-weight-bold);
+  color: var(--bik-text-muted);
+}
+
+.bik-tab.active .bik-tab-count,
+.bik-tab[aria-selected="true"] .bik-tab-count {
+  background: rgba(216,90,48,0.12);
+  color: var(--bik-orange);
+}
+
+
+/* ============================================================
+   16. PRIORITY / ALERT ROWS
+   ============================================================ */
+
+.bik-priority-row {
+  display: flex;
+  align-items: center;
+  gap: var(--bik-space-3);
+  padding: 12px var(--bik-space-4);
+  background: var(--bik-surface);
+  border: 1px solid var(--bik-border);
+  border-left-width: 3px;
+  border-left-color: var(--bik-border-strong);
+  border-radius: var(--bik-radius-md);
+  transition: box-shadow var(--bik-transition);
+}
+
+.bik-priority-row:hover { box-shadow: var(--bik-shadow-sm); }
+
+.bik-priority-row--danger  { border-left-color: var(--bik-danger); }
+.bik-priority-row--warning { border-left-color: #E67E22; }
+.bik-priority-row--success { border-left-color: var(--bik-success); }
+.bik-priority-row--info    { border-left-color: var(--bik-info); }
+
+.bik-priority-icon { font-size: 1rem; flex-shrink: 0; }
+
+.bik-priority-body { flex: 1; min-width: 0; }
+
+.bik-priority-headline {
+  font-size: var(--bik-text-sm);
+  font-weight: var(--bik-weight-semibold);
+  color: var(--bik-text);
+  line-height: var(--bik-leading-snug);
+}
+
+.bik-priority-sub {
+  font-size: var(--bik-text-xs);
+  color: var(--bik-text-muted);
+  margin-top: 2px;
+}
+
+.bik-priority-action {
+  flex-shrink: 0;
+}
+
+
+/* ============================================================
+   17. RESPONSIVE UTILITIES
+   ============================================================ */
+
+/* Container */
+.bik-container {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-inline: var(--bik-space-6);
+}
+
+.bik-container--narrow { max-width: 720px; }
+
+/* Grid helpers */
+.bik-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--bik-space-4); }
+.bik-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--bik-space-5); }
+.bik-grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--bik-space-4); }
+
+@media (max-width: 700px) {
+  .bik-container { padding-inline: var(--bik-space-4); }
+  .bik-grid-2,
+  .bik-grid-3 { grid-template-columns: 1fr; }
+  .bik-app-nav { display: none; }
+  .bik-metric-strip { flex-wrap: wrap; }
+  .bik-metric {
+    flex: 0 0 50%;
+    border-left: none;
+    border-top: 1px solid var(--bik-border);
+  }
+  .bik-metric:nth-child(-n+2) { border-top: none; }
+}
+
+@media (max-width: 480px) {
+  .bik-modal { border-radius: var(--bik-radius-lg) var(--bik-radius-lg) 0 0; }
+  .bik-modal-overlay { align-items: flex-end; padding: 0; }
+}
+
+
+/* ============================================================
+   18. MICRO-INTERACTIONS
+   ============================================================ */
+
+/* Clickable row hover */
+.bik-row-link {
+  display: flex;
+  align-items: center;
+  gap: var(--bik-space-3);
+  padding: 10px var(--bik-space-4);
+  border-bottom: 1px solid var(--bik-border);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--bik-transition);
+}
+
+.bik-row-link:last-child { border-bottom: none; }
+.bik-row-link:hover      { background: var(--bik-surface-raised); }
+
+/* Arrow that animates right on row hover */
+.bik-row-arrow {
+  color: var(--bik-text-placeholder);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  transition: color var(--bik-transition), transform var(--bik-transition);
+}
+
+.bik-row-link:hover .bik-row-arrow {
+  color: var(--bik-orange);
+  transform: translateX(3px);
+}
+
+/* Autosave indicator */
+.bik-autosave {
+  display: flex;
+  align-items: center;
+  gap: var(--bik-space-2);
+  font-size: var(--bik-text-2xs);
+  color: var(--bik-text-on-dark-muted);
+}
+
+.bik-autosave-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  transition: background 0.3s;
+}
+
+.bik-autosave-dot.saved  { background: #4CAF50; }
+.bik-autosave-dot.saving { background: var(--bik-orange); }
