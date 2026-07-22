@@ -178,6 +178,7 @@
 
     <!-- Hero -->
     <div class="dash-hero">
+      <p class="dash-hero-greeting" id="hero-greeting" hidden></p>
       <h1 class="dash-hero-title" id="hero-title">Good day, builder.</h1>
       <p class="dash-hero-sub" id="hero-sub">Your professional document toolkit — built for Australian builders and tradies.</p>
     </div>
@@ -624,15 +625,56 @@ function loadProfile() {
 
 // ── Hero ──────────────────────────────────────────────────────────
 
-function renderHero(metrics) {
-  const profile = loadProfile();
-  const name    = profile.builderName;
-  document.getElementById('hero-title').textContent = name ? `Good day, ${name}.` : 'Good day, builder.';
-  if (metrics && metrics.totalProjects > 0) {
-    const sub = metrics.needsAttention > 0
-      ? `${metrics.needsAttention} project${metrics.needsAttention !== 1 ? 's' : ''} need your attention today.`
-      : `All ${metrics.totalProjects} project${metrics.totalProjects !== 1 ? 's' : ''} looking healthy.`;
-    document.getElementById('hero-sub').textContent = sub;
+function renderHero(metrics, reports) {
+  const profile     = loadProfile();
+  const name        = profile.builderName;
+  const titleEl     = document.getElementById('hero-title');
+  const subEl       = document.getElementById('hero-sub');
+  const greetingEl  = document.getElementById('hero-greeting');
+
+  // No projects — show default welcome greeting; empty state takes over
+  if (!metrics || metrics.totalProjects === 0) {
+    titleEl.textContent    = name ? `Good day, ${name}.` : 'Good day, builder.';
+    subEl.textContent      = 'Your professional document toolkit — built for Australian builders and tradies.';
+    greetingEl.hidden      = true;
+    return;
+  }
+
+  // Count actionable (non-info) health alerts across all projects
+  let priorityCount = 0;
+  let totalPending  = 0;
+  (reports || []).forEach(r => {
+    priorityCount += r.alerts.filter(a => a.severity !== 'info').length;
+    totalPending  += r.contractSummary?.pendingAmount || 0;
+  });
+
+  // Count people on site today across all active projects
+  const todayStr      = attendanceStore._today();
+  const activeProjs   = projectStore.list().filter(p => p.status === 'active');
+  let onSiteCount     = 0;
+  for (const proj of activeProjs) {
+    const token = checkinTokens.forProject(proj.id);
+    onSiteCount += attendanceStore.forProjectOrToken(proj.id, token)
+      .filter(r => r.status === 'active' && r.date === todayStr).length;
+  }
+
+  // Primary headline
+  titleEl.textContent = priorityCount > 0
+    ? `You have ${priorityCount} thing${priorityCount !== 1 ? 's' : ''} that need${priorityCount === 1 ? 's' : ''} attention today`
+    : 'Everything is on track today';
+
+  // Supporting line — only include metrics with real data
+  const parts = [`${metrics.totalProjects} active project${metrics.totalProjects !== 1 ? 's' : ''}`];
+  if (onSiteCount > 0) parts.push(`${onSiteCount} ${onSiteCount === 1 ? 'person' : 'people'} on site`);
+  if (totalPending > 0) parts.push(`${formatAUD(totalPending)} awaiting approval`);
+  subEl.textContent = parts.join(' · ');
+
+  // Secondary greeting — shown only when a name is set
+  if (name) {
+    greetingEl.textContent = `Good day, ${name}.`;
+    greetingEl.hidden      = false;
+  } else {
+    greetingEl.hidden = true;
   }
 }
 
@@ -989,7 +1031,7 @@ function renderAll() {
   const reports  = evaluateAll(projects, id => documentHistory.listByProject(id, 200));
   const metrics  = aggregateMetrics(reports);
 
-  renderHero(metrics);
+  renderHero(metrics, reports);
   renderSummaryBar(metrics);
   renderPriorities(reports);
   renderValueMetrics();
