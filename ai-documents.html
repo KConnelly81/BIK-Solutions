@@ -3,368 +3,1380 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="BIK AI Document Generator - Generate quotes, SWMS, progress claims, variation notices and more in minutes. Built for Australian builders and tradies." />
-  <title>AI Document Generator - BIK Business Toolkit</title>
+  <meta name="description" content="BIK Business Toolkit — every tool to run a professional trade business. Quotes, SWMS, progress claims, site diary, attendance and more." />
+  <meta name="robots" content="noindex" />
+  <title>BIK Business Toolkit</title>
   <link rel="stylesheet" href="css/bik-design-system.css" />
-  <link rel="stylesheet" href="css/styles.css" />
+<style>
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bik-background);color:var(--bik-text);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+a{color:inherit;text-decoration:none}
+svg{display:block}
+
+/* ── App header ── */
+.app-hdr{position:sticky;top:0;z-index:100;background:var(--bik-navy);display:flex;align-items:center;padding:0 20px;height:54px;gap:0;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.app-logo{display:flex;align-items:center;gap:9px;text-decoration:none;flex-shrink:0;margin-right:20px}
+.logo-mark{width:30px;height:30px;background:var(--bik-orange);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;letter-spacing:-.5px;flex-shrink:0}
+.logo-name{font-size:13px;font-weight:600;color:#fff;letter-spacing:-.01em}
+.app-nav{display:flex;align-items:center;gap:2px}
+.nav-link{padding:6px 11px;border-radius:6px;font-size:13px;font-weight:500;color:rgba(255,255,255,.5);text-decoration:none;transition:color .15s,background .15s;white-space:nowrap}
+.nav-link:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.07)}
+.nav-link.act{color:#fff;background:rgba(255,255,255,.11)}
+.hdr-space{flex:1}
+.hdr-action{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);border-radius:7px;padding:6px 12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);text-decoration:none;transition:background .15s,color .15s;white-space:nowrap}
+.hdr-action:hover{background:rgba(255,255,255,.14);color:#fff}
+
+/* ── Hero ── */
+.hero{background:var(--bik-navy-dark, #14182A);padding:44px 20px 36px}
+.hero-inner{max-width:600px;margin:0 auto;text-align:center}
+.hero-eye{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--bik-orange);margin-bottom:14px}
+.hero-h1{font-size:clamp(22px,5vw,34px);font-weight:800;color:#fff;letter-spacing:-.025em;line-height:1.15;margin-bottom:8px;text-wrap:balance}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.42);margin-bottom:28px}
+.srch-wrap{position:relative}
+.srch-ico{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);pointer-events:none}
+.srch-input{width:100%;background:rgba(255,255,255,.09);border:1.5px solid rgba(255,255,255,.12);border-radius:12px;padding:14px 44px 14px 48px;font-size:15px;color:#fff;font-family:inherit;outline:none;transition:border-color .15s,background .15s}
+.srch-input::placeholder{color:rgba(255,255,255,.32)}
+.srch-input:focus{border-color:var(--bik-orange);background:rgba(255,255,255,.12)}
+.srch-clear{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.15);border:none;border-radius:50%;width:22px;height:22px;color:#fff;font-size:11px;display:none;align-items:center;justify-content:center;line-height:1;cursor:pointer}
+.srch-clear.on{display:flex}
+.hints{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px}
+.hint-chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 12px;font-size:12px;color:rgba(255,255,255,.5);cursor:pointer;transition:background .15s,color .15s;white-space:nowrap;font-family:inherit}
+.hint-chip:hover{background:rgba(255,255,255,.12);color:rgba(255,255,255,.8)}
+
+/* ── Recently used + drafts strip ── */
+.recent-strip{background:var(--bik-surface);border-bottom:1px solid var(--bik-border);padding:11px 20px;display:flex;align-items:center;gap:10px;overflow-x:auto;scrollbar-width:none;min-height:46px}
+.recent-strip::-webkit-scrollbar{display:none}
+.recent-lbl{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--bik-text-muted);flex-shrink:0;white-space:nowrap}
+.r-chip{display:flex;align-items:center;gap:7px;background:var(--bik-background);border:1px solid var(--bik-border-strong);border-radius:20px;padding:5px 13px 5px 8px;font-size:12px;font-weight:500;color:var(--bik-text);white-space:nowrap;cursor:pointer;transition:background .15s,transform .15s;flex-shrink:0;font-family:inherit}
+.r-chip:hover{background:var(--bik-surface-raised, #FAFAF8);transform:translateY(-1px)}
+.r-chip-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.draft-chip{border-style:dashed;border-color:var(--bik-warning)}
+.draft-dot{width:7px;height:7px;border-radius:50%;background:var(--bik-warning);flex-shrink:0;margin-right:2px}
+
+/* ── Search banner ── */
+.srch-banner{display:none;padding:10px 20px;font-size:13px;color:var(--bik-text-muted);background:var(--bik-surface);border-bottom:1px solid var(--bik-border)}
+.srch-banner.on{display:block}
+
+/* ── Body ── */
+.tk-body{max-width:960px;margin:0 auto;padding:24px 20px 80px;display:flex;flex-direction:column;gap:12px}
+.no-res{display:none;text-align:center;padding:48px 20px;color:var(--bik-text-muted);font-size:14px}
+.no-res.on{display:block}
+
+/* ── Category block ── */
+.cat-block{background:var(--bik-surface);border:1px solid var(--bik-border-strong);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.cat-hdr{display:flex;align-items:center;gap:14px;padding:17px 20px;cursor:pointer;user-select:none;transition:background .15s;border-bottom:1px solid transparent;-webkit-tap-highlight-color:transparent}
+.cat-hdr:hover{background:var(--bik-surface-raised, #FAFAF8)}
+.cat-block.open .cat-hdr{border-bottom-color:var(--bik-border)}
+.cat-ico{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.cat-meta{flex:1;min-width:0}
+.cat-name{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--bik-text);margin-bottom:2px;line-height:1.2}
+.cat-desc{font-size:13px;color:var(--bik-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat-pill{flex-shrink:0;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.02em;white-space:nowrap}
+.cat-chev{flex-shrink:0;color:var(--bik-text-muted);transition:transform .2s}
+.cat-block.open .cat-chev{transform:rotate(180deg)}
+.cat-body{overflow:hidden;max-height:0;transition:max-height .38s cubic-bezier(.4,0,.2,1)}
+.cat-block.open .cat-body{max-height:3200px}
+.cat-body-inner{padding:12px 16px 16px}
+
+/* ── Tool grid ── */
+.tool-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:680px){.tool-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:420px){.tool-grid{grid-template-columns:1fr}}
+
+/* ── Tool card ── */
+.t-card{background:var(--bik-background);border:1.5px solid var(--bik-border-strong);border-radius:10px;padding:14px;cursor:pointer;transition:border-color .15s,background .15s,transform .15s,box-shadow .15s;display:flex;flex-direction:column;gap:7px;min-height:114px;position:relative;-webkit-tap-highlight-color:transparent;text-align:left;font-family:inherit;color:var(--bik-text)}
+.t-card:hover{background:var(--bik-surface);border-color:var(--bik-border-strong);transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.09),0 2px 4px rgba(0,0,0,.05)}
+.t-card.sel{background:var(--bik-surface);border-color:var(--cc);box-shadow:0 0 0 3px var(--cc-a)}
+.t-card.ph{opacity:.42;cursor:not-allowed;pointer-events:none}
+.t-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.t-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.t-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap;letter-spacing:.02em;line-height:1.4}
+.s-draft{background:#FEF3C7;color:#92400E}
+.s-live{background:#DCFCE7;color:#166534}
+.s-new{background:#DBEAFE;color:#1E3A8A}
+.t-name{font-size:13px;font-weight:700;color:var(--bik-text);line-height:1.3;letter-spacing:-.01em}
+.t-tag{font-size:12px;color:var(--bik-text-muted);line-height:1.45;flex:1}
+.t-explore{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:var(--cc);letter-spacing:.02em;text-transform:uppercase;margin-top:auto;transition:gap .15s}
+.t-card:hover .t-explore{gap:7px}
+
+/* ── Detail panel ── */
+.det-wrap{margin-top:10px}
+.det-panel{background:var(--bik-surface);border:1.5px solid var(--bik-border-strong);border-radius:12px;overflow:hidden;animation:panelIn .22s ease forwards}
+@keyframes panelIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.det-hdr{display:flex;align-items:center;gap:14px;padding:18px 20px 16px;border-bottom:1px solid var(--bik-border)}
+.det-ico{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.det-title-grp{flex:1;min-width:0}
+.det-title{font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--bik-text);margin-bottom:5px}
+.det-tags{display:flex;gap:6px;flex-wrap:wrap}
+.det-tag{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+.det-close{background:var(--bik-background);border:1px solid var(--bik-border-strong);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--bik-text-muted);transition:background .15s,color .15s;flex-shrink:0;align-self:flex-start;font-family:inherit}
+.det-close:hover{background:var(--bik-surface-raised, #f5f5f3);color:var(--bik-text)}
+.det-body{display:grid;grid-template-columns:1fr 1fr}
+@media(max-width:580px){.det-body{grid-template-columns:1fr}}
+.det-left{padding:18px 20px;border-right:1px solid var(--bik-border)}
+@media(max-width:580px){.det-left{border-right:none;border-bottom:1px solid var(--bik-border)}}
+.det-right{padding:18px 20px}
+.sec-lbl{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--bik-text-muted);margin-bottom:8px}
+.when-txt{font-size:14px;color:var(--bik-text);line-height:1.55}
+.chk-list{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.chk-list li{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--bik-text);line-height:1.4}
+.chk-dot{width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;font-size:9px;color:#fff}
+
+/* ── Micro-previews ── */
+.prev{background:var(--bik-background);border:1px solid var(--bik-border);border-radius:9px;padding:12px 14px;margin-top:14px;overflow-x:auto}
+.prev-lbl{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--bik-text-muted);margin-bottom:10px}
+.vr-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid var(--bik-border)}
+.vr-row:last-child{border-bottom:none;font-weight:700}
+.vr-lbl{color:var(--bik-text-muted)}
+.vr-val{font-variant-numeric:tabular-nums;font-weight:600}
+.vr-green{color:#16A34A}
+.vr-arrow{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--bik-text-muted);padding:5px 0;font-variant-numeric:tabular-nums}
+.vr-badge{display:inline-flex;align-items:center;background:#DCFCE7;color:#166534;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.att-stat{display:flex;align-items:baseline;gap:6px;margin-bottom:10px}
+.att-num{font-size:32px;font-weight:800;color:var(--bik-text);letter-spacing:-.04em;line-height:1}
+.att-unit{font-size:12px;color:var(--bik-text-muted);text-transform:uppercase;letter-spacing:.06em}
+.att-rows{display:flex;flex-direction:column;gap:5px}
+.att-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--bik-text-muted)}
+.att-dw{display:flex;align-items:center;gap:6px}
+.att-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.diary-date{font-size:11px;font-weight:700;color:var(--bik-text-muted);letter-spacing:.04em;text-transform:uppercase;margin-bottom:8px}
+.diary-flds{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.diary-fld{background:var(--bik-surface);border:1px solid var(--bik-border);border-radius:6px;padding:7px 9px;font-size:11px;color:var(--bik-text-muted);display:flex;align-items:center;gap:5px}
+.diary-fld.fill{color:var(--bik-text);font-weight:500}
+.claim-rows{display:flex;flex-direction:column}
+.cl-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--bik-border)}
+.cl-row:last-child{border-bottom:none;padding-top:8px;font-weight:700;font-size:13px}
+.cl-lbl{color:var(--bik-text-muted)}
+.cl-val{font-variant-numeric:tabular-nums}
+.cl-green{color:#16A34A;font-weight:600}
+.cl-prog{height:5px;background:var(--bik-border-strong);border-radius:10px;margin-top:10px;overflow:hidden}
+.cl-fill{height:100%;border-radius:10px;background:#2563EB;width:65%}
+.tb-topic{font-size:13px;font-weight:700;color:var(--bik-text);margin-bottom:4px}
+.tb-meta{font-size:11px;color:var(--bik-text-muted);margin-bottom:10px}
+.tb-pts{list-style:none;display:flex;flex-direction:column;gap:4px}
+.tb-pt{display:flex;align-items:flex-start;gap:6px;font-size:12px;color:var(--bik-text-muted)}
+.tb-bul{width:5px;height:5px;border-radius:50%;background:#D97706;margin-top:5px;flex-shrink:0}
+.qt-rows{display:flex;flex-direction:column}
+.qt-row{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--bik-border)}
+.qt-row:last-child{border-bottom:none;padding-top:8px;font-weight:700;font-size:13px}
+.qt-lbl{color:var(--bik-text-muted);display:flex;align-items:center;gap:5px}
+.qt-val{font-variant-numeric:tabular-nums}
+.qt-total{color:var(--bik-orange);font-weight:700}
+.swms-rows{display:flex;flex-direction:column;gap:5px}
+.swms-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;padding:5px 0;border-bottom:1px solid var(--bik-border)}
+.swms-row:last-child{border-bottom:none}
+.swms-haz{color:var(--bik-text-muted);display:flex;align-items:center;gap:4px}
+.swms-ctl{color:var(--bik-text);font-weight:500}
+.swms-head{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--bik-text-muted);display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px}
+
+/* ── Panel footer ── */
+.det-foot{padding:14px 20px;border-top:1px solid var(--bik-border);display:flex;align-items:center;gap:10px;background:var(--bik-surface-raised, #FAFAF8);flex-wrap:wrap}
+.btn-p{display:inline-flex;align-items:center;gap:6px;background:var(--cc);color:#fff;font-size:14px;font-weight:700;padding:10px 20px;border-radius:9px;border:none;text-decoration:none;transition:filter .15s,transform .15s;font-family:inherit;letter-spacing:-.01em;cursor:pointer}
+.btn-p:hover{filter:brightness(.88);transform:translateY(-1px)}
+.btn-g{display:inline-flex;align-items:center;gap:6px;background:transparent;color:var(--bik-text-muted);font-size:13px;font-weight:600;padding:10px 16px;border-radius:9px;border:1.5px solid var(--bik-border-strong);text-decoration:none;transition:background .15s,color .15s;font-family:inherit;cursor:pointer}
+.btn-g:hover{background:var(--bik-background);color:var(--bik-text)}
+
+/* ── Coming soon chips ── */
+.coming-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.coming-chip{display:flex;align-items:center;gap:5px;background:var(--bik-surface-raised, #f5f5f3);border:1px dashed var(--bik-border-strong);border-radius:7px;padding:6px 11px;font-size:11px;color:var(--bik-text-muted);opacity:.7}
+
+/* ── Document history section ── */
+.history-section{max-width:960px;margin:0 auto;padding:0 20px 32px}
+.history-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.history-title{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--bik-text-muted)}
+.history-list{display:flex;flex-direction:column;gap:6px}
+.history-item{display:flex;align-items:center;gap:12px;background:var(--bik-surface);border:1px solid var(--bik-border-strong);border-radius:9px;padding:11px 14px;transition:background .15s}
+.history-item:hover{background:var(--bik-surface-raised, #f9f9f8)}
+.history-item-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.history-item-body{flex:1;min-width:0}
+.history-item-title{font-size:13px;font-weight:600;color:var(--bik-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-item-meta{font-size:11px;color:var(--bik-text-muted);margin-top:2px}
+.history-item-action{flex-shrink:0;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--bik-orange);padding:5px 10px;border-radius:6px;border:1.5px solid rgba(216,90,48,.2);transition:background .15s}
+.history-item-action:hover{background:rgba(216,90,48,.06)}
+
+/* ── How it works modal ── */
+.modal-ov{position:fixed;inset:0;background:rgba(14,16,22,.65);z-index:200;display:flex;align-items:flex-end;justify-content:center;padding:0;opacity:0;pointer-events:none;transition:opacity .25s ease;backdrop-filter:blur(4px)}
+.modal-ov.on{opacity:1;pointer-events:all}
+@media(min-width:540px){.modal-ov{align-items:center;padding:20px}}
+.modal-box{background:var(--bik-surface);border-radius:20px 20px 0 0;width:100%;max-height:90vh;overflow-y:auto;transform:translateY(20px);transition:transform .25s ease}
+@media(min-width:540px){.modal-box{border-radius:16px;max-width:500px;transform:scale(.95) translateY(8px)}}
+.modal-ov.on .modal-box{transform:none}
+.modal-hdr{display:flex;justify-content:space-between;align-items:flex-start;padding:22px 22px 0}
+.modal-title{font-size:17px;font-weight:800;letter-spacing:-.02em;color:var(--bik-text)}
+.modal-sub{font-size:13px;color:var(--bik-text-muted);margin-top:3px}
+.modal-x{background:var(--bik-background);border:1px solid var(--bik-border-strong);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--bik-text-muted);font-family:inherit;flex-shrink:0;cursor:pointer;transition:background .15s}
+.modal-x:hover{background:var(--bik-surface-raised, #f5f3f0)}
+.modal-steps{padding:16px 22px 24px}
+.how-step{display:flex;gap:16px;padding:14px 0;position:relative}
+.how-step:not(:last-child)::after{content:'';position:absolute;left:19px;top:48px;height:calc(100% - 34px);width:2px;background:var(--bik-border-strong)}
+.step-n{width:38px;height:38px;border-radius:50%;border:2px solid var(--bik-border-strong);background:var(--bik-surface-raised, #f9f9f8);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--bik-text-muted);flex-shrink:0;z-index:1}
+.step-b{padding-top:5px}
+.step-t{font-size:14px;font-weight:700;color:var(--bik-text);margin-bottom:3px}
+.step-d{font-size:13px;color:var(--bik-text-muted);line-height:1.5}
+
+/* ── Responsive ── */
+@media(max-width:600px){
+  .app-nav{display:none}
+  .hero{padding:32px 16px 28px}
+  .tk-body{padding:16px 12px 60px;gap:10px}
+  .cat-hdr{padding:14px 16px}
+  .cat-body-inner{padding:10px 10px 12px}
+  .det-hdr,.det-left,.det-right,.det-foot{padding:14px 16px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
 </head>
 <body>
 
-  <!-- ====== NAV ====== -->
-  <nav class="site-nav" role="navigation" aria-label="Main navigation">
-    <div class="nav-inner">
-      <a href="index.html" class="logo" aria-label="BIK Solutions - home">
-        <div class="logo-mark" aria-hidden="true"><span>B</span></div>
-        <div class="logo-text">
-          <span class="logo-name">IK SOLUTIONS</span>
-          <span class="logo-tagline">Beyond Industry Knowledge</span>
-        </div>
-      </a>
-
-      <ul class="nav-links" role="list">
-        <li><a href="services.html">Services</a></li>
-        <li><a href="builders.html">Builders / Deconstruction</a></li>
-        <li><a href="about.html">About</a></li>
-        <li>
-          <a href="toolkit.html" aria-haspopup="true" class="active">Business Toolkit <span class="nav-dropdown-arrow">&#9660;</span></a>
-          <ul class="nav-dropdown" role="list">
-            <li><a href="toolkit.html">Toolkit Overview</a></li>
-            <li><a href="ai-documents.html" class="active">AI Documents</a></li>
-            <li><a href="templates.html">Templates</a></li>
-            <li><a href="construction-resources.html">Construction Resources</a></li>
-            <li><a href="productivity.html">Productivity Hub</a></li>
-            <li><a href="coming-soon.html">Coming Soon</a></li>
-          </ul>
-        </li>
-        <li><a href="shop.html">Shop</a></li>
-        <li><a href="resources.html">Resources</a></li>
-        <li><a href="contact.html">Contact</a></li>
-      </ul>
-
-      <a href="dashboard.html" class="btn btn--coral nav-cta">Open Toolkit</a>
-
-      <button class="nav-toggle" aria-label="Open navigation menu" aria-expanded="false" aria-controls="nav-drawer">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
+<!-- ====== APP HEADER ====== -->
+<header class="app-hdr" role="banner">
+  <a href="dashboard.html" class="app-logo" aria-label="BIK Solutions — dashboard">
+    <div class="logo-mark" aria-hidden="true">B</div>
+    <span class="logo-name">BIK Business Toolkit</span>
+  </a>
+  <nav class="app-nav" aria-label="App navigation">
+    <a href="dashboard.html" class="nav-link">Dashboard</a>
+    <a href="project.html" class="nav-link">Projects</a>
+    <a href="attendance.html" class="nav-link">Site</a>
+    <a href="ai-documents.html" class="nav-link act" aria-current="page">Tools</a>
   </nav>
+  <div class="hdr-space"></div>
+</header>
 
-  <nav id="nav-drawer" class="nav-drawer" aria-label="Mobile navigation">
-    <a href="services.html">Services</a>
-    <a href="builders.html">Builders / Deconstruction</a>
-    <a href="about.html">About</a>
-    <span class="drawer-section-label">Business Toolkit</span>
-    <a href="toolkit.html">Toolkit Overview</a>
-    <a href="ai-documents.html" class="active">AI Documents</a>
-    <a href="templates.html">Templates</a>
-    <a href="construction-resources.html">Construction Resources</a>
-    <a href="productivity.html">Productivity Hub</a>
-    <a href="coming-soon.html">Coming Soon</a>
-    <a href="shop.html">Shop</a>
-    <a href="resources.html">Resources</a>
-    <a href="contact.html">Contact</a>
-    <a href="dashboard.html" class="btn btn--coral">Open Toolkit</a>
-  </nav>
+<!-- ====== HERO ====== -->
+<section class="hero" aria-label="Toolkit search">
+  <div class="hero-inner">
+    <span class="hero-eye">BIK Business Toolkit</span>
+    <h1 class="hero-h1">What do you need to do today?</h1>
+    <p class="hero-sub">Every tool to run a professional trade business.</p>
+    <div class="srch-wrap">
+      <svg class="srch-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="srch-input" id="js-srch" type="search" autocomplete="off"
+        placeholder="e.g. charge for extra work, who's on site, claim payment…"
+        aria-label="Search for a tool or task">
+      <button class="srch-clear" id="js-srch-clear" type="button" aria-label="Clear search">✕</button>
+    </div>
+    <div class="hints" id="js-hints" role="list" aria-label="Search suggestions"></div>
+  </div>
+</section>
 
-  <!-- ====== HERO ====== -->
-  <section class="toolkit-hero" aria-labelledby="ai-docs-heading">
-    <div class="container">
-      <span class="eyebrow text-coral">AI Document Generator</span>
-      <h1 id="ai-docs-heading">Professional documents in minutes, not hours.</h1>
-      <p>
-        Fill in a form. BIK generates the document. You review it, make any changes,
-        and download the PDF. Built for Australian construction — professional,
-        practical, and ready to review.
-      </p>
-      <div class="hero-ctas">
-        <a href="dashboard.html" class="btn btn--coral">Open Toolkit — Beta v0.9 Free &rarr;</a>
-        <a href="support.html" class="btn btn--ghost" style="color:#fff;border-color:rgba(255,255,255,0.35);">How it works</a>
+<!-- ====== RECENTLY USED + DRAFTS ====== -->
+<div class="recent-strip" id="js-recent" role="navigation" aria-label="Recently used tools"></div>
+
+<!-- ====== SEARCH BANNER ====== -->
+<div class="srch-banner" id="js-banner" role="status" aria-live="polite"></div>
+
+<!-- ====== TOOL CATEGORIES ====== -->
+<main class="tk-body" id="js-tk" aria-label="Toolkit categories"></main>
+<div class="no-res" id="js-nores" role="status">
+  <div style="font-size:2rem;margin-bottom:12px">🔍</div>
+  <strong>No tools match that search.</strong><br>
+  Try different words, or browse the categories below.
+</div>
+
+<!-- ====== DOCUMENT HISTORY ====== -->
+<section class="history-section" id="js-history-section" aria-labelledby="history-heading" hidden>
+  <div class="history-hdr">
+    <span class="history-title" id="history-heading">Recent Documents</span>
+  </div>
+  <div class="history-list" id="js-history-list"></div>
+</section>
+
+<!-- ====== HOW IT WORKS MODAL ====== -->
+<div class="modal-ov" id="js-modal" role="dialog" aria-modal="true" aria-labelledby="js-modal-title">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="js-modal-title"></div>
+        <div class="modal-sub" id="js-modal-sub"></div>
+      </div>
+      <button class="modal-x" id="js-modal-x" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-steps" id="js-modal-steps"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ── Utility ── */
+function hex(color, a) {
+  return color + Math.round(a * 255).toString(16).padStart(2, '0');
+}
+
+/* ── Tool data ── */
+const CATS = [
+  {
+    id: 'get-paid',
+    name: 'GET PAID & PROTECT YOUR MARGIN',
+    desc: 'Protect cash flow and get paid for every dollar of work done.',
+    icon: '💰',
+    color: '#16A34A',
+    tools: ['variation', 'progress-claim', 'quote-builder', 'payment-reminder'],
+    coming: [{ n: 'Retention Claim', i: '🏦' }],
+    open: true
+  },
+  {
+    id: 'run-site',
+    name: 'RUN THE SITE',
+    desc: 'Stay across every day — who is there, what happened, what was said.',
+    icon: '🏗️',
+    color: '#2563EB',
+    tools: ['site-attendance', 'site-diary'],
+    coming: [{ n: 'Site Instructions', i: '📌' }, { n: 'Delivery Register', i: '🚚' }],
+    open: true
+  },
+  {
+    id: 'keep-safe',
+    name: 'KEEP PEOPLE SAFE',
+    desc: "Meet your WHS obligations and protect your crew before it's needed.",
+    icon: '🦺',
+    color: '#D97706',
+    tools: ['swms', 'toolbox-talk', 'incident-report', 'inspection-checklist'],
+    coming: [{ n: 'Induction Register', i: '📝' }],
+    open: false
+  },
+  {
+    id: 'changes',
+    name: 'MANAGE CHANGES & DELAYS',
+    desc: 'Document and protect yourself when conditions, scope or time shifts.',
+    icon: '🔄',
+    color: '#9333EA',
+    tools: ['eot-claim', 'delay-notice', 'instruction-to-proceed'],
+    coming: [],
+    open: false
+  },
+  {
+    id: 'quality',
+    name: 'CONTROL QUALITY',
+    desc: 'Deliver work that meets standards and leaves no room for disputes.',
+    icon: '🎯',
+    color: '#0891B2',
+    tools: ['defect-report', 'non-conformance'],
+    coming: [],
+    open: false
+  },
+  {
+    id: 'subcont',
+    name: 'MANAGE SUBCONTRACTORS',
+    desc: 'Protect your project with clear agreements and formal notices when needed.',
+    icon: '🤝',
+    color: '#DC2626',
+    tools: ['subcontractor-agreement', 'notice-to-show-cause', 'contract-termination'],
+    coming: [],
+    open: false
+  },
+  {
+    id: 'handover',
+    name: 'FINISH & HAND OVER',
+    desc: 'Close the job cleanly. Document completion and hand over with confidence.',
+    icon: '🏁',
+    color: '#374151',
+    tools: ['scope-of-works', 'practical-completion', 'handover-checklist'],
+    coming: [],
+    open: false
+  }
+];
+
+const TOOLS = {
+  'variation': {
+    name: 'Variation Notice',
+    tag: 'The job changed. Get it agreed before you do the work.',
+    icon: '📋',
+    href: 'variation-generator.html',
+    draftKey: 'bik-variation-draft',
+    kw: ['change', 'extra', 'scope', 'agreed', 'margin', 'variation', 'different', 'client', 'charge', 'unexpected'],
+    cat: 'get-paid',
+    when: "When the client changes scope, selects something different from spec, or unexpected conditions affect the agreed price. Never start extra work without a signed variation.",
+    what: [
+      'Creates a professional variation notice',
+      'Calculates the cost and GST automatically',
+      'Records the reason and scope change',
+      'Sends for client sign-off and approval',
+      'Tracks which variations are still outstanding'
+    ],
+    prev: 'variation',
+    hiw: [
+      { t: 'Choose the project', d: 'Select the job the variation relates to. BIK pulls in the contract details.' },
+      { t: 'Describe the change', d: "Enter what changed, why, and the agreed amount. BIK calculates GST." },
+      { t: 'BIK creates the notice', d: 'A professional variation notice is generated — ready to review in seconds.' },
+      { t: 'Send for approval', d: "Email or print it. Track whether the client has approved or it's still outstanding." }
+    ]
+  },
+  'progress-claim': {
+    name: 'Progress Claim',
+    tag: 'Turn completed work into a professional claim.',
+    icon: '🧾',
+    href: 'progress-claim.html',
+    draftKey: 'bik-progress-claim-draft',
+    kw: ['claim', 'payment', 'invoice', 'stage', 'milestone', 'paid', 'progress', 'cash'],
+    cat: 'get-paid',
+    when: "At each payment stage — when you've completed agreed work and it's time to get paid. Calculate exactly what's owed based on your schedule of values.",
+    what: [
+      "Calculates exactly what you're owed at this stage",
+      "Accounts for all approved variations",
+      "Deducts amounts already claimed",
+      "Creates a compliant progress claim document",
+      "Tracks the balance remaining on the contract"
+    ],
+    prev: 'claim',
+    hiw: null
+  },
+  'quote-builder': {
+    name: 'Quote Builder',
+    tag: 'Professional, itemised quotes in under 5 minutes.',
+    icon: '✏️',
+    href: 'quote-builder.html',
+    draftKey: 'bik-quote-draft',
+    kw: ['quote', 'price', 'estimate', 'cost', 'tender', 'labour', 'materials', 'gst'],
+    cat: 'get-paid',
+    when: "When pricing any job — residential, commercial, or trade work. Include labour, materials, GST and your payment terms in a document that wins the job.",
+    what: [
+      'Itemised line items for labour and materials',
+      'Automatic GST calculation',
+      'Payment terms and schedule',
+      'Professional layout ready to send or print',
+      'Saves time over quoting from scratch every time'
+    ],
+    prev: 'quote',
+    hiw: [
+      { t: 'Enter the project details', d: 'Client name, address, and job description.' },
+      { t: 'Add line items', d: 'Labour, materials, or flat-rate items — BIK calculates GST and totals.' },
+      { t: 'Set your terms', d: 'Payment schedule, deposit required, and any exclusions.' },
+      { t: 'Generate and send', d: 'Download as PDF or copy the text and email it directly from here.' }
+    ]
+  },
+  'payment-reminder': {
+    name: 'Payment Reminder',
+    tag: 'Stop avoiding the conversation. Get paid.',
+    icon: '⏰',
+    href: 'payment-reminder.html',
+    draftKey: 'bik-payment-reminder-draft',
+    kw: ['overdue', 'late', 'reminder', 'payment', 'invoice', 'chase', 'outstanding', 'owed'],
+    cat: 'get-paid',
+    when: "When an invoice is overdue. Choose the right tone for the situation — friendly nudge, firm reminder, or formal final notice.",
+    what: [
+      'Three escalating tones to match the situation',
+      'Professional language that gets results',
+      'References the original invoice and amount',
+      'Stops you sounding unprofessional when chasing money',
+      'Email-ready in seconds'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'site-attendance': {
+    name: 'Site Attendance',
+    tag: "Know who's on site and how long they've been there.",
+    icon: '👷',
+    href: 'attendance.html',
+    draftKey: null,
+    kw: ['who', 'site', 'workers', 'attendance', 'qr', 'check in', 'register', 'workforce', 'people', 'hours'],
+    cat: 'run-site',
+    when: 'Every day, before anyone starts work. Required by law — you must know who is on site at all times.',
+    what: [
+      'QR code check-in — no worker app required',
+      'Live register of who is currently on site',
+      'Records hours for every worker automatically',
+      'Generates daily attendance reports',
+      'Supports emergency roll call at any time'
+    ],
+    prev: 'attendance',
+    hiw: null
+  },
+  'site-diary': {
+    name: 'Site Diary',
+    tag: "Capture today's site record before you forget.",
+    icon: '📓',
+    href: 'site-diary.html',
+    draftKey: 'bik-diary-draft',
+    kw: ['diary', 'daily', 'today', 'record', 'note', 'log', 'weather', 'progress', 'site record', 'document'],
+    cat: 'run-site',
+    when: "At the end of each day on site. Your legal record if a dispute arises later — workers, works completed, delays, visitors, weather.",
+    what: [
+      'Weather conditions, workers on site, work completed',
+      'Delays, instructions received, visitors on site',
+      'Project and date stamped automatically',
+      'Permanently stored for future reference',
+      'Printable for site files and dispute records'
+    ],
+    prev: 'diary',
+    hiw: null
+  },
+  'swms': {
+    name: 'SWMS Generator',
+    tag: 'Generate a Safe Work Method Statement for high-risk work.',
+    icon: '🦺',
+    href: 'swms.html',
+    draftKey: 'bik-swms-draft',
+    kw: ['swms', 'safe work', 'method', 'hazard', 'high risk', 'construction', 'whs', 'risk assessment'],
+    cat: 'keep-safe',
+    when: "Before any high-risk construction work as defined in the WHS Regulations. Must be prepared with workers and reviewed by a competent person before use on site.",
+    what: [
+      'Structured draft covering all required SWMS elements',
+      'Hazard identification and risk controls table',
+      'PPE requirements and emergency procedures',
+      'Designed for the competent-person review step',
+      'Based on Australian WHS Regulations framework'
+    ],
+    prev: 'swms',
+    hiw: [
+      { t: 'Identify the high-risk work', d: 'Select the work type from the WHS Regulations list — e.g. working at heights, excavation, demolition.' },
+      { t: 'Describe the task and hazards', d: 'BIK prompts you through each hazard type and suggests control measures.' },
+      { t: 'Generate the draft SWMS', d: 'A structured document is created — ready for your competent person to review and complete.' },
+      { t: 'Review with your workers', d: 'WHS law requires consultation. Ensure everyone who will do the work reviews and signs off.' }
+    ]
+  },
+  'toolbox-talk': {
+    name: 'Toolbox Talk',
+    tag: 'Run a safety brief before your team starts work.',
+    icon: '🔧',
+    href: 'toolbox-talk.html',
+    draftKey: 'bik-toolbox-talk-draft',
+    kw: ['safety', 'safe', 'hazard', 'toolbox', 'brief', 'meeting', 'risk', 'whs', 'health'],
+    cat: 'keep-safe',
+    when: 'Before starting new tasks, changing activity, introducing new hazards, or following a near-miss or incident.',
+    what: [
+      'Guided step-by-step topic delivery',
+      'Records who attended and acknowledged',
+      'Timestamped evidence of your WHS obligations',
+      'Stored against the project for audits',
+      'Printable for physical site files'
+    ],
+    prev: 'toolbox',
+    hiw: null
+  },
+  'incident-report': {
+    name: 'Incident Report',
+    tag: 'Report accurately. Protect your workers and your business.',
+    icon: '🚨',
+    href: 'incident-report.html',
+    draftKey: 'bik-incident-report-draft',
+    kw: ['incident', 'accident', 'near miss', 'injury', 'whs', 'report', 'investigation', 'corrective'],
+    cat: 'keep-safe',
+    when: "As soon as possible after any workplace incident, near miss, or dangerous occurrence. Accurate, timely reporting protects everyone and meets your WHS obligations.",
+    what: [
+      'Captures who, what, where, when and how',
+      'Witness statements and immediate actions section',
+      'Corrective actions and prevention steps',
+      'Structured for WHS regulator requirements',
+      'Stored securely for audits and legal reference'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'inspection-checklist': {
+    name: 'Inspection Checklist',
+    tag: 'Stage-by-stage inspections. Nothing missed. Nothing disputed.',
+    icon: '🔍',
+    href: 'inspection-checklist.html',
+    draftKey: 'bik-inspection-checklist-draft',
+    kw: ['inspection', 'checklist', 'stage', 'defect', 'quality', 'slab', 'frame', 'lock-up', 'handover'],
+    cat: 'keep-safe',
+    when: "At each stage of construction — slab, frame, lock-up, fitout, and handover. Identify defects before the next trade starts work.",
+    what: [
+      'Stage-specific inspection items',
+      'Pass / fail / not applicable per item',
+      'Notes and photo reference sections',
+      'Signed-off inspection record for disputes',
+      'Covers residential and commercial stages'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'eot-claim': {
+    name: 'EOT Claim',
+    tag: 'Extension of time claim. Document it before the deadline.',
+    icon: '📅',
+    href: 'eot-claim.html',
+    draftKey: 'bik-eot-claim-draft',
+    kw: ['extension', 'eot', 'time', 'delay', 'claim', 'contract', 'program', 'completion date'],
+    cat: 'changes',
+    when: "When a delay event occurs that is not the contractor's fault and extends the time for completion. Document and submit promptly — most contracts have strict notice periods.",
+    what: [
+      'Identifies the delay event and its cause',
+      'Calculates the extension of time sought',
+      'References the contract clause that entitles the claim',
+      'Documents the impact on the program',
+      'Formal letter format for submission'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'delay-notice': {
+    name: 'Delay Notice',
+    tag: 'Give formal notice before the deadline passes.',
+    icon: '⚠️',
+    href: 'delay-notice.html',
+    draftKey: 'bik-delay-notice-draft',
+    kw: ['delay', 'notice', 'time', 'program', 'completion', 'late', 'behind', 'contract'],
+    cat: 'changes',
+    when: "When you become aware of a delay that may affect the construction program. Give notice promptly — most contracts require notice within 2–5 business days or you lose your right to claim.",
+    what: [
+      'Formal notice of delay and its cause',
+      'Estimated impact on the program',
+      'Preserves your contractual rights to claim EOT',
+      'References the relevant contract clause',
+      'Professional document for dispute prevention'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'instruction-to-proceed': {
+    name: 'Instruction to Proceed',
+    tag: 'Verbal instruction to start work? Get it in writing.',
+    icon: '▶️',
+    href: 'instruction-to-proceed.html',
+    draftKey: 'bik-instruction-to-proceed-draft',
+    kw: ['proceed', 'instruction', 'start', 'commence', 'verbal', 'direction', 'go ahead'],
+    cat: 'changes',
+    when: "When a client or principal directs you to commence work before formal documents are signed, or to proceed after a stop-work order is lifted.",
+    what: [
+      'Records the instruction and who gave it',
+      'States the work being directed to proceed',
+      'Identifies any conditions or reservations',
+      'Creates a written record of a verbal direction',
+      'Protects you if payment is later disputed'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'defect-report': {
+    name: 'Defect Report',
+    tag: 'Number every defect. Assign responsibility. Set a deadline.',
+    icon: '🛠️',
+    href: 'defect-report.html',
+    draftKey: 'bik-defect-draft',
+    kw: ['defect', 'report', 'quality', 'rectify', 'fix', 'repair', 'trade', 'subcontractor', 'responsibility'],
+    cat: 'quality',
+    when: "After practical completion or during a defects liability period. Create a numbered defect register, assign responsibility to the right trade, and set a clear rectification deadline.",
+    what: [
+      'Numbered defect items with location description',
+      'Responsible trade and priority rating per item',
+      'Rectification deadline',
+      'Photo reference section',
+      'Sign-off record when defects are cleared'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'non-conformance': {
+    name: 'Non-Conformance Report',
+    tag: 'Work or materials not meeting spec? Create a formal NCR.',
+    icon: '❌',
+    href: 'non-conformance-report.html',
+    draftKey: 'bik-non-conformance-report-draft',
+    kw: ['non conformance', 'ncr', 'quality', 'spec', 'standard', 'reject', 'rework', 'substandard'],
+    cat: 'quality',
+    when: "When work or materials don't meet the specified standard. A formal NCR creates a trackable record and prompts corrective action before the problem compounds.",
+    what: [
+      'Describes the non-conformance with specifics',
+      'References the specification or standard not met',
+      'Records corrective action required',
+      'Tracks resolution and sign-off',
+      'Creates a quality audit trail'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'subcontractor-agreement': {
+    name: 'Subcontractor Agreement',
+    tag: 'Set clear scope, price, and terms before anyone starts.',
+    icon: '📜',
+    href: 'subcontractor-agreement.html',
+    draftKey: 'bik-subcontractor-agreement-draft',
+    kw: ['subcontractor', 'agreement', 'contract', 'scope', 'terms', 'trade', 'subie', 'engage'],
+    cat: 'subcont',
+    when: "Before any subcontractor starts work on site. Define scope, price, WHS obligations and payment terms in writing — verbal agreements create disputes.",
+    what: [
+      'Scope of works and inclusions/exclusions',
+      'Contract price and payment schedule',
+      'WHS obligations and insurance requirements',
+      'Variation and change management terms',
+      'Dispute resolution and termination clauses'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'notice-to-show-cause': {
+    name: 'Notice to Show Cause',
+    tag: 'Subcontractor in breach? Issue formal notice before acting.',
+    icon: '⚖️',
+    href: 'notice-to-show-cause.html',
+    draftKey: 'bik-notice-to-show-cause-draft',
+    kw: ['show cause', 'breach', 'notice', 'default', 'subcontractor', 'non performance', 'legal'],
+    cat: 'subcont',
+    when: "When a subcontractor is in breach of their agreement. A formal Show Cause Notice is a required step before suspending work, back-charging, or terminating. Issue it promptly.",
+    what: [
+      'Specifies the breach in clear terms',
+      'References the contract clause breached',
+      'Sets out what remedy is required',
+      'Gives the required response period',
+      'Creates a documented record before further action'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'contract-termination': {
+    name: 'Contract Termination',
+    tag: 'Terminate a subcontract after all formal steps have been taken.',
+    icon: '🔚',
+    href: 'contract-termination.html',
+    draftKey: 'bik-contract-termination-draft',
+    kw: ['termination', 'terminate', 'end', 'cancel', 'contract', 'subcontractor', 'breach'],
+    cat: 'subcont',
+    when: "When terminating a subcontractor agreement after all required notice steps have been taken and the breach has not been remedied.",
+    what: [
+      'Formally notifies termination of the agreement',
+      'References prior notices and unresolved breaches',
+      'States the grounds and effective date',
+      'Outlines next steps and cost recovery position',
+      'Creates a clean legal record of the termination'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'scope-of-works': {
+    name: 'Scope of Works',
+    tag: 'Define what is and what is not included. Prevent disputes.',
+    icon: '📄',
+    href: 'scope-of-works.html',
+    draftKey: 'bik-scope-draft',
+    kw: ['scope', 'works', 'inclusions', 'exclusions', 'contract', 'definition', 'tender', 'specification'],
+    cat: 'handover',
+    when: "When defining what is included and excluded in a contract or quote. A clear scope of works prevents scope creep and disputes about what was agreed.",
+    what: [
+      'Detailed description of the work scope',
+      'Explicit inclusions and exclusions table',
+      'Referenced to drawings or specifications',
+      'Allowances and provisional sums noted',
+      'Professionally formatted for contract attachment'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'practical-completion': {
+    name: 'Practical Completion',
+    tag: 'Close the project. Record the finish line properly.',
+    icon: '🏠',
+    href: 'practical-completion.html',
+    draftKey: 'bik-practical-completion-draft',
+    kw: ['practical completion', 'pc', 'handover', 'defects', 'outstanding', 'finish', 'complete'],
+    cat: 'handover',
+    when: "At the end of a project when the work is substantially complete. Issue the Practical Completion certificate to start the defects liability period and trigger final payment.",
+    what: [
+      'Records the date of practical completion',
+      'Lists any defects or outstanding works',
+      'Triggers the defects liability period start date',
+      'Sets the final payment date',
+      'Creates the formal milestone record for the contract'
+    ],
+    prev: null,
+    hiw: null
+  },
+  'handover-checklist': {
+    name: 'Handover Checklist',
+    tag: 'Nothing gets missed at handover. Nothing comes back later.',
+    icon: '✅',
+    href: 'handover-checklist.html',
+    draftKey: 'bik-handover-checklist-draft',
+    kw: ['handover', 'checklist', 'completion', 'keys', 'manuals', 'warranty', 'clean', 'final'],
+    cat: 'handover',
+    when: "At practical completion, before handing the project over to the client. A signed checklist means nothing can be disputed after handover.",
+    what: [
+      'Comprehensive room-by-room or area-by-area checklist',
+      'Warranties, manuals and compliance certificates',
+      'Keys, access codes and services info',
+      'Client sign-off at handover',
+      'Creates a permanent record of the handover condition'
+    ],
+    prev: null,
+    hiw: null
+  }
+};
+
+/* ── Draft localStorage keys (for status badges and recently-used) ── */
+const DRAFT_KEYS = {
+  'variation': 'bik-variation-draft',
+  'progress-claim': 'bik-progress-claim-draft',
+  'quote-builder': 'bik-quote-draft',
+  'payment-reminder': 'bik-payment-reminder-draft',
+  'site-diary': 'bik-diary-draft',
+  'swms': 'bik-swms-draft',
+  'toolbox-talk': 'bik-toolbox-talk-draft',
+  'incident-report': 'bik-incident-report-draft',
+  'inspection-checklist': 'bik-inspection-checklist-draft',
+  'eot-claim': 'bik-eot-claim-draft',
+  'delay-notice': 'bik-delay-notice-draft',
+  'instruction-to-proceed': 'bik-instruction-to-proceed-draft',
+  'defect-report': 'bik-defect-draft',
+  'non-conformance': 'bik-non-conformance-report-draft',
+  'subcontractor-agreement': 'bik-subcontractor-agreement-draft',
+  'notice-to-show-cause': 'bik-notice-to-show-cause-draft',
+  'contract-termination': 'bik-contract-termination-draft',
+  'scope-of-works': 'bik-scope-draft',
+  'practical-completion': 'bik-practical-completion-draft',
+  'handover-checklist': 'bik-handover-checklist-draft'
+};
+
+const HINTS = [
+  { t: 'Charge for extra work', q: 'extra work' },
+  { t: "Who's on site?", q: 'on site' },
+  { t: 'Claim for stage 2', q: 'claim payment' },
+  { t: 'Safety brief', q: 'toolbox' },
+  { t: 'Job delayed', q: 'delay' }
+];
+
+/* ── Micro-previews ── */
+function prevVariation() {
+  return `<div class="prev">
+    <div class="prev-lbl">Example — Contract</div>
+    <div class="vr-row"><span class="vr-lbl">Original contract</span><span class="vr-val">$480,000</span></div>
+    <div class="vr-arrow"><span>Variation 003</span><span class="vr-badge">+$9,800</span><span>approved ✓</span></div>
+    <div class="vr-row"><span class="vr-lbl">Revised contract value</span><span class="vr-val vr-green">$489,800</span></div>
+  </div>`;
+}
+function prevClaim() {
+  return `<div class="prev">
+    <div class="prev-lbl">Example — Stage 2 Claim</div>
+    <div class="claim-rows">
+      <div class="cl-row"><span class="cl-lbl">Contract value</span><span class="cl-val">$489,800</span></div>
+      <div class="cl-row"><span class="cl-lbl">Previously claimed</span><span class="cl-val">$196,000</span></div>
+      <div class="cl-row"><span class="cl-lbl">This claim (Stage 2)</span><span class="cl-val cl-green">$122,500</span></div>
+      <div class="cl-row"><span class="cl-lbl">Balance remaining</span><span class="cl-val">$171,300</span></div>
+    </div>
+    <div class="cl-prog"><div class="cl-fill"></div></div>
+    <div style="font-size:11px;color:var(--bik-text-muted);margin-top:5px">65% of contract claimed</div>
+  </div>`;
+}
+function prevAttendance() {
+  return `<div class="prev">
+    <div class="prev-lbl">Right now on site</div>
+    <div class="att-stat"><span class="att-num">7</span><span class="att-unit">on site</span></div>
+    <div class="att-rows">
+      <div class="att-row"><span class="att-dw"><span class="att-dot" style="background:#2563EB"></span>Subcontractors</span><span>4</span></div>
+      <div class="att-row"><span class="att-dw"><span class="att-dot" style="background:#16A34A"></span>Employees</span><span>2</span></div>
+      <div class="att-row"><span class="att-dw"><span class="att-dot" style="background:#D97706"></span>Visitors</span><span>1</span></div>
+    </div>
+  </div>`;
+}
+function prevDiary() {
+  const d = new Date().toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
+  return `<div class="prev">
+    <div class="prev-lbl">Today's entry</div>
+    <div class="diary-date">${d}</div>
+    <div class="diary-flds">
+      <div class="diary-fld fill">⛅ Partly cloudy, 22°</div>
+      <div class="diary-fld fill">👷 8 workers on site</div>
+      <div class="diary-fld fill">🔨 Framing complete</div>
+      <div class="diary-fld" style="opacity:.5">📷 Add photos…</div>
+    </div>
+  </div>`;
+}
+function prevToolbox() {
+  return `<div class="prev">
+    <div class="prev-lbl">Last toolbox talk</div>
+    <div class="tb-topic">Working at Heights</div>
+    <div class="tb-meta">Yesterday · 6 attended · Signed ✓</div>
+    <ul class="tb-pts">
+      <li><span class="tb-bul"></span>Fall protection required above 2m</li>
+      <li><span class="tb-bul"></span>Scaffold must be tagged and inspected</li>
+      <li><span class="tb-bul"></span>No work in high wind conditions</li>
+    </ul>
+  </div>`;
+}
+function prevQuote() {
+  return `<div class="prev">
+    <div class="prev-lbl">Example — Bathroom Reno</div>
+    <div class="qt-rows">
+      <div class="qt-row"><span class="qt-lbl">Labour — demo + tile</span><span class="qt-val">$3,200</span></div>
+      <div class="qt-row"><span class="qt-lbl">Materials (allowance)</span><span class="qt-val">$1,800</span></div>
+      <div class="qt-row"><span class="qt-lbl">GST</span><span class="qt-val">$500</span></div>
+      <div class="qt-row"><span class="qt-lbl qt-total">Total</span><span class="qt-val qt-total">$5,500</span></div>
+    </div>
+  </div>`;
+}
+function prevSWMS() {
+  return `<div class="prev">
+    <div class="prev-lbl">Hazard register — Working at Heights</div>
+    <div class="swms-head"><span>Hazard</span><span>Control measure</span></div>
+    <div class="swms-rows">
+      <div class="swms-row"><span class="swms-haz">⚠️ Fall from height</span><span class="swms-ctl">Scaffolding + harness</span></div>
+      <div class="swms-row"><span class="swms-haz">⚠️ Falling objects</span><span class="swms-ctl">Exclusion zone + hard hats</span></div>
+      <div class="swms-row"><span class="swms-haz">⚠️ Overloaded scaffold</span><span class="swms-ctl">Load limits posted + inspected</span></div>
+    </div>
+  </div>`;
+}
+
+const PREVS = {
+  variation: prevVariation,
+  claim: prevClaim,
+  attendance: prevAttendance,
+  diary: prevDiary,
+  toolbox: prevToolbox,
+  quote: prevQuote,
+  swms: prevSWMS
+};
+
+/* ── State ── */
+let selTool = null;
+let selCat = null;
+
+/* ── Recently used (localStorage-backed) ── */
+const RECENT_KEY = 'bik-recently-used';
+
+function getRecent() {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function recordOpen(toolId) {
+  try {
+    const recent = getRecent().filter(r => r.id !== toolId);
+    recent.unshift({ id: toolId, ts: Date.now() });
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recent.slice(0, 6)));
+  } catch {}
+}
+
+function hasDraft(toolId) {
+  const key = DRAFT_KEYS[toolId];
+  if (!key) return false;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    return data && typeof data === 'object' && Object.keys(data).length > 0;
+  } catch { return false; }
+}
+
+/* ── Card HTML ── */
+function cardHTML(id, cat) {
+  const t = TOOLS[id];
+  if (!t) return '';
+  const bg = hex(cat.color, 0.1);
+  const draft = hasDraft(id);
+  const statusHtml = draft
+    ? `<span class="t-status s-draft" title="You have a saved draft">Draft saved</span>`
+    : '';
+  return `<button class="t-card" data-tool="${id}" data-cat="${cat.id}"
+    style="--cc:${cat.color};--cc-a:${hex(cat.color, 0.15)}"
+    aria-expanded="false" aria-label="Explore ${t.name}" type="button">
+    <div class="t-card-top">
+      <div class="t-ico" style="background:${bg}">${t.icon}</div>
+      ${statusHtml}
+    </div>
+    <div class="t-name">${t.name}</div>
+    <div class="t-tag">${t.tag}</div>
+    <div class="t-explore">Explore <span aria-hidden="true">→</span></div>
+  </button>`;
+}
+
+/* ── Detail panel HTML ── */
+function detailHTML(id, cat) {
+  const t = TOOLS[id];
+  if (!t) return '';
+  const bg = hex(cat.color, 0.1);
+  const prev = t.prev && PREVS[t.prev] ? PREVS[t.prev]() : '';
+  const hiw = t.hiw
+    ? `<button class="btn-g" data-how="${id}" type="button">See how it works →</button>`
+    : '';
+  const draft = hasDraft(id);
+  const draftNote = draft
+    ? `<span style="font-size:12px;color:#92400E;background:#FEF3C7;padding:5px 10px;border-radius:6px;font-weight:600">📝 You have a saved draft</span>`
+    : '';
+  return `<div class="det-panel" id="dp-${id}" style="--cc:${cat.color}">
+    <div class="det-hdr">
+      <div class="det-ico" style="background:${bg}">${t.icon}</div>
+      <div class="det-title-grp">
+        <div class="det-title">${t.name}</div>
+        <div class="det-tags">
+          <span class="det-tag" style="background:${bg};color:${cat.color}">${cat.name.split(' ').slice(0, 3).join(' ')}</span>
+        </div>
+      </div>
+      <button class="det-close" data-close type="button" aria-label="Close detail">✕</button>
+    </div>
+    <div class="det-body">
+      <div class="det-left">
+        <div class="sec-lbl">When to use it</div>
+        <p class="when-txt">${t.when}</p>
+        ${prev}
+      </div>
+      <div class="det-right">
+        <div class="sec-lbl">What BIK does</div>
+        <ul class="chk-list">
+          ${t.what.map(w => `<li><span class="chk-dot" style="background:${cat.color}">✓</span><span>${w}</span></li>`).join('')}
+        </ul>
       </div>
     </div>
-  </section>
+    <div class="det-foot">
+      <a class="btn-p" href="${t.href}" style="--cc:${cat.color}"
+        onclick="recordOpen('${id}')">Open ${t.name} →</a>
+      ${hiw}
+      ${draftNote}
+    </div>
+  </div>`;
+}
 
-  <!-- ====== FILTER + TOOLS ====== -->
-  <section class="section bg-light" aria-labelledby="tools-section-heading">
-    <div class="container">
-      <h2 class="sr-only" id="tools-section-heading">All AI tools</h2>
-
-      <div class="filter-strip" role="group" aria-label="Filter tools by category">
-        <button class="filter-pill active" data-filter="all">All tools</button>
-        <button class="filter-pill" data-filter="quotes">Quotes &amp; Sales</button>
-        <button class="filter-pill" data-filter="safety">Safety</button>
-        <button class="filter-pill" data-filter="finance">Finance</button>
-        <button class="filter-pill" data-filter="project">Project Admin</button>
-        <button class="filter-pill" data-filter="hr">HR &amp; People</button>
-        <button class="filter-pill" data-filter="client">Client Comms</button>
+/* ── Category HTML ── */
+function catHTML(cat) {
+  const total = cat.tools.length + cat.coming.length;
+  const bg = hex(cat.color, 0.1);
+  const cards = cat.tools.map(id => cardHTML(id, cat)).join('');
+  const coming = cat.coming.map(c =>
+    `<span class="coming-chip">${c.i} ${c.n}</span>`
+  ).join('');
+  return `<div class="cat-block${cat.open ? ' open' : ''}" id="c-${cat.id}" data-cat="${cat.id}">
+    <div class="cat-hdr" role="button" tabindex="0"
+      aria-expanded="${cat.open}" aria-controls="cb-${cat.id}">
+      <div class="cat-ico" style="background:${bg}">${cat.icon}</div>
+      <div class="cat-meta">
+        <div class="cat-name">${cat.name}</div>
+        <div class="cat-desc">${cat.desc}</div>
       </div>
-
-      <!-- Beta tools — live now -->
-      <h3 style="font-size:0.8rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--coral); margin-bottom:20px;">Live Now — Beta v0.9</h3>
-
-      <div class="tools-grid" style="margin-bottom:48px;">
-
-        <div class="tool-card" data-category="quotes">
-          <div class="tool-card-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
-          </div>
-          <h3>Quote Builder</h3>
-          <p>Itemised quote with labour, materials, GST and payment terms. Professional enough to win the job.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--free">Live now</span>
-            <a href="quote-builder.html" class="btn btn--coral" style="padding:7px 14px;font-size:0.8rem;">Open tool &rarr;</a>
-          </div>
-        </div>
-
-        <div class="tool-card" data-category="safety">
-          <div class="tool-card-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </div>
-          <h3>SWMS Generator</h3>
-          <p>Safe Work Method Statement for high-risk construction work. Structured draft — must be reviewed by a competent person before use on site.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--pro">Pro</span>
-            <span style="font-size:0.8rem;color:var(--stone);">75 min saved</span>
-          </div>
-        </div>
-
-        <div class="tool-card" data-category="project">
-          <div class="tool-card-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
-          </div>
-          <h3>Scope of Works</h3>
-          <p>Detailed scope with inclusions and exclusions table. Stop scope creep before it starts.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--free">Live now</span>
-            <a href="scope-of-works.html" class="btn btn--coral" style="padding:7px 14px;font-size:0.8rem;">Open tool &rarr;</a>
-          </div>
-        </div>
-
-        <div class="tool-card" data-category="finance">
-          <div class="tool-card-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <h3>Progress Claim</h3>
-          <p>Schedule of values, retention calculation and previous claim summary. Keep your cash flow on track.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--pro">Pro</span>
-            <span style="font-size:0.8rem;color:var(--stone);">60 min saved</span>
-          </div>
-        </div>
-
-        <div class="tool-card" data-category="project" style="border-color:rgba(216,90,48,0.3);">
-          <div class="tool-card-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <h3>Variation Notice</h3>
-          <p>Formal variation with client acknowledgement. Get sign-off before the work starts.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--free">Live now</span>
-            <a href="variation-generator.html" class="btn btn--coral" style="padding:7px 14px;font-size:0.8rem;">Open tool &rarr;</a>
-          </div>
-        </div>
-
-        <div class="tool-card" data-category="safety">
-          <div class="tool-card-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-          <h3>Toolbox Talk</h3>
-          <p>5-10 minute safety briefing on any topic. Discussion questions and sign-off sheet included.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--free">Free</span>
-            <span style="font-size:0.8rem;color:var(--stone);">45 min saved</span>
-          </div>
-        </div>
-
-        <div class="tool-card" data-category="project">
-          <div class="tool-card-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          </div>
-          <h3>Defect Report</h3>
-          <p>Numbered defect items with responsible trade, priority rating and rectification timeline.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--free">Live now</span>
-            <a href="defect-report.html" class="btn btn--coral" style="padding:7px 14px;font-size:0.8rem;">Open tool &rarr;</a>
-          </div>
-        </div>
-
-        <div class="tool-card" data-category="project">
-          <div class="tool-card-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-          <h3>Site Diary</h3>
-          <p>Daily site record with workers, works completed, delays, visitors and weather. Sign-off ready.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--free">Live now</span>
-            <a href="site-diary.html" class="btn btn--coral" style="padding:7px 14px;font-size:0.8rem;">Open tool &rarr;</a>
-          </div>
-        </div>
-
-        <div class="tool-card" data-category="finance">
-          <div class="tool-card-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </div>
-          <h3>Payment Reminder</h3>
-          <p>3 escalating tones - friendly nudge to firm final notice. Stop avoiding the conversation.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--free">Free</span>
-            <span style="font-size:0.8rem;color:var(--stone);">15 min saved</span>
-          </div>
-        </div>
-
-        <div class="tool-card" data-category="project">
-          <div class="tool-card-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          </div>
-          <h3>Site Inspection Report</h3>
-          <p>Stage-by-stage inspection reports with findings, pass/fail items and a photo reference section.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--pro">Pro</span>
-            <span style="font-size:0.8rem;color:var(--stone);">60 min saved</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Phase 2 preview -->
-      <h3 style="font-size:0.8rem; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:var(--stone); margin-bottom:20px;">Phase 2 - On the Roadmap</h3>
-
-      <div class="tools-grid">
-
-        <div class="tool-card" style="opacity:0.6;" data-category="hr">
-          <div class="tool-card-icon" style="background:rgba(28,28,26,0.06);">
-            <svg viewBox="0 0 24 24" aria-hidden="true" style="stroke:var(--stone);"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          </div>
-          <h3 style="color:var(--stone);">Job Ad Generator</h3>
-          <p>Write a compelling trade job ad for Seek, Indeed or Facebook in under 5 minutes.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--soon">Coming Phase 2</span>
-          </div>
-        </div>
-
-        <div class="tool-card" style="opacity:0.6;" data-category="project">
-          <div class="tool-card-icon" style="background:rgba(28,28,26,0.06);">
-            <svg viewBox="0 0 24 24" aria-hidden="true" style="stroke:var(--stone);"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          </div>
-          <h3 style="color:var(--stone);">Handover Checklist</h3>
-          <p>Comprehensive practical completion checklist. Nothing gets missed at handover.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--soon">Coming Phase 2</span>
-          </div>
-        </div>
-
-        <div class="tool-card" style="opacity:0.6;" data-category="safety">
-          <div class="tool-card-icon" style="background:rgba(28,28,26,0.06);">
-            <svg viewBox="0 0 24 24" aria-hidden="true" style="stroke:var(--stone);"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          </div>
-          <h3 style="color:var(--stone);">Safety Management Plan</h3>
-          <p>Full project safety management plan for tender submissions and QBCC requirements.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--soon">Coming Phase 2</span>
-          </div>
-        </div>
-
-        <div class="tool-card" style="opacity:0.6;" data-category="safety">
-          <div class="tool-card-icon" style="background:rgba(28,28,26,0.06);">
-            <svg viewBox="0 0 24 24" aria-hidden="true" style="stroke:var(--stone);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          </div>
-          <h3 style="color:var(--stone);">Incident Report</h3>
-          <p>Compliant WHS incident report with corrective actions section for workplace incidents.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--soon">Coming Phase 2</span>
-          </div>
-        </div>
-
-        <div class="tool-card" style="opacity:0.6;" data-category="finance">
-          <div class="tool-card-icon" style="background:rgba(28,28,26,0.06);">
-            <svg viewBox="0 0 24 24" aria-hidden="true" style="stroke:var(--stone);"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <h3 style="color:var(--stone);">Retention Claim Notice</h3>
-          <p>Formal notice to release retention at practical completion or end of defects liability period.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--soon">Coming Phase 2</span>
-          </div>
-        </div>
-
-        <div class="tool-card" style="opacity:0.6;" data-category="client">
-          <div class="tool-card-icon" style="background:rgba(28,28,26,0.06);">
-            <svg viewBox="0 0 24 24" aria-hidden="true" style="stroke:var(--stone);"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          </div>
-          <h3 style="color:var(--stone);">Delay Notice</h3>
-          <p>Formal delay notice with EOT request. Protect your position when delays occur.</p>
-          <div class="tool-card-footer">
-            <span class="badge badge--soon">Coming Phase 2</span>
-          </div>
-        </div>
-
-      </div>
-
-      <div style="margin-top:32px; text-align:center;">
-        <a href="dashboard.html" class="btn btn--coral">Open Toolkit — all 5 tools live &rarr;</a>
+      <span class="cat-pill" style="background:${bg};color:${cat.color}">${total} tools</span>
+      <svg class="cat-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="cat-body" id="cb-${cat.id}">
+      <div class="cat-body-inner">
+        <div class="tool-grid" data-catg="${cat.id}">${cards}</div>
+        <div id="dw-${cat.id}"></div>
+        ${coming ? `<div class="coming-wrap">${coming}</div>` : ''}
       </div>
     </div>
-  </section>
+  </div>`;
+}
 
-  <!-- ====== CTA STRIP ====== -->
-  <section class="cta-strip" aria-labelledby="ai-docs-cta-heading">
-    <div class="container">
-      <h2 id="ai-docs-cta-heading">Ready to stop writing documents from scratch?</h2>
-      <p style="color:rgba(255,255,255,0.75);font-size:0.95rem;max-width:520px;margin:0 auto 24px;">BIK Business Toolkit is live and free to use in Beta. No account needed. No credit card. Your data never leaves your device.</p>
-      <a href="dashboard.html" class="btn btn--cream">Open Toolkit — it's free &rarr;</a>
-    </div>
-  </section>
+/* ── Render recently used + draft chips ── */
+function renderRecent() {
+  const el = document.getElementById('js-recent');
+  if (!el) return;
 
-  <!-- ====== FOOTER ====== -->
-  <footer class="site-footer" role="contentinfo">
-    <div class="container footer-inner">
-      <div class="footer-top">
-        <a href="index.html" class="logo footer-logo" aria-label="BIK Solutions - home">
-          <div class="logo-mark" aria-hidden="true"><span>B</span></div>
-          <div class="logo-text">
-            <span class="logo-name">IK SOLUTIONS PTY LTD</span>
-            <span class="logo-tagline">Beyond Industry Knowledge</span>
-          </div>
-        </a>
-        <nav class="footer-links" aria-label="Footer navigation">
-          <a href="services.html">Services</a>
-          <a href="builders.html">Builders</a>
-          <a href="about.html">About</a>
-          <a href="dashboard.html">Toolkit</a>
-          <a href="resources.html">Resources</a>
-          <a href="contact.html">Contact</a>
-          <a href="privacy-policy.html">Privacy</a>
-          <a href="terms-of-use.html">Terms</a>
-          <a href="support.html">Support</a>
-        </nav>
+  const recent = getRecent();
+
+  /* Collect tools with drafts that aren't in recently used */
+  const recentIds = recent.map(r => r.id);
+  const draftIds = Object.keys(DRAFT_KEYS).filter(id => hasDraft(id) && !recentIds.includes(id));
+
+  if (recent.length === 0 && draftIds.length === 0) {
+    el.style.display = 'none';
+    return;
+  }
+
+  const lbl = document.createElement('span');
+  lbl.className = 'recent-lbl';
+  lbl.textContent = 'Recently used';
+  el.appendChild(lbl);
+
+  recent.forEach(r => {
+    const t = TOOLS[r.id];
+    if (!t) return;
+    const cat = CATS.find(c => c.id === t.cat);
+    const color = cat ? cat.color : '#888';
+    const b = document.createElement('button');
+    b.className = 'r-chip' + (hasDraft(r.id) ? ' draft-chip' : '');
+    b.type = 'button';
+    b.dataset.tool = r.id;
+    b.innerHTML = `${hasDraft(r.id) ? '<span class="draft-dot"></span>' : ''}<span class="r-chip-icon" style="background:${hex(color, 0.12)}">${t.icon}</span>${t.name}`;
+    b.addEventListener('click', () => openInCat(r.id));
+    el.appendChild(b);
+  });
+
+  if (draftIds.length > 0) {
+    const dlbl = document.createElement('span');
+    dlbl.className = 'recent-lbl';
+    dlbl.style.marginLeft = '8px';
+    dlbl.textContent = 'Saved drafts';
+    el.appendChild(dlbl);
+
+    draftIds.forEach(id => {
+      const t = TOOLS[id];
+      if (!t) return;
+      const cat = CATS.find(c => c.id === t.cat);
+      const color = cat ? cat.color : '#888';
+      const b = document.createElement('button');
+      b.className = 'r-chip draft-chip';
+      b.type = 'button';
+      b.dataset.tool = id;
+      b.innerHTML = `<span class="draft-dot"></span><span class="r-chip-icon" style="background:${hex(color, 0.12)}">${t.icon}</span>${t.name}`;
+      b.addEventListener('click', () => openInCat(id));
+      el.appendChild(b);
+    });
+  }
+}
+
+/* ── Render search hints ── */
+function renderHints() {
+  const el = document.getElementById('js-hints');
+  if (!el) return;
+  HINTS.forEach(h => {
+    const b = document.createElement('button');
+    b.className = 'hint-chip';
+    b.type = 'button';
+    b.textContent = h.t;
+    b.addEventListener('click', () => {
+      const s = document.getElementById('js-srch');
+      if (s) { s.value = h.q; s.dispatchEvent(new Event('input')); }
+    });
+    el.appendChild(b);
+  });
+}
+
+/* ── Accordion ── */
+function toggleCat(id) {
+  const bl = document.getElementById('c-' + id);
+  if (!bl) return;
+  const open = bl.classList.toggle('open');
+  bl.querySelector('.cat-hdr').setAttribute('aria-expanded', open);
+  if (!open && selCat === id) closeDetail();
+}
+
+/* ── Detail open/close ── */
+function openDetail(toolId, catId, card) {
+  closeDetail(false);
+  selTool = toolId;
+  selCat = catId;
+  const bl = document.getElementById('c-' + catId);
+  if (bl && !bl.classList.contains('open')) {
+    bl.classList.add('open');
+    bl.querySelector('.cat-hdr').setAttribute('aria-expanded', 'true');
+  }
+  document.querySelectorAll('.t-card').forEach(c => {
+    c.classList.remove('sel');
+    c.setAttribute('aria-expanded', 'false');
+  });
+  if (card) {
+    card.classList.add('sel');
+    card.setAttribute('aria-expanded', 'true');
+  }
+  const cat = CATS.find(c => c.id === catId);
+  const dw = document.getElementById('dw-' + catId);
+  if (dw && cat) {
+    dw.innerHTML = detailHTML(toolId, cat);
+    setTimeout(() => {
+      const dp = document.getElementById('dp-' + toolId);
+      if (dp) dp.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  }
+}
+
+function closeDetail(reset = true) {
+  document.querySelectorAll('.t-card').forEach(c => {
+    c.classList.remove('sel');
+    c.setAttribute('aria-expanded', 'false');
+  });
+  document.querySelectorAll('[id^="dw-"]').forEach(w => { w.innerHTML = ''; });
+  if (reset) { selTool = null; selCat = null; }
+}
+
+function openInCat(toolId) {
+  const t = TOOLS[toolId];
+  if (!t) return;
+  const card = document.querySelector(`.t-card[data-tool="${toolId}"]`);
+  openDetail(toolId, t.cat, card);
+}
+
+/* ── How it works modal ── */
+function openHIW(toolId) {
+  const t = TOOLS[toolId];
+  if (!t || !t.hiw) return;
+  document.getElementById('js-modal-title').textContent = `How ${t.name} works`;
+  document.getElementById('js-modal-sub').textContent = 'A quick overview in 4 steps';
+  document.getElementById('js-modal-steps').innerHTML = t.hiw.map((s, i) =>
+    `<div class="how-step">
+      <div class="step-n">${i + 1}</div>
+      <div class="step-b">
+        <div class="step-t">${s.t}</div>
+        <div class="step-d">${s.d}</div>
       </div>
-      <div class="footer-bottom">
-        <p class="footer-copyright">&copy; 2026 BIK Solutions Pty Ltd. All rights reserved.</p>
-        <p class="footer-tagline">Beyond Industry Knowledge</p>
-      </div>
-    </div>
-  </footer>
+    </div>`
+  ).join('');
+  document.getElementById('js-modal').classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
 
-  <script src="js/main.js"></script>
-  <script>
-    /* Filter pill interaction */
-    (function () {
-      var pills = document.querySelectorAll('.filter-pill');
-      var cards = document.querySelectorAll('.tool-card[data-category]');
-      pills.forEach(function (pill) {
-        pill.addEventListener('click', function () {
-          pills.forEach(function (p) { p.classList.remove('active'); p.setAttribute('aria-pressed', 'false'); });
-          pill.classList.add('active');
-          pill.setAttribute('aria-pressed', 'true');
-          var filter = pill.getAttribute('data-filter');
-          cards.forEach(function (card) {
-            if (filter === 'all' || card.getAttribute('data-category') === filter) {
-              card.style.display = '';
-            } else {
-              card.style.display = 'none';
-            }
-          });
-        });
-      });
-    })();
-  </script>
+function closeModal() {
+  document.getElementById('js-modal').classList.remove('on');
+  document.body.style.overflow = '';
+}
+
+/* ── Search ── */
+let srchQ = '';
+function applySearch() {
+  const q = srchQ.toLowerCase();
+  const banner = document.getElementById('js-banner');
+  const nores = document.getElementById('js-nores');
+  if (!q) {
+    document.querySelectorAll('.t-card').forEach(c => { c.style.display = ''; });
+    document.querySelectorAll('.cat-block').forEach(b => { b.style.display = ''; });
+    banner.classList.remove('on');
+    nores.classList.remove('on');
+    return;
+  }
+  const matches = Object.entries(TOOLS).filter(([id, t]) => {
+    return [t.name, t.tag, t.when, ...t.kw].join(' ').toLowerCase().includes(q);
+  }).map(([id]) => id);
+  document.querySelectorAll('.t-card').forEach(c => {
+    c.style.display = matches.includes(c.dataset.tool) ? '' : 'none';
+  });
+  let total = 0;
+  document.querySelectorAll('.cat-block').forEach(bl => {
+    const cat = CATS.find(c => c.id === bl.dataset.cat);
+    const has = cat && cat.tools.some(id => matches.includes(id));
+    bl.style.display = has ? '' : 'none';
+    if (has) {
+      total += cat.tools.filter(id => matches.includes(id)).length;
+      if (!bl.classList.contains('open')) bl.classList.add('open');
+    }
+  });
+  banner.classList.add('on');
+  banner.innerHTML = total > 0
+    ? `<strong>${total} tool${total !== 1 ? 's' : ''}</strong> match "${srchQ}"`
+    : '';
+  nores.classList.toggle('on', total === 0);
+}
+
+/* ── Document history ── */
+function renderHistory() {
+  const HISTORY_KEY = 'bik-doc-history';
+  let records = [];
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    records = raw ? JSON.parse(raw) : [];
+  } catch {}
+  if (!records.length) return;
+
+  /* Map toolId from document history to our TOOLS keys */
+  const TOOL_ID_MAP = {
+    'variation-notice': 'variation',
+    'quote-builder': 'quote-builder',
+    'progress-claim': 'progress-claim',
+    'payment-reminder': 'payment-reminder',
+    'site-diary': 'site-diary',
+    'swms': 'swms',
+    'toolbox-talk': 'toolbox-talk',
+    'incident-report': 'incident-report',
+    'inspection-checklist': 'inspection-checklist',
+    'eot-claim': 'eot-claim',
+    'delay-notice': 'delay-notice',
+    'instruction-to-proceed': 'instruction-to-proceed',
+    'defect-report': 'defect-report',
+    'non-conformance-report': 'non-conformance',
+    'subcontractor-agreement': 'subcontractor-agreement',
+    'notice-to-show-cause': 'notice-to-show-cause',
+    'contract-termination': 'contract-termination',
+    'scope-of-works': 'scope-of-works',
+    'practical-completion': 'practical-completion',
+    'handover-checklist': 'handover-checklist'
+  };
+
+  const section = document.getElementById('js-history-section');
+  const list = document.getElementById('js-history-list');
+  if (!section || !list) return;
+
+  const recent10 = records.slice(0, 10);
+  recent10.forEach(rec => {
+    const toolKey = TOOL_ID_MAP[rec.toolId] || rec.toolId;
+    const t = TOOLS[toolKey];
+    const cat = t ? CATS.find(c => c.id === t.cat) : null;
+    const color = cat ? cat.color : '#888';
+    const icon = t ? t.icon : '📄';
+    const href = t ? t.href : '#';
+    const date = rec.updatedAt
+      ? new Date(rec.updatedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '';
+
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    item.innerHTML = `
+      <div class="history-item-ico" style="background:${hex(color, 0.1)}">${icon}</div>
+      <div class="history-item-body">
+        <div class="history-item-title">${rec.title || rec.reference || 'Untitled document'}</div>
+        <div class="history-item-meta">${rec.reference ? rec.reference + ' · ' : ''}${date}</div>
+      </div>
+      <a href="${href}" class="history-item-action">Open →</a>
+    `;
+    list.appendChild(item);
+  });
+
+  section.hidden = false;
+}
+
+/* ── Init ── */
+function init() {
+  const tk = document.getElementById('js-tk');
+  if (!tk) return;
+  tk.innerHTML = CATS.map(catHTML).join('');
+  renderRecent();
+  renderHints();
+  renderHistory();
+
+  /* Category accordions */
+  document.querySelectorAll('.cat-hdr').forEach(h => {
+    h.addEventListener('click', () => toggleCat(h.closest('.cat-block').dataset.cat));
+    h.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleCat(h.closest('.cat-block').dataset.cat);
+      }
+    });
+  });
+
+  /* Delegated clicks */
+  document.addEventListener('click', e => {
+    const card = e.target.closest('.t-card:not(.ph)');
+    if (card) {
+      const id = card.dataset.tool;
+      const cat = card.dataset.cat;
+      id === selTool ? closeDetail() : openDetail(id, cat, card);
+      return;
+    }
+    if (e.target.closest('[data-close]')) { closeDetail(); return; }
+    if (e.target.closest('[data-how]')) {
+      openHIW(e.target.closest('[data-how]').dataset.how);
+      return;
+    }
+    if (e.target === document.getElementById('js-modal') || e.target.closest('#js-modal-x')) {
+      closeModal();
+    }
+  });
+
+  /* Search */
+  const si = document.getElementById('js-srch');
+  const sc = document.getElementById('js-srch-clear');
+  if (si) {
+    si.addEventListener('input', () => {
+      srchQ = si.value.trim();
+      sc.classList.toggle('on', !!srchQ);
+      applySearch();
+    });
+  }
+  if (sc) {
+    sc.addEventListener('click', () => {
+      si.value = '';
+      srchQ = '';
+      sc.classList.remove('on');
+      si.focus();
+      applySearch();
+    });
+  }
+
+  /* Keyboard */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeDetail(); closeModal(); }
+  });
+}
+
+document.readyState === 'loading'
+  ? document.addEventListener('DOMContentLoaded', init)
+  : init();
+</script>
+
 </body>
 </html>
