@@ -1167,9 +1167,12 @@
   .hidden-mobile { display: none !important; }
 
   .autosave-indicator { display: none; }
+  .bik-autosave { display: none; }
 
   .app-btn span { display: none; }
   .app-btn--coral span { display: inline; }
+  .bik-btn span { display: none; }
+  .bik-btn--primary span { display: inline; }
 
   .doc-meta-grid { grid-template-columns: 1fr 1fr; }
   .doc-meta-grid > .doc-meta-col:last-child { grid-column: 1 / -1; }
@@ -1179,6 +1182,7 @@
 
 @media (max-width: 600px) {
   .app-header { padding: 0 14px; gap: 8px; }
+  .bik-app-header { padding: 0 14px; gap: 8px; }
   .app-toolbar { padding: 8px 14px; flex-wrap: wrap; gap: 8px; }
   .form-panel-inner { padding: 16px 14px 40px; }
   .preview-panel { padding: 14px 10px 40px; }
@@ -1193,6 +1197,7 @@
 /* ── Print / PDF ── */
 @media print {
   .app-header,
+  .bik-app-header,
   .app-toolbar,
   .draft-banner,
   .form-panel,
