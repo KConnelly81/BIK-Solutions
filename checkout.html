@@ -5,76 +5,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <meta name="robots" content="noindex" />
   <title>Site Sign-Out — BIK Solutions</title>
+  <link rel="stylesheet" href="css/bik-design-system.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --charcoal: #252320; --coral: #D85A30; --coral-dark: #b84a24;
-      --paper: #F2EDE5; --border: #e2d9cc; --text: #252320;
-      --muted: #666; --radius: 10px; --green: #2e7d32;
-    }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--paper); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
-    .ci-header { background: var(--charcoal); padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
-    .ci-logo-mark { width:34px;height:34px;background:var(--coral);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.05rem;color:#fff;flex-shrink:0; }
+    :root { --radius: 10px; }
+    body { font-family: 'Inter', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bik-background); color: var(--bik-text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    .ci-header { background: var(--bik-navy); padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+    .ci-logo-mark { width:34px;height:34px;background:var(--bik-orange);border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.05rem;color:#fff;flex-shrink:0; }
     .ci-header-title { font-size:0.85rem;font-weight:700;color:#fff; }
-    .ci-header-sub { font-size:0.72rem;color:rgba(255,255,255,0.5);margin-top:2px; }
+    .ci-header-sub { font-size:0.72rem;color:var(--bik-text-on-dark-muted);margin-top:2px; }
     .screen { display:none; }
     .screen.active { display:block; }
 
     /* Form layout */
     .co-form { padding:20px;max-width:480px;margin:0 auto; }
-    .ci-step-label { font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--coral);margin-bottom:6px; }
-    .ci-step-title { font-size:1.1rem;font-weight:800;color:var(--charcoal);margin-bottom:20px;line-height:1.2; }
+    .ci-step-label { font-size:0.62rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--bik-orange);margin-bottom:6px; }
+    .ci-step-title { font-size:1.1rem;font-weight:800;color:var(--bik-text);margin-bottom:20px;line-height:1.2; }
 
     /* Worker card */
-    .worker-card { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:20px; }
-    .wc-name { font-size:1.1rem;font-weight:800;color:var(--charcoal);margin-bottom:4px; }
-    .wc-meta { font-size:0.8rem;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap; }
-    .wc-time { background:var(--paper);border-radius:6px;padding:12px;margin-top:12px;font-size:0.82rem;color:var(--muted); }
-    .wc-time strong { color:var(--charcoal); }
+    .worker-card { background:var(--bik-surface);border:1.5px solid var(--bik-border-strong);border-radius:var(--radius);padding:16px;margin-bottom:20px; }
+    .wc-name { font-size:1.1rem;font-weight:800;color:var(--bik-text);margin-bottom:4px; }
+    .wc-meta { font-size:0.8rem;color:var(--bik-text-muted);display:flex;gap:12px;flex-wrap:wrap; }
+    .wc-time { background:var(--bik-background);border-radius:6px;padding:12px;margin-top:12px;font-size:0.82rem;color:var(--bik-text-muted); }
+    .wc-time strong { color:var(--bik-text); }
 
     /* Time display */
-    .time-display { text-align:center;background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px; }
-    .td-label { font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px; }
-    .td-time { font-size:2rem;font-weight:800;color:var(--charcoal);letter-spacing:-0.02em;font-variant-numeric:tabular-nums; }
+    .time-display { text-align:center;background:var(--bik-surface);border:1.5px solid var(--bik-border-strong);border-radius:var(--radius);padding:16px;margin-bottom:16px; }
+    .td-label { font-size:0.7rem;color:var(--bik-text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px; }
+    .td-time { font-size:2rem;font-weight:800;color:var(--bik-text);letter-spacing:-0.02em;font-variant-numeric:tabular-nums; }
 
     /* Fields */
     .field { margin-bottom:16px; }
-    .field label { display:block;font-size:0.78rem;font-weight:700;color:var(--charcoal);margin-bottom:6px; }
-    .field label .opt { font-size:0.72rem;font-weight:400;color:#888; }
+    .field label { display:block;font-size:0.78rem;font-weight:700;color:var(--bik-text);margin-bottom:6px; }
+    .field label .opt { font-size:0.72rem;font-weight:400;color:var(--bik-text-muted); }
     .field input, .field select, .field textarea {
-      width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:var(--radius);
-      font-size:1rem;font-family:inherit;background:#fff;color:var(--text);outline:none;
+      width:100%;padding:14px 16px;border:1.5px solid var(--bik-border-strong);border-radius:var(--radius);
+      font-size:1rem;font-family:inherit;background:var(--bik-surface);color:var(--bik-text);outline:none;
     }
     .field textarea { resize:vertical;min-height:80px;font-size:0.95rem; }
-    .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--coral); }
-    .field input::placeholder { color:#aaa; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--bik-border-focus); }
+    .field input::placeholder { color:var(--bik-text-placeholder); }
 
     /* Buttons */
-    .btn-primary { width:100%;background:var(--coral);color:#fff;border:none;border-radius:var(--radius);padding:18px;font-size:1.05rem;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:background 0.15s; }
-    .btn-primary:hover { background:var(--coral-dark); }
-    .btn-secondary { width:100%;background:transparent;color:var(--charcoal);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:inherit;margin-top:10px; }
+    .btn-primary { width:100%;background:var(--bik-orange);color:#fff;border:none;border-radius:var(--radius);padding:18px;font-size:1.05rem;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:background 0.15s; }
+    .btn-primary:hover { background:var(--bik-orange-dark); }
+    .btn-secondary { width:100%;background:transparent;color:var(--bik-text);border:1.5px solid var(--bik-border-strong);border-radius:var(--radius);padding:14px;font-size:0.9rem;font-weight:600;cursor:pointer;font-family:inherit;margin-top:10px; }
 
     /* Error */
-    .ci-error { background:#fff5f5;border:1.5px solid #fbb;border-radius:var(--radius);padding:14px 16px;font-size:0.84rem;color:#c00;margin-bottom:16px;display:none; }
+    .ci-error { background:var(--bik-danger-bg);border:1.5px solid var(--bik-danger);border-radius:var(--radius);padding:14px 16px;font-size:0.84rem;color:var(--bik-danger);margin-bottom:16px;display:none; }
 
     /* Success */
     .success-screen { padding:40px 20px;max-width:480px;margin:0 auto;text-align:center; }
-    .success-icon { width:72px;height:72px;background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem; }
-    .success-name { font-size:1.4rem;font-weight:900;color:var(--charcoal);margin-bottom:6px; }
-    .success-sub { font-size:0.88rem;color:var(--muted);margin-bottom:28px;line-height:1.5; }
-    .hours-badge { background:var(--charcoal);color:#fff;border-radius:var(--radius);padding:20px;margin-bottom:20px; }
-    .hb-label { font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:6px; }
+    .success-icon { width:72px;height:72px;background:var(--bik-success);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem; }
+    .success-name { font-size:1.4rem;font-weight:900;color:var(--bik-text);margin-bottom:6px; }
+    .success-sub { font-size:0.88rem;color:var(--bik-text-muted);margin-bottom:28px;line-height:1.5; }
+    .hours-badge { background:var(--bik-navy);color:#fff;border-radius:var(--radius);padding:20px;margin-bottom:20px; }
+    .hb-label { font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--bik-text-on-dark-muted);margin-bottom:6px; }
     .hb-value { font-size:2.5rem;font-weight:900;color:#fff;font-variant-numeric:tabular-nums; }
-    .hb-unit { font-size:0.9rem;color:rgba(255,255,255,0.5);margin-top:2px; }
+    .hb-unit { font-size:0.9rem;color:var(--bik-text-on-dark-muted);margin-top:2px; }
     .hb-note { font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:6px; }
-
 
     /* Multi-match list */
     .match-list { display:flex;flex-direction:column;gap:8px;margin-bottom:20px; }
-    .match-card { background:#fff;border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:border-color 0.15s; }
-    .match-card:hover { border-color:var(--coral); }
-    .match-card .mc-name { font-size:0.92rem;font-weight:700;color:var(--charcoal); }
-    .match-card .mc-meta { font-size:0.78rem;color:var(--muted);margin-top:3px; }
+    .match-card { background:var(--bik-surface);border:1.5px solid var(--bik-border-strong);border-radius:var(--radius);padding:14px 16px;cursor:pointer;transition:border-color 0.15s; }
+    .match-card:hover { border-color:var(--bik-orange); }
+    .match-card .mc-name { font-size:0.92rem;font-weight:700;color:var(--bik-text); }
+    .match-card .mc-meta { font-size:0.78rem;color:var(--bik-text-muted);margin-top:3px; }
   </style>
 </head>
 <body>
@@ -107,7 +103,7 @@
     <button class="btn-primary" id="btn-lookup">
       Find my sign-in →
     </button>
-    <div style="margin-top:16px;font-size:0.78rem;color:#888;text-align:center;line-height:1.6">
+    <div style="margin-top:16px;font-size:0.78rem;color:var(--bik-text-muted);text-align:center;line-height:1.6">
       Can't find your record? Ask your site supervisor for assistance.
     </div>
   </div>
@@ -164,7 +160,7 @@
 <!-- Already checked out -->
 <div id="screen-already-out" class="screen">
   <div class="success-screen">
-    <div class="success-icon" style="background:#888">✓</div>
+    <div class="success-icon" style="background:var(--bik-text-muted)">✓</div>
     <div class="success-name" id="ao-name"></div>
     <div class="success-sub">You have already been signed out.</div>
     <div class="hours-badge">
