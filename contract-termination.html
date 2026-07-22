@@ -6,6 +6,7 @@
   <meta name="description" content="Generate a formal contract termination notice. Use only after obtaining legal advice. Built for Australian builders." />
   <meta name="robots" content="noindex" />
   <title>Contract Termination Notice — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/bik-design-system.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/toolkit-app.css" />
 </head>
@@ -13,45 +14,45 @@
 
 <div class="app-shell">
 
-  <header class="app-header" role="banner">
-    <a href="dashboard.html" class="app-header-logo" aria-label="BIK Solutions — dashboard">
-      <div class="logo-mark" aria-hidden="true"><span>B</span></div>
-      <div class="app-title-group">
-        <span class="tool-name">Contract Termination Notice</span>
-        <a href="dashboard.html" class="tool-back">← Dashboard</a>
+  <header class="bik-app-header" role="banner">
+    <a href="dashboard.html" class="bik-app-header-logo" aria-label="BIK Solutions — dashboard">
+      <div class="bik-logo-mark" aria-hidden="true">B</div>
+      <div class="bik-logo-text">
+        <span class="bik-logo-name">Contract Termination Notice</span>
+        <a href="dashboard.html" class="bik-logo-tag" style="text-decoration:none">← Dashboard</a>
       </div>
     </a>
-    <div class="app-header-spacer"></div>
-    <div class="autosave-indicator" aria-live="polite" aria-label="Autosave status">
-      <div class="autosave-dot" id="autosave-dot" aria-hidden="true"></div>
+    <div class="bik-app-header-spacer"></div>
+    <div class="bik-autosave" aria-live="polite" aria-label="Autosave status">
+      <div class="bik-autosave-dot" id="autosave-dot" aria-hidden="true"></div>
       <span id="autosave-text">Autosave on</span>
     </div>
-    <div class="app-header-actions">
-      <button class="app-btn app-btn--ghost app-btn--ai" id="btn-ai-setup" type="button" title="Set up AI Professional Writer" aria-label="AI Writer setup">
+    <div class="bik-app-header-actions">
+      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm app-btn--ai" id="btn-ai-setup" type="button" title="Set up AI Professional Writer" aria-label="AI Writer setup">
         <span aria-hidden="true" style="font-size:0.85rem;line-height:1">✦</span>
         <span>AI Writer</span>
       </button>
-      <button class="app-btn app-btn--ghost" id="btn-history" type="button" title="View recent documents" aria-label="Document history">
+      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-history" type="button" title="View recent documents" aria-label="Document history">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span>History</span>
       </button>
-      <button class="app-btn app-btn--ghost" id="btn-clear" type="button" title="Clear all fields" aria-label="Clear form">
+      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-clear" type="button" title="Clear all fields" aria-label="Clear form">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
         <span>Clear</span>
       </button>
-      <button class="app-btn app-btn--ghost" id="btn-copy" type="button" disabled title="Copy document text to clipboard" aria-label="Copy document text">
+      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-copy" type="button" disabled title="Copy document text to clipboard" aria-label="Copy document text">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         <span>Copy</span>
       </button>
-      <button class="app-btn app-btn--ghost" id="btn-print" type="button" disabled title="Save as PDF or print" aria-label="Save as PDF">
+      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-print" type="button" disabled title="Save as PDF or print" aria-label="Save as PDF">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         <span>Save PDF</span>
       </button>
-      <button class="app-btn app-btn--ghost" id="btn-email" type="button" disabled title="Open email client with pre-filled email" aria-label="Email document">
+      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-email" type="button" disabled title="Open email client with pre-filled email" aria-label="Email document">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         <span>Email</span>
       </button>
-      <button class="app-btn app-btn--coral" id="btn-generate" type="button">Generate document</button>
+      <button class="bik-btn bik-btn--primary bik-btn--sm" id="btn-generate" type="button">Generate document</button>
     </div>
   </header>
 
@@ -114,7 +115,7 @@
       <div class="preview-panel-header">
         <span class="preview-label">Document preview</span>
         <div class="preview-actions">
-          <button class="app-btn app-btn--ghost-dark" id="btn-edit-toggle" type="button" disabled title="Click to make last-minute edits to the document before printing">Edit document</button>
+          <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-edit-toggle" type="button" disabled title="Click to make last-minute edits to the document before printing">Edit document</button>
         </div>
       </div>
       <div class="preview-empty" id="preview-empty" aria-live="polite">
