@@ -135,7 +135,7 @@ function buildContractSummary(docs) {
   );
   const pendingVariations = docs.filter(
     d => d.toolId === 'variation-notice' &&
-         ['draft', 'sent'].includes(d.approval?.status || 'draft')
+         d.approval?.status === 'sent' && d.approval?.sentAt
   );
 
   const baseQuote    = approvedQuotes[0] || null;

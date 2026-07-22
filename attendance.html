@@ -5,17 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex" />
   <title>Site Attendance — BIK Solutions</title>
+  <link rel="stylesheet" href="css/bik-design-system.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <style>
     /* ── Shell ── */
     .att-shell { display:flex;flex-direction:column;min-height:100vh;background:#f5f0e8; }
-    .att-header { background:#252320;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap; }
-    .att-header-left { display:flex;align-items:center;gap:12px; }
-    .att-logo-mark { width:32px;height:32px;background:#D85A30;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;color:#fff;flex-shrink:0; }
-    .att-header-title { font-size:0.9rem;font-weight:700;color:#fff; }
-    .att-header-back { font-size:0.72rem;color:rgba(255,255,255,0.45);text-decoration:none; }
-    .att-header-back:hover { color:#fff; }
-    .att-header-actions { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
 
     /* Project bar */
     .att-project-bar { background:#1a1816;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap; }
@@ -37,12 +31,22 @@
     .att-tab-content { display:none; }
     .att-tab-content.active { display:block; }
 
-    /* Stats row */
-    .att-stats { display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:20px; }
-    .att-stat { background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:12px 14px; }
-    .att-stat-val { font-size:1.5rem;font-weight:900;color:#252320;font-variant-numeric:tabular-nums;line-height:1; }
-    .att-stat-label { font-size:0.7rem;color:#888;margin-top:4px;line-height:1.3; }
-    .att-stat.highlight .att-stat-val { color:#D85A30; }
+    /* Stats: hero on-site count */
+    .att-onsite-hero { background:#fff;border:1px solid #e8e4de;border-radius:12px;padding:20px 24px;margin-bottom:14px;display:flex;align-items:center;gap:20px; }
+    .att-onsite-count { font-size:3.5rem;font-weight:900;color:#D85A30;font-variant-numeric:tabular-nums;line-height:1;flex-shrink:0; }
+    .att-onsite-label-wrap { flex:1;min-width:0; }
+    .att-onsite-label { font-size:1.05rem;font-weight:700;color:#252320;line-height:1.2; }
+    .att-onsite-sub { font-size:0.78rem;color:#888;margin-top:4px; }
+    .att-onsite-indicator { display:flex;align-items:center;gap:6px;margin-top:8px; }
+    .att-pulse { width:8px;height:8px;border-radius:50%;background:#2e7d32;animation:att-pulse 2s ease-in-out infinite; }
+    @keyframes att-pulse { 0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(46,125,50,0.4); } 50% { opacity:0.8; box-shadow:0 0 0 6px rgba(46,125,50,0); } }
+    .att-onsite-live { font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#2e7d32; }
+
+    /* Secondary stats row */
+    .att-stats { display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:20px; }
+    .att-stat { background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:10px 12px; }
+    .att-stat-val { font-size:1.25rem;font-weight:900;color:#252320;font-variant-numeric:tabular-nums;line-height:1; }
+    .att-stat-label { font-size:0.68rem;color:#888;margin-top:3px;line-height:1.3; }
     .att-stat.warning .att-stat-val { color:#b45309; }
     .att-stat.green .att-stat-val { color:#2e7d32; }
     .att-stat-tip { font-size:0.65rem;color:#aaa;margin-top:2px; }
@@ -155,24 +159,28 @@
 
 <div class="att-shell">
 
-  <div class="att-header">
-    <div class="att-header-left">
-      <div class="att-logo-mark">B</div>
-      <div>
-        <div class="att-header-title">Site Attendance</div>
-        <a href="dashboard.html" class="att-header-back">← Dashboard</a>
+  <header class="bik-app-header" role="banner">
+    <a href="dashboard.html" class="bik-app-header-logo" aria-label="BIK Solutions — dashboard">
+      <div class="bik-logo-mark" aria-hidden="true">B</div>
+      <div class="bik-logo-text">
+        <span class="bik-logo-name">Site Attendance</span>
+        <a href="dashboard.html" class="bik-logo-tag" style="text-decoration:none">← Dashboard</a>
       </div>
-    </div>
-    <div class="att-header-actions">
-      <button class="rollcall-btn" id="btn-rollcall" disabled title="Emergency roll call — on-site workers only">
+    </a>
+    <div class="bik-app-header-spacer"></div>
+    <div class="bik-app-header-actions">
+      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-rollcall" disabled
+        title="Emergency roll call — on-site workers only" aria-label="Emergency roll call"
+        style="border-color:rgba(180,83,9,0.5);color:#fbbf24;">
         🚨 Roll Call
       </button>
-      <button class="qr-btn" id="btn-show-qr" disabled>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3m0 4h4V14h-4m-3 7h3"/></svg>
-        QR Code
+      <button class="bik-btn bik-btn--primary bik-btn--sm" id="btn-show-qr" disabled
+        aria-label="Show site QR code for sign-in">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3m0 4h4V14h-4m-3 7h3"/></svg>
+        Show Site QR
       </button>
     </div>
-  </div>
+  </header>
 
   <div class="att-project-bar">
     <span class="att-project-label">Project</span>
@@ -194,11 +202,21 @@
     <!-- TODAY TAB -->
     <div id="tab-today" class="att-tab-content active">
 
-      <div class="att-stats" id="stats-row">
-        <div class="att-stat highlight">
-          <div class="att-stat-val" id="stat-onsite">0</div>
-          <div class="att-stat-label">On site now</div>
+      <!-- On Site Now hero -->
+      <div class="att-onsite-hero">
+        <div class="att-onsite-count" id="stat-onsite">0</div>
+        <div class="att-onsite-label-wrap">
+          <div class="att-onsite-label">On site now</div>
+          <div class="att-onsite-sub" id="stat-onsite-sub">Select a project to begin</div>
+          <div class="att-onsite-indicator">
+            <div class="att-pulse"></div>
+            <span class="att-onsite-live">Live</span>
+          </div>
         </div>
+      </div>
+
+      <!-- Secondary stats -->
+      <div class="att-stats" id="stats-row">
         <div class="att-stat">
           <div class="att-stat-val" id="stat-left">0</div>
           <div class="att-stat-label">Checked out</div>
@@ -500,6 +518,11 @@
     const totalHrs = checkedOut.reduce((s, r) => s + (r.hoursOnSite || 0), 0);
 
     $('stat-onsite').textContent = onSite.length;
+    const _heroProj = projects.find(p => p.id === pid);
+    const projLabel = _heroProj ? (_heroProj.name || _heroProj.projectName || 'Project') : null;
+    $('stat-onsite-sub').textContent = projLabel
+      ? (onSite.length === 1 ? '1 person on site' : `${onSite.length} people on site`) + ` · ${projLabel}`
+      : 'Select a project to begin';
     $('stat-left').textContent   = checkedOut.length;
     $('stat-total').textContent  = active.length;
     $('stat-hours').textContent  = totalHrs.toFixed(1);
