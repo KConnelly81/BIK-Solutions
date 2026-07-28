@@ -77,7 +77,28 @@ Once 001-005 are applied to a test/staging Supabase project (never run this agai
 
 ---
 
+## Bootstrap RPC (`006_create_organisation_bootstrap.sql`)
+
+Unlike the tables above, these tests call `public.bootstrap_organisation(...)` directly via `select * from public.bootstrap_organisation(...)` or the client SDK's `.rpc()` call, as the specified actor. A "fresh" user below means an `auth.users` row with no corresponding `profiles` row yet.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 35 | Fresh user can bootstrap successfully | Fresh authenticated user | `select * from public.bootstrap_organisation('Acme Builders', 'Jane Smith')` | Succeeds — returns one `(organisation_id, profile_id)` row; `profile_id` equals the caller's own `auth.uid()` |
+| 36 | Bootstrap creates the profile with role owner | Fresh authenticated user | After test 35, `select role from profiles where id = auth.uid()` | `owner` |
+| 37 | Bootstrap sets created_by/updated_by from the caller, not any input | Fresh authenticated user | After test 35, inspect `organisations.created_by` and `profiles.created_by` | Both equal the caller's own `auth.uid()` — the function signature has no parameter that could set these to anything else |
+| 38 | Anonymous user cannot call bootstrap at all | Unauthenticated (`anon`) | `select * from public.bootstrap_organisation('Acme', 'Jane')` | Rejected — no `EXECUTE` grant exists for `anon` |
+| 39 | Second bootstrap call by an already-provisioned user is rejected | User from test 35 (now has a profile) | `select * from public.bootstrap_organisation('Another Co', 'Jane Smith')` | Rejected — "A profile already exists for this account." No second organisation or profile is created |
+| 40 | Blank organisation name is rejected | Fresh authenticated user | `select * from public.bootstrap_organisation('   ', 'Jane Smith')` | Rejected — "Organisation name is required." No rows created |
+| 41 | Blank full name is rejected | Fresh authenticated user | `select * from public.bootstrap_organisation('Acme Builders', '')` | Rejected — "Full name is required." No rows created (organisation insert, if attempted first, is rolled back with the rest of the transaction) |
+| 42 | Invalid ABN format is rejected | Fresh authenticated user | `select * from public.bootstrap_organisation('Acme Builders', 'Jane Smith', '123')` | Rejected — "Organisation ABN must be 11 digits." No rows created |
+| 43 | Duplicate ABN across two different users is rejected cleanly | Second fresh authenticated user, using an ABN already registered by another organisation | `select * from public.bootstrap_organisation('Copycat Co', 'Bob Jones', '<existing 11-digit ABN>')` | Rejected — "An organisation with this ABN is already registered." No orphan organisation row remains (both inserts are in the same transaction) |
+| 44 | Concurrent double bootstrap by the same user creates exactly one organisation and one profile | Fresh authenticated user, two near-simultaneous sessions/calls | Fire `bootstrap_organisation(...)` twice at once for the same `auth.uid()` (e.g. two open tabs, or two concurrent `psql` sessions holding the same JWT) | Exactly one succeeds; the other is rejected with "A profile already exists for this account." (or blocks briefly on the advisory lock, then sees the now-committed profile and is rejected). `select count(*) from organisations where created_by = <user>` and `select count(*) from profiles where id = <user>` both return exactly 1 |
+| 45 | Function signature accepts no role, status, or id parameters | Code review, not a runtime call | Inspect `public.bootstrap_organisation`'s parameter list | Confirmed: only `p_organisation_name`, `p_full_name`, `p_organisation_abn`, `p_phone`, `p_job_title` — no way to submit a role, organisation_id, profile id, or status value even by a malicious/malformed request |
+
+---
+
 ## Related documents
 
 - `supabase/migrations/005_phase1_rls.sql` — the policies under test
+- `supabase/migrations/006_create_organisation_bootstrap.sql` — the bootstrap RPC under test
 - `docs/decisions/README.md` — ADR-008 (bootstrap RPC), ADR-009 (last-owner protection), ADR-010 (soft delete strategy)
