@@ -111,7 +111,7 @@ $$;
 comment on function internal.is_owner() is
   'True only for role = owner. Gates organisation-administration actions.';
 comment on function internal.is_admin() is
-  'True for role = admin OR owner (owner is a superset of admin). Gates "manage operational data" actions such as deleting customers/projects.';
+  'True for role = admin OR owner (owner is a superset of admin). Not currently referenced by any Phase 1 policy (ADR-010 removed the customers/projects DELETE policies that used it) — kept as reusable infrastructure for future admin-gated operational actions.';
 
 -- Least-privilege execute grants: only the authenticated role may call
 -- these, and only via policy evaluation — anon gets nothing, and no role
@@ -254,9 +254,16 @@ create or replace trigger profiles_prevent_unauthorised_role_change
 -- ============================================================================
 -- customers
 -- Operational data: any org member (owner/admin/member) may read, create,
--- and update. Deletion is restricted to admin/owner — "manage operational
--- data" (admin+owner) vs "create/update operational records" (member) per
--- the Phase 1 role model.
+-- and update, within their own organisation.
+--
+-- No DELETE policy exists for any role, including owner — per ADR-010
+-- (platform-wide soft delete strategy), customers are normally archived,
+-- not deleted. Routine "removal" is the existing customers_update_same_org
+-- policy setting status = 'archived', already available to any org member.
+-- Physical row deletion is reserved for GDPR/Privacy Act erasure, test-data
+-- cleanup, and administrator maintenance, performed via service_role
+-- (which bypasses RLS entirely) — never through a policy granted to
+-- authenticated.
 -- ============================================================================
 
 -- Allows: any role, own organisation's customers. Blocks: any other
@@ -287,21 +294,20 @@ create policy customers_update_same_org
   using (organisation_id = (select internal.current_organisation_id()))
   with check (organisation_id = (select internal.current_organisation_id()));
 
--- Allows: admin or owner only, own organisation. Blocks: member (can
--- create/update customers but not delete them); any other organisation.
-create policy customers_delete_admin_or_owner
-  on public.customers
-  for delete
-  to authenticated
-  using (organisation_id = (select internal.current_organisation_id()) and (select internal.is_admin()));
-
 -- ============================================================================
 -- projects
--- Same shape as customers: full CRUD for any org member, delete restricted
--- to admin/owner. Projects being the primary business object (004) makes
--- this isolation the highest-stakes of the four tables — every future
--- module inherits this same organisation_id boundary via its own
--- project_id foreign key.
+-- Same shape as customers: full read/create/update for any org member,
+-- within their own organisation. Projects being the primary business
+-- object (004) makes this isolation the highest-stakes of the four
+-- tables — every future module inherits this same organisation_id
+-- boundary via its own project_id foreign key.
+--
+-- No DELETE policy exists for any role, including owner — per ADR-010,
+-- projects are never physically deleted through any client-facing path.
+-- Routine "removal" is the existing projects_update_same_org policy
+-- setting status = 'archived', already available to any org member.
+-- Physical row deletion follows the same service_role-only path as
+-- customers above.
 -- ============================================================================
 
 create policy projects_select_same_org
@@ -323,12 +329,6 @@ create policy projects_update_same_org
   using (organisation_id = (select internal.current_organisation_id()))
   with check (organisation_id = (select internal.current_organisation_id()));
 
-create policy projects_delete_admin_or_owner
-  on public.projects
-  for delete
-  to authenticated
-  using (organisation_id = (select internal.current_organisation_id()) and (select internal.is_admin()));
-
 -- ----------------------------------------------------------------------------
 -- NOT built in this migration (deliberately deferred, tracked elsewhere):
 --   - Bootstrap RPC for new signups (ADR-008) — organisations and profiles
@@ -339,4 +339,8 @@ create policy projects_delete_admin_or_owner
 --   - "Invite a teammate" flow — profiles has no INSERT policy for this
 --     yet; adding a member currently requires the (not-yet-built)
 --     bootstrap-style RPC pattern.
+--   - Hard-delete path for customers/projects (ADR-010) — no policy in
+--     this migration grants DELETE to authenticated for either table, on
+--     any role. Physical row removal is a service_role/admin-tooling
+--     concern, not part of the client-facing API.
 -- ----------------------------------------------------------------------------
