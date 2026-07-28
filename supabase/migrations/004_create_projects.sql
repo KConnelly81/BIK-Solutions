@@ -67,7 +67,7 @@ create table if not exists public.projects (
   updated_by                  uuid references auth.users(id) on delete set null,
 
   constraint projects_status_check
-    check (status in ('draft', 'active', 'completed', 'archived')),
+    check (status in ('draft', 'active', 'on-hold', 'completed', 'archived')),
 
   -- Sensible, not strict: only rejects an impossible date pair. Either date
   -- may be absent (a draft project has neither yet).
@@ -87,7 +87,7 @@ comment on column public.projects.project_number is
 comment on column public.projects.external_reference is
   'Free-text reference from an external system (BuilderTrend job ID, Xero job code, client job number, council application number, etc.). Enables future integrations to look up a project by a foreign identifier without overloading project_number.';
 comment on column public.projects.status is
-  'Simple Phase 1 lifecycle: draft, active, completed, archived. Deliberately does not model schedules, milestones, or on-hold/paused states yet.';
+  'Phase 1 lifecycle: draft, active, on-hold, completed, archived. on-hold is a first-class operational state (e.g. waiting on council approval, client finance, weather, materials, engineering) — not folded into active or archived. Deliberately does not model schedules or milestones yet.';
 comment on column public.projects.estimated_contract_value_cents is
   'Estimate only, stored as integer cents. Not the authoritative contract ledger — that belongs to Progress Claims/Invoices in a later phase.';
 
