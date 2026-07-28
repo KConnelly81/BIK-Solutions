@@ -47,6 +47,7 @@ What else was evaluated?
 | ADR-007 | Native browser print-to-PDF over server-side PDF generation | 2026-07-15 | Accepted |
 | ADR-008 | Signup bootstrap as its own reviewed migration, not buried in another | 2026-07-28 | Accepted |
 | ADR-009 | Last-owner protection enforced at the database layer, not frontend-only | 2026-07-28 | Accepted |
+| ADR-010 | Platform-wide soft delete strategy | 2026-07-28 | Accepted |
 
 ---
 
@@ -223,3 +224,31 @@ What else was evaluated?
 **Consequences (-):** Adds one more piece of logic to design and test before role management ships. Not yet built — tracked as a follow-up alongside or after `005_phase1_rls.sql`, flagged in `002_create_profiles.sql`'s review notes.
 
 **Alternatives considered:** Relying on frontend validation only (rejected — bypassable); relying on RLS policies alone (rejected — RLS authorises actors, it does not naturally express "unless this is the last one" without the same trigger/function logic RLS policies would end up duplicating).
+
+---
+
+## ADR-010: Platform-Wide Soft Delete Strategy
+
+**Date:** 2026-07-28
+**Status:** Accepted
+
+**Context:** `005_phase1_rls.sql` currently grants `DELETE` to `admin`/`owner` on `customers` and `projects` — an ordinary, RLS-permitted hard delete, no different in cost from any other write. Before more tables are added (business documents, attendance, approvals), the platform needs one consistent answer to "what does deleting something mean," rather than each future migration inventing its own convention.
+
+**Decision:**
+- **Organisations** are never physically deleted through any client-facing path. `organisations.status` (001) already models this — `suspended` is the only lifecycle state short of permanent retention.
+- **Projects** are never physically deleted through any client-facing path. `projects.status` (004) already includes `archived`, which is the correct terminal state — a project's document/attendance/defect history must remain queryable indefinitely.
+- **Customers** are normally archived, not deleted. `customers.status` (003) already includes `archived`. A standing client-facing hard-delete grant is the exception, not the norm, and should not be routinely available.
+- **Business documents** (Variation Notices, Quotes, Invoices, Site Diaries, Attendance records, and everything else in the Phase 2+ roadmap), once issued, are never hard deleted. Correction happens by superseding, voiding, or cancelling — a new state, not a removed row. This is also the only posture consistent with standard AU record-keeping expectations for financial/contractual documents (the underlying legal obligation is a business-strategy question for those specific document types, not something this ADR resolves, but "the row must still exist to be retained" is a schema precondition either way).
+- **Hard deletes are reserved for:** GDPR/Privacy Act erasure requests, test/demo data cleanup, and administrator maintenance. These are performed through privileged paths that bypass RLS entirely (`service_role`, admin tooling, or a dedicated `SECURITY DEFINER` erasure function with its own audit trail) — never through a `DELETE` policy granted to `authenticated`.
+- **Mechanism:** prefer the existing `status` lifecycle columns (`active`/`suspended`/`archived`, extended per-table as needed — e.g. a future `voided`/`superseded` state for documents) over introducing a separate `deleted_at` timestamp convention. Where a table's `status` enum doesn't yet capture "removed" as a state, that is what needs extending, not a parallel deletion mechanism. This keeps one lifecycle model per row instead of two independent ones that can drift out of sync.
+
+**Rationale:**
+- Matches how builders actually think about this data — a completed job or an old client isn't "gone," it's history you might need again (a repeat client three years later, a defect dispute after project completion).
+- Removes an entire class of accidental/malicious data-loss incident: with no ordinary `DELETE` grant, there is no RLS policy to misconfigure or exploit into destroying a customer's project history.
+- Consistent with `organisations`'s existing posture in 005 (no `DELETE` policy exists for any role, including owner) — this ADR extends that same reasoning platform-wide instead of leaving it organisation-specific.
+
+**Consequences (+):** One deletion model to reason about, document, and test, platform-wide. Full audit/history retained by default. Lower risk of an accidental or malicious permanent data-loss incident via the ordinary API.
+**Consequences (-):** `customers_delete_admin_or_owner` and `projects_delete_admin_or_owner` in `005_phase1_rls.sql`, as currently written, contradict this decision — both grant an ordinary hard-delete to `authenticated` admin/owner. This is a required follow-up correction, not yet applied: since 001-005 have not been applied to Supabase, the clean fix is to amend `005` in place (removing those two policies) rather than layering a `006` that immediately reverses part of an unapplied migration. Flagging this rather than editing an already-approved migration silently — confirm before I make the change. Storage growth is unbounded for archived rows (no retention/purge policy yet) — acceptable for Phase 1 scale, worth revisiting once real usage data exists.
+**User communication:** None required for Phase 1 (no user-facing "permanently delete" action exists once this correction lands) — becomes relevant once a GDPR erasure request flow is built, at which point the privacy policy should describe what "delete my data" actually does.
+
+**Alternatives considered:** A separate `deleted_at timestamptz` column per table (rejected for Phase 1 — duplicates what `status` already expresses, and risks the two falling out of sync, e.g. a row with `status = 'active'` and `deleted_at` set); allowing hard delete for admin/owner as a routine action (rejected — that's the status quo this ADR corrects, and puts irreversible data loss one click away from any admin-level user).
