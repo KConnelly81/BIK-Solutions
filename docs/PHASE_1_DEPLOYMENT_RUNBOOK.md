@@ -470,14 +470,14 @@ Stop immediately, do not proceed to the next migration or validation stage, and 
 
 | Item | Status | Date | Tester | Notes |
 |---|---|---|---|---|
-| Before-deployment checklist | Not started | | | |
-| `001_create_organisations.sql` | Not started | | | |
-| `002_create_profiles.sql` | Not started | | | |
-| `003_create_customers.sql` | Not started | | | |
-| `004_create_projects.sql` | Not started | | | |
-| `005_phase1_rls.sql` | Not started | | | |
-| `006_create_organisation_bootstrap.sql` | Not started | | | |
-| `007_protect_last_owner.sql` | Not started | | | |
+| Before-deployment checklist | Passed | 2026-07-29 | Claude (BIK Phase 2) | Clean public schema confirmed pre-deployment; one pre-existing, non-BIK object noted (`public.rls_auto_enable()`, Supabase platform scaffolding, harmless — see deployment summary) |
+| `001_create_organisations.sql` | Passed | 2026-07-29 | Claude (BIK Phase 2) | Verification exact match: table_exists=1, rls_enabled=true, index_count=3, trigger_count=1, policy_count=0 |
+| `002_create_profiles.sql` | Passed | 2026-07-29 | Claude (BIK Phase 2) | Verification exact match: table_exists=1, rls_enabled=true, index_count=4, policy_count=0, fk_target=organisations |
+| `003_create_customers.sql` | Passed | 2026-07-29 | Claude (BIK Phase 2) | Verification exact match: table_exists=1, rls_enabled=true, index_count=5, policy_count=0 |
+| `004_create_projects.sql` | Passed | 2026-07-29 | Claude (BIK Phase 2) | Verification exact match: table_exists=1, rls_enabled=true, index_count=7, policy_count=0, customer_fk_target=customers |
+| `005_phase1_rls.sql` | Passed | 2026-07-29 | Claude (BIK Phase 2) | Verification exact match: total_policies=10, authenticated_has_usage=true (empirically confirms C1's fix), anon_has_usage=false, public_has_usage=false, authenticated_can_call_helper=true, escalation_trigger_count=1 |
+| `006_create_organisation_bootstrap.sql` | Passed | 2026-07-29 | Claude (BIK Phase 2) | Verification exact match: function_exists=1, authenticated_can_call=true, anon_can_call=false |
+| `007_protect_last_owner.sql` | Passed | 2026-07-29 | Claude (BIK Phase 2) | Verification exact match: both triggers present, tgdeferrable=true, tginitdeferred=true |
 | Stage 1 — Static inspection | Not started | | | |
 | Stage 2 — Anonymous access | Not started | | | |
 | Stage 3 — Authenticated bootstrap | Not started | | | |
@@ -491,12 +491,14 @@ Stop immediately, do not proceed to the next migration or validation stage, and 
 
 **Deployment session details:**
 
-- Date:
-- Tester:
+- Date: 2026-07-29
+- Tester: Claude (BIK Phase 2 Supabase deployment session)
 - Supabase project ID: `hpcqncghvdrlvufxfdnd`
-- Repository commit hash tested: `cfc4483` *(HEAD at the time this runbook was written — update to the actual commit hash tested, if different)*
-- Error details (if any failure occurred):
-- Remediation commit (if a confirmed defect required a migration fix):
+- Repository commit hash tested: `60d7a4b`
+- Error details (if any failure occurred): None — all seven migrations and their verification queries passed on the first attempt, no deviation from expected results.
+- Remediation commit (if a confirmed defect required a migration fix): None required.
+
+**Note:** Migrations `001`–`007` are applied and structurally verified (Stage 1-equivalent per-migration checks). Stages 1–7's full validation pass (anonymous access, authenticated bootstrap, tenant isolation, role/suspension behaviour, archive/deletion behaviour, last-owner invariant) and test data cleanup have **not** been executed yet and remain the next step before any frontend integration begins.
 
 ---
 
