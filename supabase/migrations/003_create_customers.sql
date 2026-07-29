@@ -22,15 +22,19 @@ create table if not exists public.customers (
   -- while customer records remain, same reasoning as profiles in 002.
   organisation_id   uuid not null references public.organisations(id) on delete restrict,
 
-  -- Individual vs business/company. Deliberately just a flag, not two
-  -- separate tables — both shapes share the same fields below (an
-  -- individual leaves business_name blank; a business may still have a
-  -- named contact person via first_name/last_name).
+  -- Individual vs business/company. This is UI/workflow guidance only —
+  -- it does not restrict which identity fields may be populated. A sole
+  -- trader is the clearest case: they legitimately have both a trading
+  -- name (business_name) and a personal contact name (first_name/
+  -- last_name), and both may be stored together regardless of
+  -- customer_type. No constraint clears or excludes either side.
   customer_type     text not null default 'individual',
 
-  -- Identity fields. All nullable individually — a record can be created
-  -- with almost nothing and completed later — but see
-  -- customers_identity_present_check below for the one minimal guard.
+  -- Identity fields. All nullable individually, and not mutually
+  -- exclusive with each other — a record can be created with almost
+  -- nothing and completed later, and business_name/first_name/last_name
+  -- may coexist freely (see customers_identity_present_check below for
+  -- the one minimal guard: at least one of the three must be present).
   business_name     text,
   first_name        text,
   last_name         text,
@@ -98,7 +102,7 @@ create table if not exists public.customers (
 comment on table public.customers is
   'Clients of one organisation. Represents an individual or a business/company. No cross-organisation uniqueness — the same real-world person or business may legitimately exist as separate customer rows in different organisations, or even appear more than once within one organisation.';
 comment on column public.customers.customer_type is
-  'individual or business. A flag, not a type-specific schema — both shapes share the same columns.';
+  'individual or business. UI/workflow guidance only — does not restrict or clear stored fields. A sole trader may legitimately have both business_name and first_name/last_name populated at once.';
 comment on column public.customers.email is
   'Not unique, deliberately. Different organisations may share a customer, and one organisation may have multiple contacts on a shared email address.';
 
