@@ -172,6 +172,48 @@ Added per ADR-009's documented limitation and `007`'s isolation-level comment bl
 | 75 | Concurrent same-organisation demotions under `READ COMMITTED` (the only isolation level any Phase 1 client, including `service_role`, actually runs at via PostgREST) | See tests #52 and #53 | (Retained, not duplicated — see above) | Exactly one of the two concurrent transactions succeeds. This **is** the confirmation that the invariant holds under the isolation level Phase 1 actually uses in production. |
 | 76 | Ownership-changing operation under explicit `REPEATABLE READ` | `service_role`, via a direct database connection (not reachable through PostgREST/the client SDK, which cannot set isolation level per request) | `BEGIN ISOLATION LEVEL REPEATABLE READ; ...` around a demotion racing a concurrent `READ COMMITTED` demotion of a different owner in the same organisation | **Documented as an unsupported configuration, not a target for correct behaviour.** May permit an outcome that leaves zero active owners — this is the known limitation in ADR-009/`007`'s comments, not a defect to be fixed by this test plan. Recorded here so it is never silently assumed to be covered by #75. |
 
+## Profiles INSERT/DELETE coverage
+
+Added during the second Phase 1 database review pass — `profiles` has never had an `INSERT` or `DELETE` policy for `authenticated` (by design, since `002`), but this was not previously exercised by explicit tests.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 77 | Authenticated user (already provisioned) cannot insert an arbitrary profile row | An existing Org A member | `insert into profiles (id, organisation_id, role) values (gen_random_uuid(), <Org A>, 'member')` | Rejected — no `INSERT` policy exists on `profiles` for `authenticated`, regardless of content. |
+| 78 | Authenticated user cannot create a profile for another user | Any authenticated user, given a second, otherwise-unprovisioned `auth.users` id (`<other_user_id>`) | `insert into profiles (id, organisation_id, role) values (<other_user_id>, <own org>, 'member')` | Rejected — same reason as #77; the target `id` being someone else's makes no difference, since no `INSERT` path exists at all. |
+| 79 | Authenticated user cannot delete their own profile | Any authenticated user | `delete from profiles where id = auth.uid()` | Rejected — no `DELETE` policy exists on `profiles` for `authenticated`. Offboarding is `status = 'suspended'` (owner-only), not deletion. |
+| 80 | Authenticated owner cannot delete another member's profile | Org A owner | `delete from profiles where id = <Org A member>` | Rejected — same reason; ownership of the acting role does not open a `DELETE` path that was never granted. |
+| 81 | `bootstrap_organisation()` remains the only Phase 1 path that creates an initial profile | Code review, not a runtime call | Confirm no `INSERT` policy exists on `profiles` for `authenticated` (`005`), and that `bootstrap_organisation()` (`006`) is the only function that inserts into `profiles` and is `SECURITY DEFINER` (bypassing RLS entirely for that one, identity-locked insert) | Confirmed — the absence of any authenticated-facing `INSERT` path, combined with `006` being the sole `SECURITY DEFINER` writer, means bootstrap is structurally the only way an initial profile is created in Phase 1. |
+
+## Cross-organisation customer isolation
+
+Added during the second Phase 1 database review pass — the original test plan covered cross-org isolation explicitly for `projects` (#5, #6) and implicitly for `customers` via the general org-isolation tests (#3), but never exercised `customers`' `INSERT`/`UPDATE` cross-org boundaries directly, the way `projects` already had.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 82 | Org A user cannot read Org B's customers | Org A member (any role) | `select * from customers where organisation_id = <Org B>` | 0 rows. |
+| 83 | Org A user cannot insert a customer using Org B's `organisation_id` | Org A member | `insert into customers (organisation_id, first_name) values (<Org B>, 'Test')` | Rejected — `customers_insert_same_org`'s `WITH CHECK` fails regardless of the `organisation_id` value submitted, exactly as already proven for `projects` (#5). |
+| 84 | Org A user cannot update an Org B customer | Org A member | `update customers set notes = 'changed' where id = <an Org B customer>` | 0 rows affected — the row is never visible to this `UPDATE` in the first place, since `customers_update_same_org`'s `USING` clause excludes it. |
+| 85 | Org A user cannot archive an Org B customer | Org A member | `update customers set status = 'archived' where id = <an Org B customer>` | 0 rows affected, same reason as #84 — archiving is an ordinary `UPDATE` and gets no special treatment. |
+
+## Bootstrap exception diagnostics
+
+Added during the second Phase 1 database review pass. The review concluded, from documented PostgreSQL internals (`errtableconstraint()` populates the constraint-name diagnostic using the index's relation name for both constraint-backed and plain unique-index-backed violations), that `006`'s `GET STACKED DIAGNOSTICS ... CONSTRAINT_NAME` logic is reliable as written. No code change was made. These tests exist to empirically confirm that conclusion at first deployment, not because the analysis is in doubt.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 43 | *(existing)* Duplicate ABN across two different users is rejected cleanly | See original entry above | — | Now expected with high confidence, not merely hoped for: `v_constraint_name` should read exactly `organisations_abn_unique_idx`, producing "An organisation with this ABN is already registered." — not the generic fallback. |
+| 86 | A non-ABN uniqueness conflict during bootstrap falls through to the generic safe message | `service_role`, contrived scenario (e.g. directly pre-inserting a `profiles` row with a specific `id` immediately before that same user calls `bootstrap_organisation()`, deliberately bypassing the advisory-lock-protected normal path to force a raw PK conflict) | Trigger a `unique_violation` on `profiles_pkey` rather than `organisations_abn_unique_idx` during `006`'s insert block | "Unable to complete signup. Please try again." — confirms the fallback branch behaves correctly for a uniqueness conflict that isn't the ABN case, and that no constraint or table name leaks into the message either way. |
+
+## `auth.users` deletion interaction
+
+Added during the second Phase 1 database review pass — the most important remaining item identified in that review. Confirms the analysis in ADR-012 empirically.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 87 | Deleting the sole active owner's `auth.users` row is rejected | `service_role` / Supabase Auth admin action | Delete the `auth.users` row for an organisation's sole active owner | The entire transaction (the `auth.users` deletion and its cascade into `profiles`) is rolled back — rejected with "Organisation ... must retain at least one active owner." The `auth.users` row still exists afterwards; the account is not deleted. |
+| 88 | Assigning a second active owner first, then deleting the original owner's account, succeeds | Org A owner promotes a member to `owner`, then `service_role`/Auth admin deletes the original owner's `auth.users` row | Two-step sequence per ADR-012's documented procedure | Succeeds — after the deletion, Org A has exactly one active owner remaining (the newly promoted one), satisfying `007`'s invariant. |
+| 89 | Suspending the organisation first, then deleting the sole owner's account, succeeds | `service_role` suspends Org A (`status = 'suspended'`), then deletes the sole owner's `auth.users` row | Two-step sequence per ADR-012's documented procedure | Succeeds — `007`'s invariant does not apply to a non-active organisation, so the cascade-deleted profile does not trigger a rejection. Org A remains suspended and inaccessible via the ordinary API afterwards, per ADR-013, until a separate recovery/reactivation action is taken with a valid owner in place. |
+
 ---
 
 ## Related documents

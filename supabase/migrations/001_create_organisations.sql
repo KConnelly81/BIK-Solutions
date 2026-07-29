@@ -26,6 +26,19 @@ $$;
 comment on function public.set_updated_at() is
   'Shared BEFORE UPDATE trigger function. Stamps updated_at = now() on every row update. Reused by all Phase 1 tables.';
 
+-- Trigger functions are invoked by the executor as part of DML processing
+-- on a table the caller already has separate table-level (RLS-governed)
+-- privilege on — the invoking role does not need, and is never granted,
+-- EXECUTE on the trigger function itself to make a trigger fire. Revoking
+-- the default PostgreSQL PUBLIC execute grant here closes an unintended
+-- direct-call surface (not previously exploitable — Postgres refuses to
+-- invoke a trigger-returning function outside trigger context regardless
+-- of grants — but treated as a privilege-hygiene defect per the Phase 1
+-- database review's second pass, not left as documentation only).
+revoke all on function public.set_updated_at() from public;
+revoke all on function public.set_updated_at() from anon;
+revoke all on function public.set_updated_at() from authenticated;
+
 -- ----------------------------------------------------------------------------
 -- Table: organisations
 -- The tenant boundary. Represents one builder/trade business using BIK.

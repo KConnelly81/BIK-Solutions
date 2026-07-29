@@ -196,6 +196,13 @@ create constraint trigger profiles_last_owner_guard
   for each row
   execute function public.enforce_last_owner_on_profiles();
 
+-- Trigger function, invoked by the executor when profiles is mutated, not
+-- called directly by any client role — same reasoning as 001/005's
+-- trigger functions. Default PUBLIC execute grant revoked accordingly.
+revoke all on function public.enforce_last_owner_on_profiles() from public;
+revoke all on function public.enforce_last_owner_on_profiles() from anon;
+revoke all on function public.enforce_last_owner_on_profiles() from authenticated;
+
 comment on trigger profiles_last_owner_guard on public.profiles is
   'DEFERRABLE INITIALLY DEFERRED: fires once per affected row, but only at transaction commit (or explicit SET CONSTRAINTS ... IMMEDIATE), after every statement in the transaction has already been applied. This is what makes multi-row updates and multi-statement transactions evaluate correctly against final state instead of partial, order-dependent progress — see the migration''s accompanying explanation.';
 
@@ -232,6 +239,12 @@ create constraint trigger organisations_last_owner_guard
 
 comment on trigger organisations_last_owner_guard on public.organisations is
   'DEFERRABLE INITIALLY DEFERRED. Critical for bootstrap compatibility: an IMMEDIATE trigger here would check for an owner right after the organisations INSERT in 006, before that same transaction has inserted the owner profile, and would incorrectly reject every signup. Deferring to commit time means both inserts have completed before this check runs.';
+
+-- Trigger function — same reasoning as enforce_last_owner_on_profiles()
+-- above. Default PUBLIC execute grant revoked accordingly.
+revoke all on function public.enforce_last_owner_on_organisations() from public;
+revoke all on function public.enforce_last_owner_on_organisations() from anon;
+revoke all on function public.enforce_last_owner_on_organisations() from authenticated;
 
 -- ----------------------------------------------------------------------------
 -- NOT built in this migration (deliberately deferred, tracked elsewhere):
