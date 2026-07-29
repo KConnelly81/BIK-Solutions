@@ -76,7 +76,7 @@ where table_schema='public' and table_name in ('organisations','profiles','custo
 
 ### C3 — `anon`/`authenticated` hold `MAINTAIN`/`REFERENCES`/`TRIGGER`/`TRUNCATE` on all four Phase 1 tables; `TRUNCATE` is RLS-bypassing and confirmed reachable by `anon`
 
-**Status: DRAFTED (`009_revoke_dangerous_table_privileges.sql`), NOT YET APPLIED — pending explicit approval.**
+**Status: CORRECTED via `009_revoke_dangerous_table_privileges.sql` (2026-07-29).** Approved and applied to `hpcqncghvdrlvufxfdnd`; verification queries confirm `anon` now holds zero privileges on all four tables, `authenticated` holds exactly `008`'s ten `SELECT`/`INSERT`/`UPDATE` rows and nothing else, and the `postgres`-role default ACL for `public` no longer lists `anon`/`authenticated` at all (re-running the live `truncate` test as `anon` now fails with `permission denied for table projects`, in place of the prior silent success). Full verification detail in ADR-015.
 
 **Category:** Confirmed defect (critical — unauthenticated, RLS-bypassing data destruction path).
 
@@ -580,7 +580,7 @@ Distinct from §17: this is what to check *after* the schema is live on the targ
 | New (this pass) — `customers` cross-org INSERT/UPDATE untested | Test-coverage gap | **Closed.** Tests 82–85 added. |
 | C2 — missing baseline table-level GRANTs for `authenticated` (discovered live, Stage 2 of the deployment runbook, not by this static review) | Critical (deployment-blocking) | **Corrected via `008_grant_authenticated_table_privileges.sql`.** See ADR-014. Tests 90–93 added to confirm empirically once applied. |
 
-**Remaining blockers to unconditional READY:** none that are code defects. H2 remains open by design (an accepted limitation, not a blocker to deployment). L2/L3 are cosmetic and explicitly not worth acting on yet. C2 is corrected pending application of `008` (drafted, not yet applied as of this update — see the deployment runbook's Results Record for current status).
+**Remaining blockers to unconditional READY:** none that are code defects. H2 remains open by design (an accepted limitation, not a blocker to deployment). L2/L3 are cosmetic and explicitly not worth acting on yet. C2 and C3 are both corrected and applied (`008`, `009` — see the deployment runbook's Results Record for verification detail); Stages 5–7 of the deployment runbook's live validation and test data cleanup remain the next step before frontend integration begins.
 
 **Accepted limitations, stated together:** (1) last-owner protection is not safe under an explicit `REPEATABLE READ` transaction — mitigated by the fact that no current code path opens one, and by the documented recommendation to route future ownership-management work through a controlled RPC; (2) a suspended organisation cannot be reactivated through the ordinary tenant-scoped API — `service_role` administration is required until a future, narrowly-scoped recovery RPC is designed (§6: confirmed not to make Phase 1 unusable, since suspension itself is not yet triggered by any automated process).
 

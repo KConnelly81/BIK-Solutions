@@ -89,9 +89,9 @@
 --             003_create_customers.sql, 004_create_projects.sql,
 --             008_grant_authenticated_table_privileges.sql (this migration
 --             leaves 008's SELECT/INSERT/UPDATE grants untouched)
--- NOT YET APPLIED to hpcqncghvdrlvufxfdnd as of this file's creation --
--- drafted for review, per standing instruction never to apply migrations
--- without explicit approval.
+-- Applied to hpcqncghvdrlvufxfdnd 2026-07-29, approved and verified --
+-- see docs/PHASE_1_DATABASE_REVIEW.md finding C3 and ADR-015 for the
+-- verification results.
 -- ============================================================================
 
 -- Explicit statement of the PUBLIC boundary (currently a no-op -- see note

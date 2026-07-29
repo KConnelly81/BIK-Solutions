@@ -381,7 +381,7 @@ The Phase 1 database review (`docs/PHASE_1_DATABASE_REVIEW.md`, §7 "Table grant
 ## ADR-015: Revoke `MAINTAIN`/`REFERENCES`/`TRIGGER`/`TRUNCATE` from Client Roles; Correct the Default ACL That Produced Them
 
 **Date:** 2026-07-29
-**Status:** Proposed — migration drafted (`009_revoke_dangerous_table_privileges.sql`), not yet applied, pending explicit approval.
+**Status:** Accepted — migration `009_revoke_dangerous_table_privileges.sql` approved and applied to `hpcqncghvdrlvufxfdnd` 2026-07-29; all verification queries below re-run post-application and confirmed matching the expected matrix.
 
 **Context:** Continued live validation of `hpcqncghvdrlvufxfdnd` (deployment runbook Stage 1 static inspection, re-run after `008` was applied) surfaced that `anon` and `authenticated` both still held `MAINTAIN`, `REFERENCES`, `TRIGGER`, and `TRUNCATE` on all four Phase 1 tables — a superset of the `REFERENCES`/`TRIGGER`/`TRUNCATE` subset C2/ADR-014 had already observed as a symptom (ADR-014 didn't include `MAINTAIN` in its own inspection query, and neither C2 nor `008` investigated the root cause of this set or treated it as a defect in its own right — `008` was scoped purely to adding the missing `SELECT`/`INSERT`/`UPDATE`).
 
@@ -415,7 +415,7 @@ The Phase 1 database review (`docs/PHASE_1_DATABASE_REVIEW.md`, §7 "Table grant
 | `customers` | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE | + SELECT, INSERT, UPDATE | none | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE |
 | `projects` | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE | + SELECT, INSERT, UPDATE | none | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE |
 
-**Expected privilege matrix (after `009`, not yet applied):**
+**Confirmed privilege matrix (after `009`, applied and verified):**
 
 | Table | `anon` | `authenticated` | `PUBLIC` | `service_role` |
 |---|---|---|---|---|
@@ -424,27 +424,33 @@ The Phase 1 database review (`docs/PHASE_1_DATABASE_REVIEW.md`, §7 "Table grant
 | `customers` | **none** | SELECT, INSERT, UPDATE | none | unchanged |
 | `projects` | **none** | SELECT, INSERT, UPDATE | none | unchanged |
 
-**Verification queries, to run after applying `009`:**
+**Verification queries, run after applying `009` — all four matched expected exactly:**
 ```sql
--- Expect: zero rows (anon reduced to nothing on all four tables)
+-- anon: zero rows. Confirmed -- query returned no rows for grantee='anon' on any of
+-- the four tables.
 select table_name, grantee, privilege_type from information_schema.role_table_grants
 where table_schema='public' and table_name in ('organisations','profiles','customers','projects')
   and grantee='anon';
 
--- Expect: exactly the same 10 rows 008 produced (SELECT/UPDATE x2, SELECT/INSERT/UPDATE x2),
--- and no MAINTAIN/REFERENCES/TRIGGER/TRUNCATE rows for authenticated
+-- authenticated: exactly the same 10 rows 008 produced, nothing else. Confirmed --
+-- organisations/profiles -> SELECT, UPDATE; customers/projects -> SELECT, INSERT,
+-- UPDATE; no MAINTAIN/REFERENCES/TRIGGER/TRUNCATE rows for authenticated on any table.
 select table_name, grantee, privilege_type from information_schema.role_table_grants
 where table_schema='public' and table_name in ('organisations','profiles','customers','projects')
   and grantee='authenticated' order by table_name, privilege_type;
 
--- Expect: the anon/authenticated entries in the postgres-role default ACL no longer
--- include D/x/t/m (TRUNCATE/REFERENCES/TRIGGER/MAINTAIN)
+-- postgres-role default ACL for public: anon/authenticated no longer appear at all
+-- (revoking every privilege type a default-ACL entry granted removes the entry
+-- entirely, rather than leaving it empty). Confirmed -- the postgres-owned row is
+-- now `postgres=arwdDxtm/postgres, service_role=Dxtm/postgres` only; the separate
+-- supabase_admin-owned row (out of scope for 009, see below) is unchanged.
 select r.rolname as defacl_owner_role, pg_catalog.array_to_string(d.defaclacl, ', ') as default_acl
 from pg_default_acl d join pg_namespace n on n.oid=d.defaclnamespace join pg_roles r on r.oid=d.defaclrole
 where n.nspname='public' and d.defaclobjtype='r';
 
--- Expect: permission denied (not silent success) -- re-run the exact live test from the
--- investigation above, this time expecting it to fail
+-- Re-run of the exact live exploit test from the investigation above, now expecting
+-- failure. Confirmed -- ERROR 42501: permission denied for table projects (in place
+-- of the prior silent success), transaction never committed either way.
 begin;
 set local role anon;
 truncate public.projects;
