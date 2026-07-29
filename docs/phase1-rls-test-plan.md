@@ -46,34 +46,38 @@ Once 001-005 are applied to a test/staging Supabase project (never run this agai
 | 14 | Member cannot delete organisation | Org A member | `delete from organisations where id = <own org>` | Rejected — no DELETE policy exists for any role |
 | 15 | Owner cannot delete organisation either | Org A owner | `delete from organisations where id = <own org>` | Rejected — deliberately no DELETE policy in Phase 1, even for owner |
 | 16 | Member can create and update a project | Org A member | `insert into projects (...)`, then `update projects set notes = '...' where id = <that project>` | Both succeed |
-| 17 | Member cannot delete a project | Org A member | `delete from projects where id = <own org's project>` | Rejected — `projects_delete_admin_or_owner` requires `is_admin()` |
-| 18 | Admin can delete a project | Org A admin | `delete from projects where id = <own org's project>` | Succeeds |
-| 19 | Member cannot delete a customer | Org A member | `delete from customers where id = <own org's customer>` | Rejected |
-| 20 | Admin can delete a customer | Org A admin | `delete from customers where id = <own org's customer>` | Succeeds |
-| 21 | Member cannot promote themselves to owner | Org A member | `update profiles set role = 'owner' where id = auth.uid()` | Rejected by `profiles_prevent_unauthorised_role_change` trigger, even though the RLS UPDATE policy itself would have allowed the row-level update |
-| 22 | Member cannot move themselves to another organisation | Org A member | `update profiles set organisation_id = <Org B id> where id = auth.uid()` | Rejected by the same trigger |
-| 23 | Owner can promote a member to admin | Org A owner | `update profiles set role = 'admin' where id = <Org A member>` | Succeeds |
-| 24 | Admin cannot promote a member to admin | Org A admin | `update profiles set role = 'admin' where id = <Org A member>` | Rejected — `profiles_update_self_or_owner` only allows owner to update someone else's row |
+| 17 | Member cannot hard-delete a project | Org A member | `delete from projects where id = <own org's project>` | Rejected — no DELETE policy exists on `projects` for any role (ADR-010) |
+| 18 | Admin cannot hard-delete a project | Org A admin | `delete from projects where id = <own org's project>` | Rejected — same reason; there is no `is_admin()`-gated DELETE policy any more |
+| 19 | Owner cannot hard-delete a project either | Org A owner | `delete from projects where id = <own org's project>` | Rejected — no role, including owner, has a client-facing DELETE path on `projects` |
+| 20 | Owner can archive a project | Org A owner | `update projects set status = 'archived' where id = <own org's project>` | Succeeds — via `projects_update_same_org`, the correct routine-removal path per ADR-010 |
+| 21 | Member cannot hard-delete a customer | Org A member | `delete from customers where id = <own org's customer>` | Rejected — no DELETE policy exists on `customers` for any role (ADR-010) |
+| 22 | Admin cannot hard-delete a customer | Org A admin | `delete from customers where id = <own org's customer>` | Rejected — same reason |
+| 23 | Owner cannot hard-delete a customer either | Org A owner | `delete from customers where id = <own org's customer>` | Rejected — no role, including owner, has a client-facing DELETE path on `customers` |
+| 24 | Admin can archive a customer | Org A admin | `update customers set status = 'archived' where id = <own org's customer>` | Succeeds — via `customers_update_same_org`, the correct routine-removal path per ADR-010 |
+| 25 | Member cannot promote themselves to owner | Org A member | `update profiles set role = 'owner' where id = auth.uid()` | Rejected by `profiles_prevent_unauthorised_role_change` trigger, even though the RLS UPDATE policy itself would have allowed the row-level update |
+| 26 | Member cannot move themselves to another organisation | Org A member | `update profiles set organisation_id = <Org B id> where id = auth.uid()` | Rejected by the same trigger |
+| 27 | Owner can promote a member to admin | Org A owner | `update profiles set role = 'admin' where id = <Org A member>` | Succeeds |
+| 28 | Admin cannot promote a member to admin | Org A admin | `update profiles set role = 'admin' where id = <Org A member>` | Rejected — `profiles_update_self_or_owner` only allows owner to update someone else's row |
 
 ## Referential integrity under deletion
 
 | # | Test | Actor | Action | Expected Result |
 |---|---|---|---|---|
-| 25 | Deleted customer leaves project intact | Org A admin | Delete a customer linked to a project, then read the project | Project row still exists; `projects.customer_id` is now `null` (ON DELETE SET NULL) |
-| 26 | Cannot delete an organisation with any profile remaining | `service_role` (bypasses RLS, tests the FK constraint itself, not RLS) | `delete from organisations where id = <org with any profile>` | Rejected — FK `RESTRICT` on `profiles.organisation_id` |
-| 27 | Cannot delete an organisation with any project remaining | `service_role` | `delete from organisations where id = <org with any project>` | Rejected — FK `RESTRICT` on `projects.organisation_id` |
-| 28 | Cannot delete an organisation with any customer remaining | `service_role` | `delete from organisations where id = <org with any customer>` | Rejected — FK `RESTRICT` on `customers.organisation_id` |
+| 29 | Hard-deleted customer leaves project intact | `service_role` (the only path capable of a hard delete at all, per ADR-010 — this test exercises the FK behaviour, not RLS) | Delete a customer linked to a project, then read the project | Project row still exists; `projects.customer_id` is now `null` (ON DELETE SET NULL) |
+| 30 | Cannot delete an organisation with any profile remaining | `service_role` (bypasses RLS, tests the FK constraint itself, not RLS) | `delete from organisations where id = <org with any profile>` | Rejected — FK `RESTRICT` on `profiles.organisation_id` |
+| 31 | Cannot delete an organisation with any project remaining | `service_role` | `delete from organisations where id = <org with any project>` | Rejected — FK `RESTRICT` on `projects.organisation_id` |
+| 32 | Cannot delete an organisation with any customer remaining | `service_role` | `delete from organisations where id = <org with any customer>` | Rejected — FK `RESTRICT` on `customers.organisation_id` |
 
 ## Known gaps (expected to fail today — tracked, not bugs)
 
 | # | Test | Actor | Action | Expected Result |
 |---|---|---|---|---|
-| 29 | New signup cannot create their own organisation yet | Freshly authenticated user, no profile | `insert into organisations (...)` | Rejected — no INSERT policy exists; this is the ADR-008 bootstrap RPC gap, not a defect in 005 |
-| 30 | Owner can currently demote the organisation's only remaining owner | Org A owner (sole owner) | `update profiles set role = 'member' where id = auth.uid()` | **Currently succeeds** — this is the ADR-009 gap. Re-run this test once last-owner protection ships and update the expected result to "Rejected." |
+| 33 | New signup cannot create their own organisation yet | Freshly authenticated user, no profile | `insert into organisations (...)` | Rejected — no INSERT policy exists; this is the ADR-008 bootstrap RPC gap, not a defect in 005 |
+| 34 | Owner can currently demote the organisation's only remaining owner | Org A owner (sole owner) | `update profiles set role = 'member' where id = auth.uid()` | **Currently succeeds** — this is the ADR-009 gap. Re-run this test once last-owner protection ships and update the expected result to "Rejected." |
 
 ---
 
 ## Related documents
 
 - `supabase/migrations/005_phase1_rls.sql` — the policies under test
-- `docs/decisions/README.md` — ADR-008 (bootstrap RPC), ADR-009 (last-owner protection)
+- `docs/decisions/README.md` — ADR-008 (bootstrap RPC), ADR-009 (last-owner protection), ADR-010 (soft delete strategy)
