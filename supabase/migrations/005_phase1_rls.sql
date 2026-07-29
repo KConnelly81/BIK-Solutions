@@ -21,16 +21,32 @@
 --            functions rather than checking status per-policy. See those
 --            functions' comments for the full consequence analysis.
 --
---            Rerunnability: every object created or modified in this
---            migration (the internal schema and its grants, all four
---            helper functions, all ten policies, the self-escalation
---            trigger and its function) uses CREATE OR REPLACE, DROP ... IF
---            EXISTS, or otherwise idempotent GRANT/REVOKE statements, so
---            this migration is safely rerunnable in the intended clean
---            development workflow. This is stated because it was not true
---            of an earlier version of this file (the ten CREATE POLICY
---            statements had no DROP POLICY IF EXISTS guard) — see
---            docs/PHASE_1_DATABASE_REVIEW.md finding M1.
+--            Rerun behaviour, stated precisely rather than as a blanket
+--            "idempotent" claim:
+--              - Policy definitions are safely replaceable: every
+--                CREATE POLICY is preceded by a matching
+--                DROP POLICY IF EXISTS.
+--              - Functions use CREATE OR REPLACE FUNCTION, safe for
+--                identical re-application of this file as written. This
+--                is not a general schema-migration guarantee — if a
+--                function's parameter list or return type were ever
+--                changed in a future edit, CREATE OR REPLACE would need
+--                to be preceded by an explicit DROP FUNCTION; not a
+--                concern for re-running this file unchanged.
+--              - Schema creation (`CREATE SCHEMA IF NOT EXISTS`) and the
+--                GRANT/REVOKE statements are naturally idempotent —
+--                reissuing an already-held or already-revoked privilege
+--                is a no-op, not an error.
+--              - The trigger uses CREATE OR REPLACE TRIGGER (PG14+),
+--                safe for identical re-application, same caveat as
+--                functions above.
+--            Taken together: this migration is intended for one-time,
+--            ordered application as a single transaction, and is safely
+--            rerunnable as a complete unit in that mode. This precise
+--            wording replaces an earlier, looser "idempotent" claim in
+--            this file — see docs/PHASE_1_DATABASE_REVIEW.md finding M1
+--            (original defect) and its second-pass follow-up on exact
+--            rerun language.
 -- Phase:     1 (Foundation)
 -- Depends on: 001_create_organisations.sql, 002_create_profiles.sql,
 --             003_create_customers.sql, 004_create_projects.sql
@@ -334,6 +350,14 @@ create or replace trigger profiles_prevent_unauthorised_role_change
   before update on public.profiles
   for each row
   execute function public.prevent_unauthorised_profile_role_change();
+
+-- Same reasoning as public.set_updated_at() (001): this is a trigger
+-- function, invoked by the executor when profiles is updated, not called
+-- directly by any client role. It needs no EXECUTE grant to any client
+-- role to function, and the default PUBLIC grant is revoked accordingly.
+revoke all on function public.prevent_unauthorised_profile_role_change() from public;
+revoke all on function public.prevent_unauthorised_profile_role_change() from anon;
+revoke all on function public.prevent_unauthorised_profile_role_change() from authenticated;
 
 -- ============================================================================
 -- customers

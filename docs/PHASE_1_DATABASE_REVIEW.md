@@ -9,11 +9,19 @@
 
 ## 1. Executive Assessment
 
-## **NOT READY** — correction pass applied 2026-07-29; unchanged from READY per explicit instruction pending a full fresh re-review
+## **READY WITH ACCEPTED LIMITATIONS** (database schema) — revised 2026-07-29, second complete review pass
 
-**Update (2026-07-29 correction pass):** C1 (the deployment-blocking missing schema grant), the `status`-reversal half of H1, and M1 (non-idempotent policies) have been corrected directly in their original migration files. Suspension has additionally been given real enforcement (see ADR-013) — a strictly larger fix than H1 originally called for, since the review's own finding noted suspension had *no* enforced access effect at all, not just a self-reversal gap. H2 (the `REPEATABLE READ` limitation) has been **documented, not redesigned**, per explicit instruction — it remains an accepted, currently-unreachable limitation, not a corrected defect. Per instruction, the executive assessment is **not** being upgraded to READY: a HIGH finding (H2) remains open by design, and this correction pass — while thorough — is not the same thing as the "reviewed again as a complete set" pass that would justify that upgrade. Practically, the severity of what remains open has dropped substantially: the one finding that would have broken the application outright is fixed, and everything remaining is either an accepted, documented, currently-unreachable limitation, or a lower-severity item not yet actioned. See §12 for the itemised status of every finding.
+**This is a change from the first correction pass's NOT READY verdict**, on the basis of a full second review of `001`–`007` as one complete release, per this pass's explicit scope. The basis for the upgrade:
 
-Original assessment, for context: one confirmed defect in `005_phase1_rls.sql` would have made every RLS-protected query fail for every authenticated user the moment these migrations were applied — not a subtle security gap, an outright functional break. That defect (C1) is now corrected. This assessment was, and remains, deliberately not softened by the amount of good work already in this schema.
+- Both findings that were genuinely blocking are now corrected and re-verified by re-reading the corrected files in full: **C1** (missing `internal` schema `USAGE` grant — would have broken every authenticated request) and the access-enforcement half of **H1** (suspension had no effect — closed by ADR-013). Both are structural, code-level fixes, not documentation.
+- **H2** (last-owner protection's `REPEATABLE READ` limitation) remains open **by deliberate design**, not oversight — it is unreachable through the current API surface (PostgREST only ever runs at `READ COMMITTED`), fully documented in three places (`007`, ADR-009, this document), and comes with a concrete recommendation (route future ownership-management work through a controlled RPC) for whoever eventually needs to lift the limitation. This is exactly what "ACCEPTED LIMITATIONS" — as distinct from "READY" outright — exists to capture: a known, bounded, documented gap, not an unknown one.
+- **M5** and **M6** — the two items that remained genuinely open after the first correction pass — have both been resolved by rigorous analysis in this second pass (§14, and the `GET STACKED DIAGNOSTICS` analysis in the M5 finding below), not deferred further.
+- **M1**'s rerun-language has been made precise rather than a blanket claim (per this pass's explicit instruction), and **L1** (trigger-function execute grants) is now corrected, closing every item that was open after the first pass except the two narrow, explicitly-scoped test-coverage gaps noted in §9 (which remain low-priority and out of scope by design, not overlooked).
+- A full function-execution-privilege audit (§13) was performed as new work in this pass and found and corrected one class of defect (L1) consistently across every trigger function in the schema.
+
+**Why not unconditional READY:** H2 is a real, permanent-for-now limitation, not a temporary gap being tracked to zero — "ACCEPTED LIMITATIONS" is the accurate label, not "READY" unqualified. Nothing in `001`–`007` has been empirically executed against a live database at any point in this process (every review, including this one, has been static analysis and code reading) — the pre-deployment procedure in §17 is not a formality, it is the first time any of this is actually run.
+
+**Database vs application — read §15 before treating this verdict as "ship the product."** This assessment covers the **database schema only**. The live application is not close to cutover-ready — see §15 for the explicit, separate list of what blocks connecting real users to this schema, none of which is a database concern.
 
 ---
 
@@ -134,7 +142,7 @@ There is no `CustomerStore` or equivalent anywhere in `js/toolkit/` or `js/tools
 
 ### M5 — `GET STACKED DIAGNOSTICS ... CONSTRAINT_NAME` behaviour for a partial unique *index* violation is unverified
 
-**Status: OPEN, unchanged.** Not addressed in this correction pass — remains an empirical verification item for first deployment (test #43).
+**Status: RESOLVED by analysis (2026-07-29, second review pass). No code change required.** PostgreSQL's internal unique-violation reporting path (`errtableconstraint()`, invoked from the btree unique-check code) populates the constraint-name diagnostic field using the *index relation's name*, for both a plain `CREATE UNIQUE INDEX` and a named table constraint added via `ALTER TABLE ... ADD CONSTRAINT ... UNIQUE` — the diagnostic field does not distinguish between the two creation paths, because both are enforced through the same underlying unique-index mechanism. `organisations_abn_unique_idx` is therefore correctly identified by `006`'s `GET STACKED DIAGNOSTICS v_constraint_name = CONSTRAINT_NAME;` regardless of being a partial index rather than a `pg_constraint` row. This is documented, primary PostgreSQL behaviour (the same mechanism `ON CONFLICT` and most ORMs rely on to catch a specific unique violation by name), not an assumption. Test #43 (existing) and #86 (new, added this pass) remain as empirical confirmation at first deployment — standard due diligence, not because the conclusion is in doubt.
 
 **Category:** Unverified assumption, low risk.
 
@@ -142,7 +150,7 @@ There is no `CustomerStore` or equivalent anywhere in `js/toolkit/` or `js/tools
 
 ### M6 — Deleting a sole owner's `auth.users` row will be silently rolled back, with a raw Postgres error
 
-**Status: OPEN, unchanged.** Not addressed in this correction pass. Now additionally relevant to ADR-013's recovery-RPC recommendation — whoever designs that RPC should read this finding alongside it, since the two interact (a recovery RPC touching a suspended organisation's ownership should account for this cascade behaviour too).
+**Status: RESOLVED — confirmed by analysis and formally documented (2026-07-29, second review pass). No code change; this was never a code defect.** Promoted to its own full analysis in §14 below, per the second review's explicit instruction that this be treated as "the most important remaining issue," not an edge-case footnote. Confirmed: cascaded deletes fire ordinary triggers (standard, documented PostgreSQL behaviour), so `007`'s deferred `profiles_last_owner_guard` correctly rejects deletion of a sole active owner's `auth.users` row, rolling back the entire transaction — the account is not deleted. **The required administrative sequence (assign a second owner first, or suspend the organisation first) is now documented in ADR-012**, not left implicit. Tests #87–89 added to confirm empirically.
 
 **Category:** Undocumented operational consequence (beneficial side effect, but needs a runbook note).
 
@@ -154,7 +162,7 @@ There is no `CustomerStore` or equivalent anywhere in `js/toolkit/` or `js/tools
 
 ### L1 — Trigger functions retain the default `PUBLIC EXECUTE` grant
 
-**Status: OPEN, unchanged.** Not in scope for this correction pass (not listed in the corrections requested). Still recommended, still not exploitable.
+**Status: CORRECTED (2026-07-29, second review pass).** `public.set_updated_at()` (`001`), `public.prevent_unauthorised_profile_role_change()` (`005`), and `public.enforce_last_owner_on_profiles()`/`public.enforce_last_owner_on_organisations()` (`007`) now each have the default `PUBLIC` execute grant explicitly revoked, from `public`, `anon`, and `authenticated`. Reclassified from "hygiene" to a corrected item per this pass's explicit instruction to treat unintended function execution as a defect rather than documentation-only — the practical exploitability assessment is unchanged (Postgres refuses to invoke a `trigger`-returning function outside trigger context regardless of grants), but the privilege state itself is now explicit rather than inherited-and-unreviewed.
 
 
 `public.set_updated_at()` (`001`), `public.prevent_unauthorised_profile_role_change()` (`005`), and `public.enforce_last_owner_on_profiles()` / `public.enforce_last_owner_on_organisations()` (`007`, both `SECURITY DEFINER`) never have their default Postgres `PUBLIC EXECUTE` grant revoked, unlike every other function in this schema. **Not practically exploitable** — PostgreSQL refuses to invoke a `trigger`-returning function outside of trigger context regardless of privileges, so this cannot be called directly via RPC or a raw connection. Recommend revoking anyway, for consistency with this schema's own stated least-privilege posture and to avoid a future reader assuming an inconsistency means something is missed.
@@ -374,9 +382,161 @@ Documented approach only, per your instruction — no destructive scripts create
 
 ---
 
+---
+
+## 13. Function Execution Privilege Audit (second review pass)
+
+Every function across `001`–`007`, its intended caller, and its final privilege state after this pass's corrections.
+
+| Function | Migration | Type | Intended caller | Final privilege state | Justification |
+|---|---|---|---|---|---|
+| `public.set_updated_at()` | `001` | Trigger function | None (executor-invoked only) | Default `PUBLIC` grant revoked from `public`/`anon`/`authenticated`; no grants held by any client role | Triggers do not require the DML-issuing role to hold `EXECUTE` on the trigger function — trigger firing is authorised by the invoking role's table-level (RLS-governed) privilege, not a direct function call. **Corrected this pass (L1).** |
+| `public.prevent_unauthorised_profile_role_change()` | `005` | Trigger function | None | Same as above | Same reasoning. **Corrected this pass.** |
+| `public.enforce_last_owner_on_profiles()` | `007` | Trigger function (`SECURITY DEFINER`) | None | Same as above | Same reasoning — `SECURITY DEFINER` governs what the function's *body* can see once invoked, not who may invoke it; it still does not need a client-role grant. **Corrected this pass.** |
+| `public.enforce_last_owner_on_organisations()` | `007` | Trigger function (`SECURITY DEFINER`) | None | Same as above | Same reasoning. **Corrected this pass.** |
+| `internal.current_organisation_id()` | `005` | RLS helper (`SECURITY DEFINER`) | `authenticated`, evaluated as part of policy expressions | `EXECUTE` granted to `authenticated` only; revoked from `public`/`anon` | Genuinely different from a trigger function: RLS policy expressions are evaluated *as the querying role* (here, `authenticated`, since PostgREST executes as that role) — a function referenced inside a policy's `USING`/`WITH CHECK` clause is an ordinary function call from the privilege-checking system's perspective, requiring the querying role to hold `EXECUTE`, independent of the function's own `SECURITY DEFINER` status (which governs the *body's* privileges once entered, not who may enter it). This is the minimum grant required for every policy in `005` to function at all. |
+| `internal.current_role()` | `005` | RLS helper (`SECURITY DEFINER`) | `authenticated` | Same as above | Same reasoning. |
+| `internal.is_owner()` | `005` | RLS helper (`SECURITY INVOKER`, default) | `authenticated` | Same as above | Called directly inside policy expressions (`organisations_update_owner_only`, the self-escalation trigger's condition); same requirement. |
+| `internal.is_admin()` | `005` | RLS helper (`SECURITY INVOKER`, default) | `authenticated` | Same as above | Not currently referenced by any policy (ADR-010 removed the policies that used it) — granted for consistency with its siblings and as ready infrastructure; holding an unused grant on an already-minimal, side-effect-free boolean function is not a privilege-hygiene concern the way an unrevoked default grant on a writing/definer trigger function would be. |
+| `internal.assert_organisation_has_active_owner()` | `007` | Internal helper (`SECURITY DEFINER`) | Only the two `SECURITY DEFINER` trigger functions above, which run as the schema-owning role and therefore have implicit `EXECUTE` on functions that role owns | No grant to any client role; default `PUBLIC` grant revoked | Never called from a policy expression or directly by a client — confirmed already-minimal before this pass, re-verified here. |
+| `public.bootstrap_organisation()` | `006` | Client-callable RPC (`SECURITY DEFINER`) | `authenticated`, via `supabase.rpc(...)` | `EXECUTE` granted to `authenticated` only; revoked from `public`/`anon` | The one function in this schema genuinely meant to be called directly by a client. Confirmed unchanged and correct — kept callable only by `authenticated`, per this pass's explicit instruction. |
+
+**Summary:** four trigger functions corrected (default grant revoked); four RLS-helper functions confirmed as correctly requiring `authenticated` `EXECUTE` (not a hygiene issue — a functional requirement, justified above); one internal helper confirmed already-minimal; one RPC confirmed unchanged and correctly scoped. No function in this schema grants more privilege than its role requires, after this pass.
+
+---
+
+## 14. `auth.users` Deletion Interaction — Confirmed Analysis
+
+Per this pass's explicit framing as the most important remaining issue.
+
+**Mechanism, traced precisely:**
+1. `profiles.id references auth.users(id) on delete cascade` (`002`). Deleting an `auth.users` row causes PostgreSQL to delete the corresponding `profiles` row as part of enforcing the foreign key, within the same transaction as the `auth.users` `DELETE`.
+2. Cascaded deletes fire ordinary row-level triggers on the referencing table exactly as an explicit `DELETE` would — this is standard, documented PostgreSQL behaviour, not something specific to or dependent on this schema's design.
+3. `profiles_last_owner_guard` (`007`) is one such trigger. Being `DEFERRABLE INITIALLY DEFERRED`, it does not fire immediately — it fires at transaction commit, by which point the cascaded `profiles` deletion has already been applied within the (still uncommitted) transaction.
+4. `internal.assert_organisation_has_active_owner()` — invoked by that deferred trigger — queries the current state of `organisations`/`profiles` for the affected organisation. If the deleted profile was that organisation's sole active owner and the organisation is `status = 'active'`, the count is zero, and the function raises.
+5. A deferred constraint trigger raising an exception at commit time aborts the **entire transaction** — not just the cascaded `profiles` deletion, the originating `auth.users` `DELETE` too.
+
+**Conclusion, stated directly:** deleting the sole active owner's `auth.users` row is rejected outright. The transaction rolls back. The account is not deleted. This holds for any ordinary role performing the deletion — including Supabase's Auth admin API, which performs a genuine SQL `DELETE` against `auth.users` — because the FK cascade and trigger firing are enforced at the database level, independent of which client or service issued the statement. The only theoretical bypass is a role with trigger-suppression capability (`SET session_replication_role = replica`, superuser-only), which is the same class of last-resort, must-be-logged action already documented in §11's rollback/recovery guidance — not a routine administrative path, and not weakened or newly enabled by anything in this review.
+
+**This was already correct database behaviour before this review pass — no SQL was changed as a result of this analysis.** What was missing was the explicit, documented administrative procedure for the two situations where a sole owner's account genuinely does need to be deleted (a real GDPR erasure request, an offboarding). That procedure is now recorded in **ADR-012**:
+
+1. **Assign a second active owner first**, then delete the original owner's account — after the cascade, one active owner remains.
+2. **Suspend the organisation first** (`service_role`, per ADR-013), then delete the sole owner's account — `007`'s invariant does not apply to a non-active organisation, so the deletion succeeds; the organisation remains suspended (and inaccessible via the ordinary API, per ADR-013) until a separate recovery action reactivates it with a valid owner in place.
+
+Neither requires a schema change. Both are already correctly supported by the existing `007` trigger. Tests #87–89 (`docs/phase1-rls-test-plan.md`) confirm this empirically once applied to a test project. **The last-owner invariant was not weakened anywhere in this analysis or this review pass** — the two-step procedure above is the safer alternative to weakening it, exactly as instructed.
+
+---
+
+## 15. Database Deployment Readiness vs Application Cutover Readiness
+
+Deliberately separated, per this pass's explicit instruction. These are two different questions with two different answers.
+
+### Database deployment readiness: READY WITH ACCEPTED LIMITATIONS
+
+Nothing about the **schema itself** — its tables, constraints, indexes, RLS policies, helper functions, the bootstrap RPC, or the last-owner protection — blocks applying `001`–`007` to a Supabase project, subject to completing §17's pre-deployment procedure and §18's post-deployment validation first. The one accepted limitation (H2) does not block this: it constrains what *future* server-side code must avoid (opening a `REPEATABLE READ` transaction around ownership changes), not anything about deploying the schema as written.
+
+### Application cutover readiness: NOT READY, and not close
+
+Connecting the live BIK Solutions application to this schema requires all of the following, **none of which are database concerns**, and none of which have been started:
+
+1. **Supabase client/service integration.** There is currently no `@supabase-js` (or equivalent) integration anywhere in `js/`. The entire live app runs against `localStorage`. This is a substantial, net-new engineering effort — auth flow (sign-up calling `bootstrap_organisation()`, sign-in, session handling), a data-access layer for `customers`/`projects` replacing `project-store.js`, error handling for RLS rejections, etc.
+2. **Dollar-to-cents conversion** at whatever boundary is chosen (§8a, decision 1) — not yet implemented.
+3. **`complete` → `completed` status mapping** (§8a, decision 2) — not yet implemented, and blocks any migration of existing localStorage project data.
+4. **Customer extraction/deduplication** (§8a, decision 3) — the one-time backfill from scattered per-project client fields into `customers` has not been designed, let alone built.
+5. **`contractRef` mapping decision** — still open (§8, §12), blocks any project data migration script.
+6. **A localStorage migration or reset strategy** — for existing users/beta testers, a decision is needed on whether existing `localStorage` data is migrated into the new schema, or whether Phase 2 launches as a clean slate with existing local data left in place/exported. Not addressed by this review; a product decision, not a database one.
+7. **A suspended-organisation recovery workflow**, if suspension is to be used operationally before the future recovery RPC (§6, §17) exists — `service_role` administration is sufficient for Phase 1's actual needs (§6's conclusion), but whoever operates the platform needs to know this is a manual step today.
+
+**None of items 1–7 block deploying the database schema itself.** They block the separate, much larger effort of switching the production application over to use it.
+
+---
+
+## 16. Test Execution Plan
+
+Every test in `docs/phase1-rls-test-plan.md` (89 total after this pass), categorised by how it must be run, with a safe execution order for a freshly-migrated non-production Supabase project.
+
+### Categories
+
+| Category | What it means | Test IDs |
+|---|---|---|
+| Static migration inspection | Code review, not a runtime call | 45, 72, 81 |
+| Supabase client test as `anon` | Unauthenticated client, no session | 7, 8, 9, 10, 38 |
+| Supabase client test as `authenticated` | A specific, real authenticated session with a known profile/role | 1–6, 11–13, 16, 17–28, 35–37, 39–43, 46–47, 50, 60–68, 70, 77–80, 82–85 |
+| SQL Editor / direct connection test (`service_role` or explicit role assumption) | Requires `service_role` privileges, or setting `role`/`request.jwt.claims` directly in a SQL session — not reachable via the ordinary client SDK | 14, 15, 18–24, 29–34, 48, 49, 51, 54–58, 63–65 (owner-actor tests reachable via client SDK using an owner session; included here only where the test explicitly specifies `service_role`), 69, 71, 73, 74, 86–89 |
+| Concurrent two-session test | Requires two genuinely overlapping sessions/connections, not expressible as a single sequential script | 44, 52, 53 |
+| Documented-limitation test (not asserting correctness) | Records an accepted limitation rather than proving correct behaviour | 76 |
+
+(Several tests specify an "owner" or "admin" actor without requiring `service_role` — these are reachable via the ordinary client SDK using that user's own session, and are listed under `authenticated`. Tests explicitly written against `service_role` in the test plan are listed under the SQL Editor category regardless of which table they touch.)
+
+### Safe execution order
+
+1. **Static migration inspection** (45, 72, 81) — no database required; can be done before or independent of any deployment.
+2. **Test 59 first, before any other runtime test.** This is the empirical confirmation of C1's fix. Every other authenticated test assumes it passes.
+3. **Anonymous access tests** (7–10, 38) — cheap, no fixture data required, confirm the baseline deny-by-default posture before testing anything more specific.
+4. **Bootstrap tests** (35–45, excluding 44) — these create the first real organisations/profiles the rest of the plan depends on. Run in a fresh project with no pre-seeded fixture data, since several assert exact counts.
+5. **Concurrent bootstrap test** (44) — run once ordinary bootstrap is confirmed working, before building further fixture data on top of a possibly-inconsistent state.
+6. **Seed remaining fixtures** (Org A, Org B, multiple roles per org, as `docs/phase1-rls-test-plan.md`'s "How to run this" section describes) via `service_role`.
+7. **Organisation isolation, role behaviour, and referential-integrity tests** (1–6, 11–34, 46–58, 60–72, 77–85, 87–89) — the bulk of the plan, safe to run in any order once fixtures exist, except:
+8. **Concurrent demotion/suspension tests** (52, 53) — run these deliberately, in isolation, immediately before or after step 7 rather than interleaved with it, since they depend on precise fixture state (exactly two active owners) that other tests in step 7 might otherwise mutate.
+9. **Migration rerun tests** (73, 74) — run **last**, since they re-apply migration files against a database that already has fixture data in it; confirm this succeeds without disturbing existing rows (idempotent `CREATE POLICY`/`CREATE OR REPLACE FUNCTION` do not touch table data).
+10. **Documented-limitation test** (76) — optional, run only if specifically validating the `REPEATABLE READ` analysis; not part of the pass/fail gate for deployment readiness, since it is expected to demonstrate the limitation, not prove correctness.
+
+---
+
+## 17. Exact Pre-Deployment Procedure
+
+1. Confirm the deployment role: identify which Postgres role will execute `001`–`007` against the target project, and confirm that role owns every object it creates (standard for a fresh Supabase project connecting via the Dashboard SQL editor, CLI, or the `apply_migration` MCP tool — but confirm, don't assume, per §7's original note on this).
+2. Create or select a **non-production** Supabase project for first application. Never apply first to `hpcqncghvdrlvufxfdnd` (or any project with real user data) directly.
+3. Apply `001` through `007`, strictly in numerical order, as one migration run.
+4. Run §16, steps 1–2 (static inspection, test 59) immediately after application, before creating any further test data.
+5. If test 59 fails: stop. Do not proceed to further tests or to any other project. Re-verify the `grant usage on schema internal to authenticated;` statement in `005` was actually applied (`select has_schema_privilege('authenticated', 'internal', 'usage');` as a direct diagnostic query).
+6. If test 59 passes: proceed through §16's remaining steps in order.
+7. Do not proceed to production application until every test in §16 has been run and every result matches its documented expectation (including the two explicitly-expected-to-be-limited tests, 34 and 76, which should show their documented limitation, not an unexpected error).
+
+---
+
+## 18. Exact Post-Deployment Validation Procedure
+
+Distinct from §17: this is what to check *after* the schema is live on the target project (test or production), before declaring that specific deployment done.
+
+1. **Privilege re-verification**, direct SQL: `select grantee, privilege_type from information_schema.role_usage_grants where object_schema = 'internal';` — confirm exactly one row (`authenticated`, `USAGE`), nothing for `anon` or `PUBLIC`.
+2. **Function grant re-verification**: `select routine_name, grantee, privilege_type from information_schema.role_routine_grants where routine_schema in ('public','internal');` — confirm the exact grant set matches §13's table (four `internal.*` functions + `bootstrap_organisation()` granted to `authenticated` only; every trigger function granted to nobody).
+3. **Policy inventory check**: `select schemaname, tablename, policyname, cmd, roles from pg_policies where schemaname = 'public';` — confirm exactly ten policies, matching `005`'s definitions, all scoped `{authenticated}`.
+4. **Trigger inventory check**: confirm `organisations_set_updated_at`, `profiles_set_updated_at`, `customers_set_updated_at`, `projects_set_updated_at`, `profiles_prevent_unauthorised_role_change`, `profiles_last_owner_guard`, `organisations_last_owner_guard` all exist, and that the two `_last_owner_guard` triggers show `tgdeferrable` and `tginitdeferred` as true (`select tgname, tgdeferrable, tginitdeferred from pg_trigger where tgname like '%last_owner_guard';`).
+5. **Run the full test suite** (§16) if not already done as part of §17.
+6. **Confirm zero unexpected rows**: `select count(*) from organisations; select count(*) from profiles; select count(*) from customers; select count(*) from projects;` — should reflect only the test fixtures created during validation, nothing unexpected left over from a failed or partial earlier attempt.
+7. **Sign off** by recording the date, the project this was validated against, and the result of every §16 test in a deployment log (not specified further here — a product/ops decision on where that log lives, not a database concern).
+
+---
+
+## 19. Disposition of Every Finding (Second Review Pass Summary)
+
+| Finding | Original severity | Status after this pass |
+|---|---|---|
+| C1 — missing `internal` schema `USAGE` grant | Critical | **Corrected.** Re-verified by re-reading `005` in full this pass. |
+| H1 — `profiles.status` self-reversal + no access enforcement | High | **Corrected.** Trigger extended; suspension enforcement added (ADR-13). Re-verified this pass. |
+| H2 — last-owner protection unsafe under `REPEATABLE READ` | High | **Accepted limitation.** Documented in three places; not reachable via current API; recommendation recorded for future ownership-management work. |
+| M1 — non-idempotent `CREATE POLICY` statements | Medium | **Corrected**, and rerun language made precise this pass (item 7). |
+| M2 — money storage mismatch (cents vs dollar-float) | Medium | **Deferred requirement**, decision recorded (§8a); implementation not yet built; blocks application cutover only (§15). |
+| M3 — project status value mismatch (`complete`/`completed`) | Medium | **Deferred requirement**, decision recorded (§8a); implementation not yet built; blocks application cutover only. |
+| M4 — no existing customer data model | Medium | **Deferred requirement**, decision recorded (§8a); extraction/dedup design not yet built; blocks application cutover only. |
+| M5 — unverified bootstrap diagnostic behaviour | Medium | **Resolved by analysis** this pass. No code change. Tests 43/86 remain as empirical confirmation. |
+| M6 — `auth.users` deletion / last-owner interaction | Medium | **Resolved by analysis and formally documented** this pass (§14, ADR-012). No code change — behaviour was already correct; the procedure was the gap, now closed. |
+| L1 — trigger functions retain default `PUBLIC` execute | Low | **Corrected** this pass (§13). |
+| L2 — `007`'s stated dependencies broader than required | Low | **Still open.** Not in scope for this pass. Cosmetic only. |
+| L3 — `enforce_last_owner_on_organisations` fires on every `UPDATE` | Low | **Still open, and still not recommended to act on** — no query pattern justifies the optimisation yet. |
+| New (this pass) — `profiles` INSERT/DELETE untested | Test-coverage gap | **Closed.** Tests 77–81 added. |
+| New (this pass) — `customers` cross-org INSERT/UPDATE untested | Test-coverage gap | **Closed.** Tests 82–85 added. |
+
+**Remaining blockers to unconditional READY:** none that are code defects. H2 remains open by design (an accepted limitation, not a blocker to deployment). L2/L3 are cosmetic and explicitly not worth acting on yet.
+
+**Accepted limitations, stated together:** (1) last-owner protection is not safe under an explicit `REPEATABLE READ` transaction — mitigated by the fact that no current code path opens one, and by the documented recommendation to route future ownership-management work through a controlled RPC; (2) a suspended organisation cannot be reactivated through the ordinary tenant-scoped API — `service_role` administration is required until a future, narrowly-scoped recovery RPC is designed (§6: confirmed not to make Phase 1 unusable, since suspension itself is not yet triggered by any automated process).
+
+---
+
 ## Related documents
 
 - `supabase/migrations/001`–`007` — the migrations under review
-- `docs/decisions/README.md` — ADR-001–012
-- `docs/phase1-rls-test-plan.md` — the test plan referenced throughout §9
+- `docs/decisions/README.md` — ADR-001–013
+- `docs/phase1-rls-test-plan.md` — the test plan referenced throughout §9 and §16 (89 tests after this pass)
 - `js/toolkit/project-store.js`, `js/toolkit/calculator.js` — the live data models compared in §8
