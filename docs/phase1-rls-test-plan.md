@@ -97,8 +97,31 @@ Unlike the tables above, these tests call `public.bootstrap_organisation(...)` d
 
 ---
 
+## Last-owner protection (`007_protect_last_owner.sql`)
+
+Unless noted, "Actor" performs the action directly via SQL as that role — several of these specifically exercise `service_role`/direct SQL, since the point of `007` is that RLS bypass must not also bypass this invariant.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 46 | Sole owner cannot demote themselves | Org A sole owner | `update profiles set role = 'member' where id = auth.uid()` | Rejected at commit — "Organisation ... must retain at least one active owner." |
+| 47 | Sole owner cannot suspend themselves | Org A sole owner | `update profiles set status = 'suspended' where id = auth.uid()` | Rejected at commit, same reason |
+| 48 | Sole owner cannot be transferred to another organisation | `service_role` (RLS already blocks this for ordinary callers via 005's `WITH CHECK`; this exercises the non-RLS backstop) | `update profiles set organisation_id = <Org B id> where id = <Org A's sole owner>` | Rejected at commit — the trigger checks the organisation being left (Org A), which would have zero active owners |
+| 49 | Sole owner's profile cannot be deleted | `service_role` | `delete from profiles where id = <Org A's sole owner>` | Rejected at commit |
+| 50 | Non-sole owner can demote themselves | Org A owner (organisation has 2 active owners) | `update profiles set role = 'member' where id = auth.uid()` | Succeeds — the other owner still satisfies the invariant |
+| 51 | Demoting every owner in one multi-row statement is rejected | `service_role`, Org A has exactly 2 owners | `update profiles set role = 'member' where organisation_id = <Org A> and role = 'owner'` | Rejected — the whole statement (both rows) rolls back. The deferred trigger fires once per affected row, but not until the entire statement (and transaction) has already applied both changes, so the first row-firing already observes zero remaining owners |
+| 52 | Two owners demoting themselves concurrently | Org A, exactly 2 active owners, owner X and owner Y in two separate concurrent sessions | Session 1: `update profiles set role='member' where id=X`, commit. Session 2 (started at nearly the same time): `update profiles set role='member' where id=Y`, commit | Exactly one commits successfully; the other is rejected with "must retain at least one active owner." The per-organisation advisory lock in `internal.assert_organisation_has_active_owner` serialises the two commits so the second transaction's check correctly observes the first transaction's already-applied change |
+| 53 | One owner suspended while another is demoted, concurrently | Same setup as #52, but Session 1 suspends X (`status='suspended'`) while Session 2 demotes Y (`role='member'`) | Same outcome as #52 — exactly one of the two commits |
+| 54 | Sequential ownership transfer within one transaction succeeds | `service_role`, Org A has one owner (X) and one member (Y) intended to become the new owner | In one transaction: `update profiles set role='member' where id=X;` then `update profiles set role='owner' where id=Y;` then commit | Succeeds — both statements complete before the deferred trigger runs at commit, by which point Org A has exactly one active owner (Y). This would fail if the trigger were IMMEDIATE rather than deferred, since the first statement alone leaves Org A owner-less mid-transaction |
+| 55 | Reactivating a suspended, owner-less organisation is rejected | `service_role`, Org A is `status='suspended'` with zero active owners | `update organisations set status = 'active' where id = <Org A>` | Rejected at commit — the organisations-side trigger checks for an active owner at the moment status becomes 'active' |
+| 56 | Suspending an organisation with zero active owners is allowed | `service_role`, Org A already has zero active owners (e.g. sole owner was suspended while Org A itself was already suspended) | `update organisations set status = 'suspended' where id = <Org A>` (no-op status-wise, or transitioning further) | Succeeds — the invariant does not apply to non-active organisations |
+| 57 | Bootstrap still succeeds end-to-end | Fresh authenticated user | `select * from public.bootstrap_organisation('Acme Builders', 'Jane Smith')` | Succeeds — both the `organisations` insert and the `profiles` insert (role=owner) complete within one transaction before either deferred trigger fires at commit |
+| 58 | Direct SQL org creation without an accompanying owner is rejected | `service_role` | In one transaction: `insert into organisations (name) values ('Ghost Co');` alone, no profiles insert, then commit | Rejected at commit — the organisations-side trigger finds the new (active-status) organisation has zero active owners |
+
+---
+
 ## Related documents
 
 - `supabase/migrations/005_phase1_rls.sql` — the policies under test
 - `supabase/migrations/006_create_organisation_bootstrap.sql` — the bootstrap RPC under test
-- `docs/decisions/README.md` — ADR-008 (bootstrap RPC), ADR-009 (last-owner protection), ADR-010 (soft delete strategy)
+- `supabase/migrations/007_protect_last_owner.sql` — the last-owner protection under test
+- `docs/decisions/README.md` — ADR-008 (bootstrap RPC), ADR-009 (last-owner protection, implemented in 007), ADR-010 (soft delete strategy), ADR-011 (single organisation membership), ADR-012 (profile lifecycle bound to auth.users)

@@ -223,7 +223,9 @@ What else was evaluated?
 - This is a data-integrity invariant (an org must always have at least one owner), not just an authorisation rule, so it belongs at the database layer alongside the other constraints in this schema, not solely in application code.
 
 **Consequences (+):** The invariant holds regardless of which client or integration performs the write.
-**Consequences (-):** Adds one more piece of logic to design and test before role management ships. Not yet built — tracked as a follow-up alongside or after `005_phase1_rls.sql`, flagged in `002_create_profiles.sql`'s review notes.
+**Consequences (-):** Adds one more piece of logic to design and test before role management ships.
+
+**Implementation:** Built in `supabase/migrations/007_protect_last_owner.sql` as a pair of `DEFERRABLE INITIALLY DEFERRED` constraint triggers (on `organisations` and `profiles`), backed by a shared `internal.assert_organisation_has_active_owner()` function and a per-organisation `pg_advisory_xact_lock` to correctly serialise concurrent demotions, suspensions, transfers, and deletions that would otherwise race past a naive check. Being constraint triggers rather than RLS policies, they fire regardless of caller — the ordinary authenticated API, a `SECURITY DEFINER` function, `service_role` admin tooling, or direct SQL — closing exactly the gap this ADR describes. Scoped to organisations with `status = 'active'` only; see `007`'s review notes for the explicit assessment of why that scope is safe (reactivating a suspended organisation independently re-validates the invariant, and applying it unconditionally would block the legitimate suspended-organisation administration and privacy workflows ADR-010 and ADR-012 depend on). Tested in `docs/phase1-rls-test-plan.md` #46-58.
 
 **Alternatives considered:** Relying on frontend validation only (rejected — bypassable); relying on RLS policies alone (rejected — RLS authorises actors, it does not naturally express "unless this is the last one" without the same trigger/function logic RLS policies would end up duplicating).
 
