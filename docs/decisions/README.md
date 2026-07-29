@@ -45,6 +45,8 @@ What else was evaluated?
 | ADR-005 | Document Intelligence Engine architecture | 2026-07-15 | Accepted |
 | ADR-006 | Client-side only storage for Phase 1 document tools | 2026-07-15 | Accepted |
 | ADR-007 | Native browser print-to-PDF over server-side PDF generation | 2026-07-15 | Accepted |
+| ADR-008 | Signup bootstrap as its own reviewed migration, not buried in another | 2026-07-28 | Accepted |
+| ADR-009 | Last-owner protection enforced at the database layer, not frontend-only | 2026-07-28 | Accepted |
 
 ---
 
@@ -179,3 +181,45 @@ What else was evaluated?
 
 **Consequences (+):** Simple, reliable, cost-free, no maintenance.
 **Consequences (-):** User must select "Save as PDF" in the print dialog — one extra click. Header/toolbar content requires explicit hiding via print CSS (implemented). Cannot generate PDFs programmatically or email them automatically. Will migrate to server-side generation (e.g. Puppeteer/Playwright or a PDF API) in Phase 2 when automated delivery is required.
+
+---
+
+## ADR-008: Signup Bootstrap as Its Own Reviewed Migration
+
+**Date:** 2026-07-28
+**Status:** Accepted
+
+**Context:** The Phase 1 Supabase schema (`organisations`, `profiles`, `customers`, `projects`) requires a bootstrap path that creates the first `organisations` row and the first `profiles` row (role `owner`) for a new signup, atomically, via a `SECURITY DEFINER` function or Edge Function. This need was identified while building `002_create_profiles.sql`.
+
+**Decision:** The signup bootstrap will be its own migration, written and reviewed after the core Phase 1 tables (`001`–`004`) and RLS policies (`005`) are in place and approved — not embedded inside `002_create_profiles.sql` or any other table-creation migration.
+
+**Rationale:**
+- A `SECURITY DEFINER` function is a privilege-escalation surface — it deliberately bypasses RLS, so it deserves a migration (and a review pass) entirely of its own rather than being one clause inside a larger file.
+- The bootstrap function's correctness depends on the final shape of the RLS policies it needs to satisfy (e.g. what role gets assigned, what the first profile is allowed to do immediately after creation) — designing it before 005 exists risks having to rewrite it anyway.
+- Keeps each migration's diff reviewable against a single responsibility, consistent with how `001`–`004` were scoped.
+
+**Consequences (+):** Every privilege-bypassing function in the schema is easy to locate and audit — none of them are hidden inside a table-definition migration.
+**Consequences (-):** New signups cannot actually create an account until this migration lands. This is a known, tracked gap, not an oversight — flagged again in `002_create_profiles.sql`'s trailing comment block.
+
+**Alternatives considered:** Embedding the bootstrap function in `002` (rejected — mixes table DDL with a privileged RPC, and locks in the function's logic before RLS policies exist to validate it against).
+
+---
+
+## ADR-009: Last-Owner Protection Enforced at the Database Layer
+
+**Date:** 2026-07-28
+**Status:** Accepted
+
+**Context:** `profiles.role` (introduced in `002_create_profiles.sql`) allows exactly one of `owner`, `admin`, `member` per user. Nothing currently stops the last remaining `owner` of an organisation from being demoted to a lower role or deleted, which would leave an organisation with no one able to perform owner-level actions (e.g. updating `organisations`, managing other members' roles).
+
+**Decision:** This will be prevented by a controlled, reviewed database-level mechanism — a role-management function and/or a constraint/trigger that rejects the demotion or deletion of an organisation's final active `owner` — rather than by frontend form validation alone, and rather than treating it as fully solved by the ordinary row-level-security policies added in `005_phase1_rls.sql`.
+
+**Rationale:**
+- Frontend validation only stops the official app UI; it does nothing against direct API calls, scripts, or future integrations that write to `profiles` directly.
+- Standard RLS policies (an org member can update rows within their own `organisation_id`) authorise *who* can attempt a role change, but do not by themselves express the *stateful* rule "not if this is the last owner" — that needs either a `BEFORE UPDATE/DELETE` trigger or a dedicated `SECURITY DEFINER` role-change function that checks the invariant before applying it.
+- This is a data-integrity invariant (an org must always have at least one owner), not just an authorisation rule, so it belongs at the database layer alongside the other constraints in this schema, not solely in application code.
+
+**Consequences (+):** The invariant holds regardless of which client or integration performs the write.
+**Consequences (-):** Adds one more piece of logic to design and test before role management ships. Not yet built — tracked as a follow-up alongside or after `005_phase1_rls.sql`, flagged in `002_create_profiles.sql`'s review notes.
+
+**Alternatives considered:** Relying on frontend validation only (rejected — bypassable); relying on RLS policies alone (rejected — RLS authorises actors, it does not naturally express "unless this is the last one" without the same trigger/function logic RLS policies would end up duplicating).
