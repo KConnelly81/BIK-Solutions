@@ -43,11 +43,11 @@ Complete every item below before running any migration. If any item fails, stop 
   git log -1 --oneline
   ```
   Expected: no uncommitted changes. Record the commit hash shown — it goes in the Results Record below.
-- [ ] **Migration order is correct.** Confirm exactly these seven files exist in `supabase/migrations/`, no gaps, no duplicates, no extras:
+- [ ] **Migration order is correct.** Confirm exactly these eight files exist in `supabase/migrations/`, no gaps, no duplicates, no extras (`008` was added 2026-07-29 to correct C2 — see ADR-014 — after `001`–`007` were first deployed; a fresh deployment applies all eight in one pass):
   ```bash
   ls supabase/migrations/
   ```
-  Expected, in this exact order: `001_create_organisations.sql`, `002_create_profiles.sql`, `003_create_customers.sql`, `004_create_projects.sql`, `005_phase1_rls.sql`, `006_create_organisation_bootstrap.sql`, `007_protect_last_owner.sql`.
+  Expected, in this exact order: `001_create_organisations.sql`, `002_create_profiles.sql`, `003_create_customers.sql`, `004_create_projects.sql`, `005_phase1_rls.sql`, `006_create_organisation_bootstrap.sql`, `007_protect_last_owner.sql`, `008_grant_authenticated_table_privileges.sql`.
 - [ ] **No secrets are present in the repository.** From the repository root:
   ```bash
   grep -rEn "service_role.{0,3}key|sb_secret|sk_live|eyJhbGciOi|SUPABASE_SERVICE|postgres://.*:.*@|DATABASE_URL" --include="*.sql" --include="*.md" --include="*.json" --include="*.env*" .
@@ -192,7 +192,29 @@ order by tgname;
 
 **Stop if:** any error, fewer than two rows returned, or either row shows `tgdeferrable=false`/`tginitdeferred=false` — an immediate (non-deferred) version of either trigger would incorrectly reject `bootstrap_organisation()` in Stage 3 below, so this must be confirmed before proceeding.
 
-**All seven migrations applied and verified is the end of "Migration execution." Proceed to Stage 1 only once every verification query above has returned its expected result.**
+### 8. `008_grant_authenticated_table_privileges.sql`
+
+**Added 2026-07-29, after `001`–`007` were first applied and verified.** Not part of the original seven-migration set — added to correct a defect Stage 2 (below) found live: `authenticated` had no baseline table-level `SELECT`/`INSERT`/`UPDATE` grant on any of the four Phase 1 tables, so every request failed with `permission denied for table ...` before RLS was ever evaluated. See `docs/PHASE_1_DATABASE_REVIEW.md` finding C2 and ADR-014 for the full analysis. If you are running this runbook fresh (rather than resuming after this correction), apply `008` immediately after `007`, in the same pass, before proceeding to Stage 1.
+
+**Creates:** no new tables, functions, or policies — purely `GRANT` statements against objects `001`–`004` already created. `organisations`/`profiles`: `SELECT`, `UPDATE`. `customers`/`projects`: `SELECT`, `INSERT`, `UPDATE`. No `DELETE` anywhere (ADR-010). Nothing granted to `anon`.
+
+**Expected successful result:** success, no errors.
+
+**Verification query:**
+```sql
+select table_name, grantee, privilege_type
+from information_schema.role_table_grants
+where table_schema='public'
+  and table_name in ('organisations','profiles','customers','projects')
+  and grantee in ('anon','authenticated')
+  and privilege_type in ('SELECT','INSERT','UPDATE','DELETE')
+order by table_name, grantee, privilege_type;
+```
+**Expected:** exactly ten rows, all `grantee='authenticated'`: `organisations`→SELECT,UPDATE (2); `profiles`→SELECT,UPDATE (2); `customers`→SELECT,INSERT,UPDATE (3); `projects`→SELECT,INSERT,UPDATE (3). No `anon` rows at all, no `DELETE` rows at all, no `INSERT` rows for `organisations`/`profiles`.
+
+**Stop if:** any error, any unexpected row (an `anon` grant, a `DELETE` grant, or an `INSERT` grant on `organisations`/`profiles`), or any expected row missing.
+
+**All eight migrations applied and verified is the end of "Migration execution." Proceed to Stage 1 only once every verification query above has returned its expected result.**
 
 ---
 
@@ -280,6 +302,8 @@ select * from public.bootstrap_organisation('Should Not Work', 'Nobody');
 reset role;
 ```
 **Expected:** all four `select`s return zero rows (not an error — RLS with no matching policy for `anon` yields an empty result, not a permission error, for `SELECT`). The `bootstrap_organisation` call is expected to **error** with a permission-denied message (no `EXECUTE` grant for `anon`), not run.
+
+**Corrected, 2026-07-29 — this expectation was wrong on this project, and finding out why is what led to `008`.** Running this exact block against `hpcqncghvdrlvufxfdnd` produced `ERROR: 42501: permission denied for table organisations` on the very first `select`, not a silent empty result. Investigation (`information_schema.role_table_grants`) found `authenticated` — not just `anon` — had no baseline `SELECT`/`INSERT`/`UPDATE` table grant on any of the four Phase 1 tables, meaning every ordinary authenticated request would fail identically, on the caller's own data as much as anyone else's. This is recorded as finding **C2** (`docs/PHASE_1_DATABASE_REVIEW.md`) and corrected via `008_grant_authenticated_table_privileges.sql` (ADR-014). **The corrected expectation for this block, permanently (not just until `008` is applied):** all four `select`s fail with `permission denied for table ...`, because `008` deliberately grants `anon` nothing — the practical outcome (`anon` sees no data) is unchanged, only the mechanism is. The `bootstrap_organisation` expectation is unaffected either way. If this block instead returns silent empty results in a future Postgres/Supabase version, that would itself be worth investigating, not assuming is an improvement.
 
 **Stop if:** any `select` returns any row, or `bootstrap_organisation` executes successfully as `anon`.
 
@@ -478,14 +502,15 @@ Stop immediately, do not proceed to the next migration or validation stage, and 
 | `005_phase1_rls.sql` | Passed | 2026-07-29 | Claude (BIK Phase 2) | Verification exact match: total_policies=10, authenticated_has_usage=true (empirically confirms C1's fix), anon_has_usage=false, public_has_usage=false, authenticated_can_call_helper=true, escalation_trigger_count=1 |
 | `006_create_organisation_bootstrap.sql` | Passed | 2026-07-29 | Claude (BIK Phase 2) | Verification exact match: function_exists=1, authenticated_can_call=true, anon_can_call=false |
 | `007_protect_last_owner.sql` | Passed | 2026-07-29 | Claude (BIK Phase 2) | Verification exact match: both triggers present, tgdeferrable=true, tginitdeferred=true |
-| Stage 1 — Static inspection | Not started | | | |
-| Stage 2 — Anonymous access | Not started | | | |
-| Stage 3 — Authenticated bootstrap | Not started | | | |
-| Stage 4 — Tenant isolation | Not started | | | |
-| Stage 5 — Role and suspension behaviour | Not started | | | |
-| Stage 6 — Archive and deletion behaviour | Not started | | | |
-| Stage 7 — Last-owner invariant | Not started | | | |
-| Test data cleanup | Not started | | | |
+| `008_grant_authenticated_table_privileges.sql` | Drafted, pending approval — not yet applied | 2026-07-29 | Claude (BIK Phase 2) | Written to correct C2 (below). SQL, live-privilege findings, and verification plan presented to Principal Architect for review before application, per standing instruction never to apply migrations automatically. |
+| Stage 1 — Static inspection | Passed | 2026-07-29 | Claude (BIK Phase 2) | All blocks matched exactly: 4 tables, `internal` schema, all 10 functions, all 7 triggers, RLS enabled on all 4 tables, 10 policies scoped `{authenticated}`, correct grants, zero unintended `authenticated` execution on the five sensitive functions |
+| Stage 2 — Anonymous access | **Blocked — confirmed defect found (C2)** | 2026-07-29 | Claude (BIK Phase 2) | `set local role anon; select * from organisations;` failed with `permission denied for table organisations` instead of the documented "zero rows" expectation. Root cause: `authenticated` (not just `anon`) had no baseline table-level SELECT/INSERT/UPDATE grant on any of the four Phase 1 tables — see C2 in `docs/PHASE_1_DATABASE_REVIEW.md` and ADR-014. Testing paused per stop condition ("any result differs from the documented expectation"); resumes at Stage 2 once `008` is approved and applied. |
+| Stage 3 — Authenticated bootstrap | Blocked | | | Blocked by Stage 2's finding — an authenticated request cannot reach RLS at all until `008` is applied. |
+| Stage 4 — Tenant isolation | Blocked | | | Same reason as Stage 3. |
+| Stage 5 — Role and suspension behaviour | Blocked | | | Same reason as Stage 3. |
+| Stage 6 — Archive and deletion behaviour | Blocked | | | Same reason as Stage 3. |
+| Stage 7 — Last-owner invariant | Blocked | | | Same reason as Stage 3. |
+| Test data cleanup | Not started | | | Three disposable `auth.users` rows created for Stage 3 (`disposable-a/b/c@bik-test.invalid`) remain in place, unused — no `profiles`/`organisations` rows exist yet, since the Stage 2 failure occurred before any test data was written. Will be reused once testing resumes. |
 
 **Status values:** `Not started` / `Passed` / `Failed` / `Blocked` (blocked = could not attempt because an earlier item failed).
 
@@ -494,9 +519,9 @@ Stop immediately, do not proceed to the next migration or validation stage, and 
 - Date: 2026-07-29
 - Tester: Claude (BIK Phase 2 Supabase deployment session)
 - Supabase project ID: `hpcqncghvdrlvufxfdnd`
-- Repository commit hash tested: `60d7a4b`
-- Error details (if any failure occurred): None — all seven migrations and their verification queries passed on the first attempt, no deviation from expected results.
-- Remediation commit (if a confirmed defect required a migration fix): None required.
+- Repository commit hash tested: `60d7a4b` (migrations `001`–`007`); `008` drafted on top, pending approval
+- Error details (if any failure occurred): Stage 2 anonymous-access test failed with `permission denied for table organisations` instead of the documented zero-rows expectation — see C2 above. `001`–`007` themselves had zero failures across all per-migration verifications and Stage 1.
+- Remediation commit (if a confirmed defect required a migration fix): `008_grant_authenticated_table_privileges.sql` — drafted, documented, committed to the repository; **not yet applied to `hpcqncghvdrlvufxfdnd`**, pending explicit approval per standing instruction.
 
 **Note:** Migrations `001`–`007` are applied and structurally verified (Stage 1-equivalent per-migration checks). Stages 1–7's full validation pass (anonymous access, authenticated bootstrap, tenant isolation, role/suspension behaviour, archive/deletion behaviour, last-owner invariant) and test data cleanup have **not** been executed yet and remain the next step before any frontend integration begins.
 

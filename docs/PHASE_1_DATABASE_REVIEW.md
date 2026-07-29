@@ -21,6 +21,8 @@
 
 **Why not unconditional READY:** H2 is a real, permanent-for-now limitation, not a temporary gap being tracked to zero — "ACCEPTED LIMITATIONS" is the accurate label, not "READY" unqualified. Nothing in `001`–`007` has been empirically executed against a live database at any point in this process (every review, including this one, has been static analysis and code reading) — the pre-deployment procedure in §17 is not a formality, it is the first time any of this is actually run.
 
+**Addendum (2026-07-29, post-deployment):** `001`–`007` were subsequently applied to `hpcqncghvdrlvufxfdnd` and structurally verified — every per-migration check in §17/§18 passed exactly as expected, including empirical confirmation of C1's fix. Live behavioural validation (the deployment runbook's Stage 2) then found **C2** — missing baseline table-level `GRANT`s for `authenticated`, a defect this static review's §7 privilege audit did not and could not catch on its own, since it depends on the target project's actual provisioning state, not on anything readable from the migration files. See §2 (C2) and ADR-014. Corrected via `008_grant_authenticated_table_privileges.sql`, additive only, no change to `001`–`007`.
+
 **Database vs application — read §15 before treating this verdict as "ship the product."** This assessment covers the **database schema only**. The live application is not close to cutover-ready — see §15 for the explicit, separate list of what blocks connecting real users to this schema, none of which is a database concern.
 
 ---
@@ -47,6 +49,30 @@
 ```sql
 grant usage on schema internal to authenticated;
 ```
+
+### C2 — Missing baseline table-level GRANTs for `authenticated` on all four Phase 1 tables
+
+**Status: CORRECTED via `008_grant_authenticated_table_privileges.sql` (2026-07-29).** Discovered live, not by static review — Stage 2 (anonymous access) of `docs/PHASE_1_DEPLOYMENT_RUNBOOK.md`, executed against `hpcqncghvdrlvufxfdnd` after `001`–`007` were applied and structurally verified. See ADR-014 for the full decision record.
+
+**Category:** Confirmed defect (deployment-blocking — for `authenticated`, not just `anon`).
+
+**Where:** No migration in `001`–`007` issues a `GRANT` on `public.organisations`/`profiles`/`customers`/`projects` to `authenticated`. The Phase 1 database review's original privilege audit (§7, "Table grants," below) assumed Supabase's standard project provisioning supplies baseline `SELECT`/`INSERT`/`UPDATE`/`DELETE` automatically, with RLS as the sole gate on top. That assumption does not hold on this project.
+
+**What was found:** `set local role anon; select * from organisations;` (Stage 2's documented test) failed with `permission denied for table organisations` instead of the expected silent, RLS-filtered empty result. Direct inspection —
+```sql
+select table_name, grantee, privilege_type from information_schema.role_table_grants
+where table_schema='public' and table_name in ('organisations','profiles','customers','projects')
+  and grantee in ('anon','authenticated');
+```
+— confirmed `authenticated` (and `anon`) held only `REFERENCES`/`TRIGGER`/`TRUNCATE` on all four tables. No `SELECT`, `INSERT`, or `UPDATE` for either role.
+
+**Why this matters more than the anon test alone suggests:** PostgreSQL checks table-level `GRANT` privilege *before* RLS is evaluated at all. `anon` ending up with no access is the correct outcome (every `005` policy is scoped `to authenticated` only, so `anon` was always going to see nothing) but for the wrong reason — an absent baseline grant, not RLS doing its job. `authenticated` having the same gap is the real finding: **every ordinary authenticated request against any of the four Phase 1 tables fails outright** — not "correctly restricted to the caller's own organisation," a hard permission error on the caller's own data too. `bootstrap_organisation()` (`006`) is unaffected (`SECURITY DEFINER`, runs as the owning role), but Stage 3's own verification reads, Stage 4 onward, and any future frontend integration would all fail without this correction.
+
+**Blast radius:** total, for `authenticated`, across all four tables — identical in scope to C1 but at the table-grant layer instead of the schema-usage layer, and only discoverable once real DML was attempted against a live project (C1 was caught by static analysis; C2 was not, because a privilege audit checking "does a grant exist" cannot substitute for actually issuing a query under the target role — see the runbook's own §16/§18 rationale for why live validation, not just review, was always part of the plan).
+
+**Confidence:** Certain — directly observed via a failing live query and confirmed via `information_schema.role_table_grants`, not inferred.
+
+**Exact correction:** `008_grant_authenticated_table_privileges.sql` — `grant select, update on public.organisations to authenticated;` / same on `profiles`; `grant select, insert, update on public.customers to authenticated;` / same on `projects`. No `DELETE` (ADR-010), nothing for `anon` (already correct), no sequence grants (none exist — confirmed via `pg_class`, every PK is `uuid default gen_random_uuid()`). Full rationale in ADR-014.
 
 ---
 
@@ -527,8 +553,9 @@ Distinct from §17: this is what to check *after* the schema is live on the targ
 | L3 — `enforce_last_owner_on_organisations` fires on every `UPDATE` | Low | **Still open, and still not recommended to act on** — no query pattern justifies the optimisation yet. |
 | New (this pass) — `profiles` INSERT/DELETE untested | Test-coverage gap | **Closed.** Tests 77–81 added. |
 | New (this pass) — `customers` cross-org INSERT/UPDATE untested | Test-coverage gap | **Closed.** Tests 82–85 added. |
+| C2 — missing baseline table-level GRANTs for `authenticated` (discovered live, Stage 2 of the deployment runbook, not by this static review) | Critical (deployment-blocking) | **Corrected via `008_grant_authenticated_table_privileges.sql`.** See ADR-014. Tests 90–93 added to confirm empirically once applied. |
 
-**Remaining blockers to unconditional READY:** none that are code defects. H2 remains open by design (an accepted limitation, not a blocker to deployment). L2/L3 are cosmetic and explicitly not worth acting on yet.
+**Remaining blockers to unconditional READY:** none that are code defects. H2 remains open by design (an accepted limitation, not a blocker to deployment). L2/L3 are cosmetic and explicitly not worth acting on yet. C2 is corrected pending application of `008` (drafted, not yet applied as of this update — see the deployment runbook's Results Record for current status).
 
 **Accepted limitations, stated together:** (1) last-owner protection is not safe under an explicit `REPEATABLE READ` transaction — mitigated by the fact that no current code path opens one, and by the documented recommendation to route future ownership-management work through a controlled RPC; (2) a suspended organisation cannot be reactivated through the ordinary tenant-scoped API — `service_role` administration is required until a future, narrowly-scoped recovery RPC is designed (§6: confirmed not to make Phase 1 unusable, since suspension itself is not yet triggered by any automated process).
 
@@ -536,7 +563,7 @@ Distinct from §17: this is what to check *after* the schema is live on the targ
 
 ## Related documents
 
-- `supabase/migrations/001`–`007` — the migrations under review
-- `docs/decisions/README.md` — ADR-001–013
-- `docs/phase1-rls-test-plan.md` — the test plan referenced throughout §9 and §16 (89 tests after this pass)
+- `supabase/migrations/001`–`008` — the migrations under review (`008` added 2026-07-29 to correct C2, discovered live during deployment runbook Stage 2, not by this static review)
+- `docs/decisions/README.md` — ADR-001–014
+- `docs/phase1-rls-test-plan.md` — the test plan referenced throughout §9 and §16 (93 tests after the `008` addendum)
 - `js/toolkit/project-store.js`, `js/toolkit/calculator.js` — the live data models compared in §8

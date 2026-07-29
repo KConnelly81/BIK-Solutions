@@ -51,6 +51,7 @@ What else was evaluated?
 | ADR-011 | Single organisation membership per user (Phase 1) | 2026-07-28 | Accepted |
 | ADR-012 | Profile lifecycle bound to auth.users — no independent profile deletion | 2026-07-28 | Accepted |
 | ADR-013 | Organisation/profile suspension enforced at the tenant-helper layer | 2026-07-29 | Accepted |
+| ADR-014 | Explicit baseline table-level GRANTs for `authenticated`, layered under RLS | 2026-07-29 | Accepted |
 
 ---
 
@@ -353,3 +354,26 @@ Neither is built as part of this decision. Building the recovery RPC prematurely
 **Consequences (-):** No self-service recovery path exists yet for a legitimately-suspended organisation that should be reinstated — this is an accepted, temporary gap until the recovery RPC is designed. `007`'s last-owner protection required no changes: `internal.assert_organisation_has_active_owner()` queries `organisations`/`profiles` directly by parameter, not through the now-filtered helper functions, so this decision has no effect on that invariant (confirmed during the correction pass, not merely assumed).
 
 **Alternatives considered:** Leaving `status` as informational only, documented as such (rejected — a documented-but-inert safety field is worse than no field, since it invites false confidence); adding `status = 'active'` checks to each policy individually (rejected — duplicates the check across every current and future policy instead of centralising it once); allowing a suspended owner to reactivate their own organisation through the ordinary API (rejected — makes suspension trivially self-reversible by the party being suspended, defeating its purpose).
+
+---
+
+## ADR-014: Explicit Baseline Table-Level GRANTs for `authenticated`, Layered Under RLS
+
+**Date:** 2026-07-29
+**Status:** Accepted
+
+**Context:** Live validation of `001`–`007` against `hpcqncghvdrlvufxfdnd` (Stage 2 of `docs/PHASE_1_DEPLOYMENT_RUNBOOK.md`, anonymous-access testing) surfaced that `set local role anon; select * from organisations;` failed with `permission denied for table organisations` rather than the runbook's documented expectation of a silent, RLS-filtered empty result. Direct inspection (`information_schema.role_table_grants`) confirmed the cause: `authenticated` held only `REFERENCES`/`TRIGGER`/`TRUNCATE` on all four Phase 1 tables — no `SELECT`, `INSERT`, or `UPDATE`. PostgreSQL evaluates table-level `GRANT`s before RLS is ever consulted, so this is not merely a cosmetic difference in error message: it means an ordinary `authenticated` request against `organisations`, `profiles`, `customers`, or `projects` fails outright today, for the requesting user's own data as much as anyone else's. `anon` showed the identical grant set — its total lockout is correct in outcome but was accidental in mechanism (absence of any baseline grant, not RLS doing its job), since every policy in `005` is scoped `to authenticated` and would give `anon` zero rows regardless.
+
+The Phase 1 database review (`docs/PHASE_1_DATABASE_REVIEW.md`, §7 "Table grants") had explicitly assumed *"standard Supabase project setup grants baseline SELECT/INSERT/UPDATE/DELETE at the table level to these roles, with RLS as the actual gate."* That assumption, reasonable based on typical Supabase provisioning, did not hold on this specific project. Recorded as finding **C2** in that document.
+
+**Decision:** Add `008_grant_authenticated_table_privileges.sql`, a purely additive migration granting exactly the table-level privileges each table's existing `005` RLS policies already assume: `organisations` (`SELECT`, `UPDATE`), `profiles` (`SELECT`, `UPDATE`), `customers` (`SELECT`, `INSERT`, `UPDATE`), `projects` (`SELECT`, `INSERT`, `UPDATE`). No `DELETE` anywhere (ADR-010 — soft delete via `status = 'archived'`; no `DELETE` policy exists in `005` for `authenticated` on any table regardless, so a `DELETE` grant would be strictly wider than what RLS supports). Nothing granted to `anon` — its current lack of access is correct and this migration leaves it untouched. No sequence privileges — confirmed via `pg_class` that no sequences exist in `public` (every primary key is `uuid default gen_random_uuid()`).
+
+**Rationale:**
+- The correct model for this schema, as originally designed, is table-level `GRANT` establishing the outer boundary of what a role may attempt, with RLS policies deciding which specific rows within that boundary are actually visible/writable. `008` restores that model exactly as `005` was written to assume — it does not widen what any policy allows, it makes the policies reachable at all.
+- No `INSERT` grant on `organisations`/`profiles` for `authenticated`: `005` deliberately has no `INSERT` policy on either table (organisations and profiles are created only via `bootstrap_organisation()`, `006`, `SECURITY DEFINER`). Granting table-level `INSERT` without a matching policy would be inert (RLS would still reject every attempt) but misleading to a future reader auditing grants — left out entirely, consistent with "grant only what a policy can act on."
+- A confirmed, deployment-blocking defect (this stops the entire authenticated API surface, not an edge case) is exactly the kind of thing ADR-008/ADR-009's own precedent treats as worth a dedicated, reviewed migration rather than an undocumented live `GRANT` — auditable in git, reviewable before application, consistent with every other Phase 1 change.
+
+**Consequences (+):** Every existing `005` policy becomes reachable exactly as designed, with no change to policy logic, no change to what any role can ultimately do. Closes the single defect blocking Stage 3 onward of the deployment runbook and, unaddressed, blocking the entire frontend-integration milestone. Documented, reviewable, git-tracked — not a live dashboard edit.
+**Consequences (-):** None identified. This is strictly permissive-within-existing-policy-bounds; no access is granted that `005`'s policies don't already independently gate.
+
+**Alternatives considered:** A one-off live `GRANT` applied directly via the SQL Editor without a migration file (rejected — not reviewable, not reproducible for a future environment, breaks the pattern every other Phase 1 change follows); granting broader privileges (e.g. `ALL PRIVILEGES`) for simplicity (rejected — `DELETE` would be strictly wider than any policy supports, violating least-privilege for no benefit); modifying `005` itself to add the grants inline (rejected — `005` already shipped and was empirically verified as applied; treating the missing grants as a separate, additive migration keeps the change scoped to exactly the defect found, and keeps `005`'s own verified state untouched).

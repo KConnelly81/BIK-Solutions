@@ -31,9 +31,9 @@ Once 001-005 are applied to a test/staging Supabase project (never run this agai
 
 | # | Test | Actor | Action | Expected Result |
 |---|---|---|---|---|
-| 7 | Anonymous user cannot read projects | Unauthenticated (`anon`) | `select * from projects` | 0 rows (no policy matches the `anon` role at all — every policy is scoped `to authenticated`) |
-| 8 | Anonymous user cannot read organisations | Unauthenticated (`anon`) | `select * from organisations` | 0 rows |
-| 9 | Anonymous user cannot read customers | Unauthenticated (`anon`) | `select * from customers` | 0 rows |
+| 7 | Anonymous user cannot read projects | Unauthenticated (`anon`) | `select * from projects` | Blocked. **Corrected 2026-07-29 (C2/ADR-014):** on this project, `anon` holds no table-level `SELECT` grant at all (confirmed via `information_schema.role_table_grants`), so this fails with `permission denied for table projects` — a hard grant-level rejection, not an RLS-filtered empty result. `008` does not grant `anon` anything, so this remains the permanent, correct behaviour going forward, not a transitional state. Either outcome (0 rows or permission denied) means "no access"; the mechanism differs from what this row originally documented. |
+| 8 | Anonymous user cannot read organisations | Unauthenticated (`anon`) | `select * from organisations` | Blocked, same correction and reasoning as #7 — `permission denied for table organisations`, not 0 rows. |
+| 9 | Anonymous user cannot read customers | Unauthenticated (`anon`) | `select * from customers` | Blocked, same correction and reasoning as #7 — `permission denied for table customers`, not 0 rows. |
 | 10 | Anonymous user cannot insert a customer | Unauthenticated (`anon`) | `insert into customers (...) values (...)` | Rejected |
 
 ## Role behaviour (owner / admin / member)
@@ -216,10 +216,24 @@ Added during the second Phase 1 database review pass — the most important rema
 
 ---
 
+## Table-level grant coverage (Migration 008)
+
+Added 2026-07-29 after live validation (deployment runbook Stage 2) found `authenticated` held no baseline `SELECT`/`INSERT`/`UPDATE` table-level grant on any of the four Phase 1 tables — every request failed with `permission denied for table ...` before RLS was ever evaluated, regardless of the RLS policy logic being correct. See `docs/PHASE_1_DATABASE_REVIEW.md` finding C2 and ADR-014. These tests confirm `008_grant_authenticated_table_privileges.sql` closes exactly that gap, without widening what any `005` policy already allows.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 90 | `authenticated` holds exactly the intended table-level privileges, no more | `service_role` / direct SQL (static privilege check, not a session test) | `select table_name, privilege_type from information_schema.role_table_grants where table_schema='public' and table_name in ('organisations','profiles','customers','projects') and grantee='authenticated' and privilege_type in ('SELECT','INSERT','UPDATE','DELETE');` | Exactly: `organisations`→SELECT,UPDATE; `profiles`→SELECT,UPDATE; `customers`→SELECT,INSERT,UPDATE; `projects`→SELECT,INSERT,UPDATE. No DELETE anywhere, no INSERT on organisations/profiles. |
+| 91 | `anon` holds no DML table-level privilege on any Phase 1 table, before or after `008` | `service_role` / direct SQL | Same query as #90 with `grantee='anon'` | Zero rows. `008` does not grant `anon` anything — this must be true both before and after `008` is applied. |
+| 92 | An authenticated request with no matching profile reaches RLS instead of failing at the grant layer | A disposable `authenticated` session for a user with no `profiles` row (or, pre-`008`, any authenticated user) | `set local role authenticated; set local request.jwt.claims = '{"sub":"<user with no profile>","role":"authenticated"}'; select * from organisations;` | **Before `008`:** fails with `permission denied for table organisations` (the C2 defect). **After `008`:** succeeds, returns 0 rows — `internal.current_organisation_id()` returns `NULL` for a user with no active profile, so `organisations_select_own`'s `USING` clause matches nothing. The distinction between these two outcomes — a grant-level error vs. an RLS-filtered empty result — is the entire point of this test. |
+| 93 | Hard `DELETE` remains unavailable to `authenticated` after `008`, on all four tables | Org A owner (or any role) | `delete from organisations where id = <own org>`; repeat for `profiles`/`customers`/`projects` | Rejected on every table — `008` grants no `DELETE` privilege, so these fail at the grant layer exactly as before, independent of RLS (which also has no `DELETE` policy for `authenticated` on any of the four tables, per ADR-010). |
+
+---
+
 ## Related documents
 
 - `supabase/migrations/005_phase1_rls.sql` — the policies under test
 - `supabase/migrations/006_create_organisation_bootstrap.sql` — the bootstrap RPC under test
 - `supabase/migrations/007_protect_last_owner.sql` — the last-owner protection under test
-- `docs/decisions/README.md` — ADR-008 (bootstrap RPC), ADR-009 (last-owner protection, implemented in 007, isolation-level limitation), ADR-010 (soft delete strategy), ADR-011 (single organisation membership), ADR-012 (profile lifecycle bound to auth.users), ADR-013 (suspension enforcement)
-- `docs/PHASE_1_DATABASE_REVIEW.md` — the review that identified findings C1, H1, H2, and M1, corrected in this revision
+- `supabase/migrations/008_grant_authenticated_table_privileges.sql` — the baseline table-level grants under test in this section
+- `docs/decisions/README.md` — ADR-008 (bootstrap RPC), ADR-009 (last-owner protection, implemented in 007, isolation-level limitation), ADR-010 (soft delete strategy), ADR-011 (single organisation membership), ADR-012 (profile lifecycle bound to auth.users), ADR-013 (suspension enforcement), ADR-014 (baseline table-level grants)
+- `docs/PHASE_1_DATABASE_REVIEW.md` — the review that identified findings C1, H1, H2, M1 (corrected in the initial revision) and C2 (corrected via migration 008)
