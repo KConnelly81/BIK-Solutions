@@ -19,6 +19,43 @@
 --             005_phase1_rls.sql (creates the `internal` schema, reused
 --             here), 006_create_organisation_bootstrap.sql (must remain
 --             compatible — see the bootstrap-compatibility notes below)
+--
+-- TRANSACTION ISOLATION LIMITATION (documented, not yet redesigned):
+-- The concurrency protection below (a per-organisation advisory lock,
+-- re-checked after acquiring it) is correct and complete under
+-- READ COMMITTED — Postgres's default, and the isolation level every
+-- PostgREST-mediated request (the entire Phase 1 client-facing API,
+-- `authenticated` and `service_role` alike) actually runs at. It is NOT
+-- universally isolation-level independent:
+--   - Under READ COMMITTED: each statement takes a fresh snapshot, so a
+--     transaction unblocked from the advisory lock correctly sees
+--     whatever the previous holder just committed. This is what makes
+--     concurrent same-organisation demotions (test plan #52-53) resolve
+--     correctly — exactly one succeeds.
+--   - Under REPEATABLE READ: a transaction's snapshot is fixed at
+--     transaction start. Waiting on the advisory lock changes *when* a
+--     blocked transaction proceeds, but not *what it can see* — its
+--     re-check may still read a stale, pre-lock snapshot and miss another
+--     transaction's already-committed change, incorrectly permitting an
+--     outcome that leaves zero active owners. This is UNSUPPORTED: do not
+--     perform ownership-changing writes (profiles.role/status/
+--     organisation_id, organisations.status) inside an explicit
+--     REPEATABLE READ transaction.
+--   - Under SERIALIZABLE: safe, but with different failure semantics —
+--     Postgres's predicate-lock-based conflict detection will abort one
+--     of the two conflicting transactions with a generic
+--     40001 serialization_failure, not this migration's friendly
+--     business-logic message. Callers must be prepared to retry.
+-- No code path in Phase 1 opens a REPEATABLE READ transaction, so this is
+-- a documented constraint on future code, not a currently reachable gap.
+-- Recommendation: before any ownership-management capability is exposed
+-- more broadly (e.g. a bulk admin tool, a scripted migration, a future
+-- Edge Function), route it through a single controlled RPC that is known
+-- to run at READ COMMITTED (or SERIALIZABLE with retry handling), rather
+-- than allowing arbitrary server-side code to touch these columns
+-- directly under an isolation level this protection was not designed for.
+-- See docs/PHASE_1_DATABASE_REVIEW.md (finding H2) and ADR-009 for the
+-- same limitation recorded there.
 -- ============================================================================
 
 create schema if not exists internal;
@@ -44,6 +81,16 @@ create schema if not exists internal;
 -- must see the true state of organisations/profiles regardless of the
 -- calling role's RLS visibility, and must not be vulnerable to
 -- search_path hijacking.
+--
+-- Independent of 005's suspension-enforcement filtering: this function
+-- takes p_organisation_id as a direct parameter (from the calling
+-- trigger's NEW/OLD row) and queries organisations/profiles directly —
+-- it does NOT go through internal.current_organisation_id()/current_role(),
+-- which 005 changed to return NULL for a suspended profile or
+-- organisation. That change has no effect on this invariant: the count
+-- below already independently filters to status='active' on both sides,
+-- and was written that way before 005's correction existed. No change
+-- was required here when 005 was corrected.
 -- ----------------------------------------------------------------------------
 create or replace function internal.assert_organisation_has_active_owner(p_organisation_id uuid)
 returns void

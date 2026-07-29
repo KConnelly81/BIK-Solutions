@@ -50,6 +50,7 @@ What else was evaluated?
 | ADR-010 | Platform-wide soft delete strategy | 2026-07-28 | Accepted |
 | ADR-011 | Single organisation membership per user (Phase 1) | 2026-07-28 | Accepted |
 | ADR-012 | Profile lifecycle bound to auth.users — no independent profile deletion | 2026-07-28 | Accepted |
+| ADR-013 | Organisation/profile suspension enforced at the tenant-helper layer | 2026-07-29 | Accepted |
 
 ---
 
@@ -227,6 +228,8 @@ What else was evaluated?
 
 **Implementation:** Built in `supabase/migrations/007_protect_last_owner.sql` as a pair of `DEFERRABLE INITIALLY DEFERRED` constraint triggers (on `organisations` and `profiles`), backed by a shared `internal.assert_organisation_has_active_owner()` function and a per-organisation `pg_advisory_xact_lock` to correctly serialise concurrent demotions, suspensions, transfers, and deletions that would otherwise race past a naive check. Being constraint triggers rather than RLS policies, they fire regardless of caller — the ordinary authenticated API, a `SECURITY DEFINER` function, `service_role` admin tooling, or direct SQL — closing exactly the gap this ADR describes. Scoped to organisations with `status = 'active'` only; see `007`'s review notes for the explicit assessment of why that scope is safe (reactivating a suspended organisation independently re-validates the invariant, and applying it unconditionally would block the legitimate suspended-organisation administration and privacy workflows ADR-010 and ADR-012 depend on). Tested in `docs/phase1-rls-test-plan.md` #46-58.
 
+**Known limitation — transaction isolation:** this protection is correct and complete under `READ COMMITTED`, which is Postgres's default and the isolation level every PostgREST-mediated request (the entire Phase 1 client-facing API) actually runs at. It is **not** universally isolation-level independent: under an explicit `REPEATABLE READ` transaction, a transaction unblocked from the advisory lock may still be reading a stale, pre-lock snapshot, and could incorrectly permit an ownership change that leaves zero active owners. `SERIALIZABLE` remains safe (Postgres's own conflict detection aborts one transaction with a generic `40001`), just with a different, less friendly error than this migration's own message. No code path in Phase 1 opens a `REPEATABLE READ` transaction, so this is a documented constraint on future code, not a currently reachable gap. **Recommendation:** before ownership-management capability (role/status changes, organisation reactivation) is exposed more broadly — a bulk admin tool, a scripted migration, a future Edge Function — it should be routed through a single controlled RPC known to run at `READ COMMITTED` or `SERIALIZABLE` with retry handling, rather than allowing arbitrary server-side code to touch these columns directly. Identified in `docs/PHASE_1_DATABASE_REVIEW.md` (finding H2) during the Phase 1 database review; documented here, in `007`, and in the review rather than redesigned, per that review's correction pass.
+
 **Alternatives considered:** Relying on frontend validation only (rejected — bypassable); relying on RLS policies alone (rejected — RLS authorises actors, it does not naturally express "unless this is the last one" without the same trigger/function logic RLS policies would end up duplicating).
 
 ---
@@ -313,3 +316,32 @@ This is recorded as a **documented platform invariant enforced through process a
 **Consequences (-):** The invariant is not mechanically enforced. A careless or rushed admin script could still violate it, and the database will not stop that — this is an accepted risk, consistent with other privileged-path trust boundaries already present in this schema (e.g. `organisations` has no `DELETE` policy for any client role at all; deletion there is likewise a fully trusted, out-of-band operation).
 
 **Alternatives considered:** A trigger on `profiles` requiring some precondition before allowing `DELETE` (rejected — the same privileged caller the trigger would need to trust to set that precondition is the caller the trigger is meant to constrain, so it adds complexity without adding real protection, and cannot itself verify state in the separate `auth` schema); disabling hard deletes of `profiles` entirely (rejected — contradicts ADR-010 and the underlying Privacy Act erasure obligation, which requires an actual deletion capability to exist somewhere in the system).
+
+---
+
+## ADR-013: Organisation/Profile Suspension Enforced at the Tenant-Helper Layer
+
+**Date:** 2026-07-29
+**Status:** Accepted
+
+**Context:** The Phase 1 database review (`docs/PHASE_1_DATABASE_REVIEW.md`, finding H1) identified that `organisations.status`/`profiles.status = 'suspended'` had no enforced effect anywhere in the schema — `internal.current_organisation_id()`/`current_role()` (`005`) looked up a caller's row by `id = auth.uid()` alone, and every tenant-isolation policy scoped only by `organisation_id = current_organisation_id()`. A suspended member, or any member of a suspended organisation, retained full ordinary read/write access. Separately, the self-escalation trigger guarded `role`/`organisation_id` but not `status`, so a suspended user could reverse their own suspension.
+
+**Decision:** For Phase 1: **a user may access operational data only when both their profile and their organisation are `status = 'active'`.** This is enforced in exactly one place — `internal.current_organisation_id()` and `internal.current_role()` now join `profiles` to `organisations` and require both to be `active`, returning `NULL` otherwise. Every existing tenant-isolation policy inherits this automatically, since all of them are already built on these two functions rather than checking `status` individually. `prevent_unauthorised_profile_role_change()` was separately extended to also guard `status`, closing the self-reversal path.
+
+**Consequence accepted deliberately:** once an organisation is suspended, `current_organisation_id()` returns `NULL` for every one of its members, **including its owner** — so `organisations_update_owner_only` (which depends on the same function) can no longer be used to reactivate it through the ordinary client API. A suspended organisation cannot be reactivated by anyone through the normal tenant-scoped API, by design. This is judged safer than the alternative (a carve-out that would let a suspended owner reactivate their own organisation through the same path being restricted, which would make the suspension trivially self-reversible in exactly the way the profile-level version of this problem was).
+
+**Recovery path (documented requirement, not built in this correction):** reactivating a suspended organisation requires either:
+- a dedicated, carefully reviewed `SECURITY DEFINER` recovery RPC (following the same pattern and scrutiny as `bootstrap_organisation()`, ADR-008), or
+- direct `service_role` administration.
+
+Neither is built as part of this decision. Building the recovery RPC prematurely — before its authorisation model (who may invoke it, what evidence of legitimate recovery it requires) is properly designed — risks recreating exactly the kind of privilege-bypassing surface ADR-008 insisted be reviewed in isolation. This is recorded here as a required future capability, not an oversight.
+
+**Rationale:**
+- A `suspended` status with no access consequence is actively misleading — it looks like a safety control while providing none, which is worse than having no such field at all.
+- Filtering at the two shared helper functions, rather than adding `AND status = 'active'` checks to each of the ten individual policies, means every current and future policy that scopes by `current_organisation_id()`/`current_role()` inherits the restriction automatically — there is exactly one place to get this right, not ten (or more, as new tables are added).
+- Locking out even the owner of a suspended organisation is consistent with treating suspension as a genuine administrative action, not something reversible by the party it was applied to.
+
+**Consequences (+):** Suspension now does what its name implies. No policy needs to be individually re-audited as new tables are added — the enforcement point is structural, not per-policy. Consistent with ADR-012's requirement that privileged, RLS-bypassing operations (which recovery necessarily is) be deliberately designed, not improvised.
+**Consequences (-):** No self-service recovery path exists yet for a legitimately-suspended organisation that should be reinstated — this is an accepted, temporary gap until the recovery RPC is designed. `007`'s last-owner protection required no changes: `internal.assert_organisation_has_active_owner()` queries `organisations`/`profiles` directly by parameter, not through the now-filtered helper functions, so this decision has no effect on that invariant (confirmed during the correction pass, not merely assumed).
+
+**Alternatives considered:** Leaving `status` as informational only, documented as such (rejected — a documented-but-inert safety field is worse than no field, since it invites false confidence); adding `status = 'active'` checks to each policy individually (rejected — duplicates the check across every current and future policy instead of centralising it once); allowing a suspended owner to reactivate their own organisation through the ordinary API (rejected — makes suspension trivially self-reversible by the party being suspended, defeating its purpose).
