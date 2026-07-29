@@ -74,6 +74,31 @@ where table_schema='public' and table_name in ('organisations','profiles','custo
 
 **Exact correction:** `008_grant_authenticated_table_privileges.sql` — `grant select, update on public.organisations to authenticated;` / same on `profiles`; `grant select, insert, update on public.customers to authenticated;` / same on `projects`. No `DELETE` (ADR-010), nothing for `anon` (already correct), no sequence grants (none exist — confirmed via `pg_class`, every PK is `uuid default gen_random_uuid()`). Full rationale in ADR-014.
 
+### C3 — `anon`/`authenticated` hold `MAINTAIN`/`REFERENCES`/`TRIGGER`/`TRUNCATE` on all four Phase 1 tables; `TRUNCATE` is RLS-bypassing and confirmed reachable by `anon`
+
+**Status: DRAFTED (`009_revoke_dangerous_table_privileges.sql`), NOT YET APPLIED — pending explicit approval.**
+
+**Category:** Confirmed defect (critical — unauthenticated, RLS-bypassing data destruction path).
+
+**Where:** No BIK migration (`001`–`008`) grants or revokes `MAINTAIN`/`REFERENCES`/`TRIGGER`/`TRUNCATE` on any table. C2's note (above) that `authenticated`/`anon` held "only `REFERENCES`/`TRIGGER`/`TRUNCATE`" recorded the symptom at the time but did not identify a root cause or flag `TRUNCATE` specifically as RLS-bypassing; `008` closed the missing-`SELECT`/`INSERT`/`UPDATE` half of that finding and left this half untouched.
+
+**Root cause, confirmed via `pg_default_acl`:** the `public` schema carries a pre-existing default ACL for role `postgres` — `anon=Dxtm/postgres, authenticated=Dxtm/postgres, service_role=Dxtm/postgres` (`D`=TRUNCATE, `x`=REFERENCES, `t`=TRIGGER, `m`=MAINTAIN) — set at project provisioning, before any Phase 1 migration ran. Every table `postgres` creates in `public` (all four Phase 1 tables, confirmed owned by `postgres` via `pg_class`) inherits this automatically at `CREATE TABLE` time. This is Supabase/PostgreSQL platform provisioning, not anything this codebase's migrations introduced. A second, separate default ACL exists for role `supabase_admin` on `public` — `postgres=arwdDxtm/supabase_admin, anon=arwdDxtm/supabase_admin, authenticated=arwdDxtm/supabase_admin, service_role=arwdDxtm/supabase_admin` — i.e. **full** privileges including `SELECT`/`INSERT`/`UPDATE`/`DELETE`, automatically, to `anon`/`authenticated`/`service_role`, for any table created by `supabase_admin` (e.g. via the Studio Table Editor UI, not SQL migrations). No current BIK table is affected (all four are `postgres`-owned), but this is a live landmine for any future table created outside the migration workflow.
+
+**What was found, and confirmed live:** `TRUNCATE` is not filtered by row-level security at all in PostgreSQL — no per-row check of any kind, gated solely by the table-level `TRUNCATE` privilege. Confirmed empirically, then rolled back (no data lost):
+```sql
+begin;
+set local role anon;
+truncate public.projects;   -- succeeded, no permission error
+rollback;
+```
+`organisations`/`customers` could not be truncated individually in the same test (`ERROR: 0A000: cannot truncate a table referenced in a foreign key constraint`) — a foreign-key ordering block, not a privilege block; `TRUNCATE ... CASCADE`, or truncating all four together, would not be stopped by it. `REFERENCES`/`TRIGGER`/`MAINTAIN` are not currently reachable through Supabase's standard PostgREST Data API (no BIK frontend/Supabase-client code exists yet — confirmed by repository search; only a Phase 2 comment placeholder in `js/integrations/core/auth-manager.js`), so their practical exploitability today is lower, but they represent the same undocumented widening of the trust boundary and have no legitimate use by either client role.
+
+**Blast radius:** critical in principle for `TRUNCATE` — any caller holding the project's public `anon` key could, via a direct Postgres session assuming the `anon`/`authenticated` role (not the standard PostgREST Data API path, which has no `TRUNCATE` endpoint, but reachable by any tooling, script, or future code path that does connect this way), empty every Phase 1 table, completely bypassing every RLS policy `005` defines. Lower, latent severity for `REFERENCES`/`TRIGGER`/`MAINTAIN` under the current all-PostgREST access pattern; would escalate immediately if any future code path executes SQL directly under these roles.
+
+**Confidence:** Certain — root cause confirmed via `pg_default_acl`, current grant state confirmed via `aclexplode(relacl)`, exploitability confirmed via a live (rolled-back) `TRUNCATE` as `anon`.
+
+**Exact correction:** `009_revoke_dangerous_table_privileges.sql` — revokes `MAINTAIN`/`REFERENCES`/`TRIGGER`/`TRUNCATE` from `anon` and `authenticated` on all four tables, adds explicit (currently no-op) `revoke all ... from public` statements for auditability, and corrects the `postgres`-role default ACL for `public` so future tables don't reinherit the same set. Does **not** touch `service_role` (see ADR-015 — separate, currently-inert gap) or the `supabase_admin`-owned default ACL (cannot be altered by `postgres`; addressed instead by a process safeguard — all future BIK tables via SQL migration only, never the Table Editor). Full rationale, privilege matrix, and verification plan in ADR-015.
+
 ---
 
 ## 3. High-Priority Findings

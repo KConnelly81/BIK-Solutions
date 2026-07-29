@@ -377,3 +377,96 @@ The Phase 1 database review (`docs/PHASE_1_DATABASE_REVIEW.md`, §7 "Table grant
 **Consequences (-):** None identified. This is strictly permissive-within-existing-policy-bounds; no access is granted that `005`'s policies don't already independently gate.
 
 **Alternatives considered:** A one-off live `GRANT` applied directly via the SQL Editor without a migration file (rejected — not reviewable, not reproducible for a future environment, breaks the pattern every other Phase 1 change follows); granting broader privileges (e.g. `ALL PRIVILEGES`) for simplicity (rejected — `DELETE` would be strictly wider than any policy supports, violating least-privilege for no benefit); modifying `005` itself to add the grants inline (rejected — `005` already shipped and was empirically verified as applied; treating the missing grants as a separate, additive migration keeps the change scoped to exactly the defect found, and keeps `005`'s own verified state untouched).
+
+## ADR-015: Revoke `MAINTAIN`/`REFERENCES`/`TRIGGER`/`TRUNCATE` from Client Roles; Correct the Default ACL That Produced Them
+
+**Date:** 2026-07-29
+**Status:** Proposed — migration drafted (`009_revoke_dangerous_table_privileges.sql`), not yet applied, pending explicit approval.
+
+**Context:** Continued live validation of `hpcqncghvdrlvufxfdnd` (deployment runbook Stage 1 static inspection, re-run after `008` was applied) surfaced that `anon` and `authenticated` both still held `MAINTAIN`, `REFERENCES`, `TRIGGER`, and `TRUNCATE` on all four Phase 1 tables — a superset of the `REFERENCES`/`TRIGGER`/`TRUNCATE` subset C2/ADR-014 had already observed as a symptom (ADR-014 didn't include `MAINTAIN` in its own inspection query, and neither C2 nor `008` investigated the root cause of this set or treated it as a defect in its own right — `008` was scoped purely to adding the missing `SELECT`/`INSERT`/`UPDATE`).
+
+**Investigation, read-only, before drafting any fix:**
+
+1. **Full privilege matrix** (`aclexplode(pg_class.relacl)`, all four tables): `anon` → `MAINTAIN, REFERENCES, TRIGGER, TRUNCATE` only, on every table, nothing else. `authenticated` → the same four, plus `008`'s `SELECT`/`UPDATE` (all four tables) and `INSERT` (`customers`/`projects` only). `PUBLIC` (the pseudo-role) → no ACL entry at all, on any of the four tables — confirmed by its complete absence from the `aclexplode` output, not inferred. `service_role` → `MAINTAIN, REFERENCES, TRIGGER, TRUNCATE` only — **no `SELECT`/`INSERT`/`UPDATE`/`DELETE`**, an adjacent finding, below. `postgres` (table owner) → full privileges, as expected for the migration-executing role.
+
+2. **Root cause** (`pg_default_acl`, joined to `pg_roles`/`pg_namespace`): two relevant default-ACL rows for schema `public`. For role `postgres` (the role that actually created all four BIK tables, confirmed via `pg_class` ownership): `anon=Dxtm/postgres, authenticated=Dxtm/postgres, service_role=Dxtm/postgres` — exactly the `MAINTAIN`/`REFERENCES`/`TRIGGER`/`TRUNCATE` set found live, decoded from PostgreSQL's ACL letters (`D`=TRUNCATE, `x`=REFERENCES, `t`=TRIGGER, `m`=MAINTAIN). For role `supabase_admin`: `anon=arwdDxtm/supabase_admin, authenticated=arwdDxtm/supabase_admin, service_role=arwdDxtm/supabase_admin` — the **full** privilege set (including `SELECT`/`INSERT`/`UPDATE`/`DELETE`) for any table `supabase_admin` creates instead of `postgres`. Neither entry originates from any file in `supabase/migrations/` — confirmed by inspection; none of `001`–`008` issues `ALTER DEFAULT PRIVILEGES` or touches these four privilege types. Both are Supabase/PostgreSQL platform provisioning, present before Phase 1 migrations began.
+
+3. **Default privileges for future tables:** unchanged from (2) — any table created by `postgres` (the role every migration in this project runs as, via the `apply_migration` tool or an equivalent SQL Editor/CLI session) will keep inheriting `MAINTAIN`/`REFERENCES`/`TRIGGER`/`TRUNCATE` for `anon`/`authenticated`/`service_role` until the default ACL itself is corrected — a per-table `REVOKE` alone would not prevent recurrence on the next migration.
+
+4. **Does any BIK functionality need `REFERENCES`/`TRIGGER` for `anon`/`authenticated`?** No. Confirmed by repository search: no Supabase client is wired into any frontend code yet — the only reference anywhere in `js/` is a comment placeholder in `js/integrations/core/auth-manager.js` describing a *future* Phase 2 `SupabaseTokenStore`. `REFERENCES` and `TRIGGER` are DDL-adjacent privileges (creating a foreign key that references this table; creating a trigger on this table) that only matter to a role issuing `CREATE`/`ALTER` statements — PostgREST's Data API, the only path either client role will ever use, never does this. There is no current or currently-planned use.
+
+5. **Is `TRUNCATE` actually exploitable, or just theoretically present?** Tested directly, then rolled back, no data lost:
+   ```sql
+   begin;
+   set local role anon;
+   truncate public.projects;   -- succeeded, no permission error
+   rollback;
+   ```
+   `TRUNCATE public.organisations;` in the same session was blocked, but by a foreign-key-ordering error (`profiles` references it), not a privilege error — meaning `TRUNCATE ... CASCADE`, or truncating all four tables together, would not be stopped by that same accident of ordering. Row-level security does not apply to `TRUNCATE` in PostgreSQL at all — it is gated solely by the table-level privilege, with no per-row evaluation of any kind. This is confirmed, not theoretical, for `anon` — the project's intentionally public, client-shipped role.
+
+**Decision:** Add `009_revoke_dangerous_table_privileges.sql` — purely subtractive, revoking exactly `MAINTAIN`/`REFERENCES`/`TRIGGER`/`TRUNCATE` from `anon` and `authenticated` on all four tables, leaving `008`'s `SELECT`/`INSERT`/`UPDATE` grants untouched, plus `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE MAINTAIN, REFERENCES, TRIGGER, TRUNCATE ON TABLES FROM anon, authenticated;` so future tables created the same way (`postgres`, via migration) don't reinherit the set. Explicit (currently no-op) `revoke all ... from public` statements added per table for auditability, matching the revoke-then-grant pattern already used in `001`/`005`/`006`/`007`.
+
+**Current privilege matrix (before `009`):**
+
+| Table | `anon` | `authenticated` | `PUBLIC` | `service_role` |
+|---|---|---|---|---|
+| `organisations` | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE | + SELECT, UPDATE | none | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE |
+| `profiles` | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE | + SELECT, UPDATE | none | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE |
+| `customers` | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE | + SELECT, INSERT, UPDATE | none | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE |
+| `projects` | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE | + SELECT, INSERT, UPDATE | none | MAINTAIN, REFERENCES, TRIGGER, TRUNCATE |
+
+**Expected privilege matrix (after `009`, not yet applied):**
+
+| Table | `anon` | `authenticated` | `PUBLIC` | `service_role` |
+|---|---|---|---|---|
+| `organisations` | **none** | SELECT, UPDATE | none | unchanged (out of scope — see below) |
+| `profiles` | **none** | SELECT, UPDATE | none | unchanged |
+| `customers` | **none** | SELECT, INSERT, UPDATE | none | unchanged |
+| `projects` | **none** | SELECT, INSERT, UPDATE | none | unchanged |
+
+**Verification queries, to run after applying `009`:**
+```sql
+-- Expect: zero rows (anon reduced to nothing on all four tables)
+select table_name, grantee, privilege_type from information_schema.role_table_grants
+where table_schema='public' and table_name in ('organisations','profiles','customers','projects')
+  and grantee='anon';
+
+-- Expect: exactly the same 10 rows 008 produced (SELECT/UPDATE x2, SELECT/INSERT/UPDATE x2),
+-- and no MAINTAIN/REFERENCES/TRIGGER/TRUNCATE rows for authenticated
+select table_name, grantee, privilege_type from information_schema.role_table_grants
+where table_schema='public' and table_name in ('organisations','profiles','customers','projects')
+  and grantee='authenticated' order by table_name, privilege_type;
+
+-- Expect: the anon/authenticated entries in the postgres-role default ACL no longer
+-- include D/x/t/m (TRUNCATE/REFERENCES/TRIGGER/MAINTAIN)
+select r.rolname as defacl_owner_role, pg_catalog.array_to_string(d.defaclacl, ', ') as default_acl
+from pg_default_acl d join pg_namespace n on n.oid=d.defaclnamespace join pg_roles r on r.oid=d.defaclrole
+where n.nspname='public' and d.defaclobjtype='r';
+
+-- Expect: permission denied (not silent success) -- re-run the exact live test from the
+-- investigation above, this time expecting it to fail
+begin;
+set local role anon;
+truncate public.projects;
+rollback;
+```
+
+**Rollback approach:** Purely additive to reverse — no data is touched by `009` (grant/revoke statements only), so rollback is re-issuing the original grants and default-ACL entry:
+```sql
+grant maintain, references, trigger, truncate on public.organisations, public.profiles, public.customers, public.projects
+  to anon, authenticated;
+alter default privileges for role postgres in schema public
+  grant maintain, references, trigger, truncate on tables to anon, authenticated;
+```
+Low-risk either direction — this is a privilege-only change with no schema, data, or application-code dependency on the revoked privileges (confirmed by investigation step 4). Rollback would only be warranted if a future, currently-unknown requirement is found to genuinely need one of these privileges for a client role, which nothing in the current codebase does.
+
+**Could Supabase platform behaviour reintroduce these grants?** Two identified paths, neither closed by `009` alone:
+1. **Restoring the project from a backup/PITR snapshot taken before `009` is applied** would revert to the pre-fix grants and default ACL, same as it would for `008` or any other applied migration. Standard implication of any point-in-time restore, not specific to this fix.
+2. **Creating a future table via the Supabase Studio Table Editor UI instead of a SQL migration.** The Table Editor creates objects as `supabase_admin`, not `postgres` — and `supabase_admin`'s own default ACL for `public` (found in investigation step 2) grants `anon`/`authenticated`/`service_role` **full** privileges automatically (`SELECT`/`INSERT`/`UPDATE`/`DELETE` included, not just the four revoked here). `009` cannot correct this — `postgres` is not superuser and is not a member of `supabase_admin`, so it cannot alter another role's default privileges. **Process safeguard, not a technical one:** every future BIK table must continue to be created exclusively via a reviewed SQL migration (as `001`–`009` all are), never the Table Editor, until/unless the `supabase_admin`-owned default ACL is separately corrected with Supabase support or a superuser session — out of scope for this ADR, recorded here so it isn't lost.
+
+**Adjacent finding, deliberately not folded into `009`:** `service_role` currently holds the identical `MAINTAIN`/`REFERENCES`/`TRIGGER`/`TRUNCATE`-only set (same `Dxtm/postgres` default ACL applies to it too) and has **no** table-level `SELECT`/`INSERT`/`UPDATE`/`DELETE` grant on any of the four tables. `service_role`'s `BYPASSRLS` role attribute (confirmed via `pg_roles`) bypasses RLS *policy evaluation* only — it does not substitute for the underlying table-level `GRANT` check, which PostgreSQL still enforces first. Practically inert today (no service-role code exists anywhere in this codebase), but any future Edge Function or scheduled job using the service-role key would hit the same "permission denied" symptom C2 found for `authenticated`, the moment it's written. Left for its own deliberate decision when a concrete service-role use case exists, rather than guessed at now.
+
+**Consequences (+):** Closes a confirmed, RLS-bypassing, unauthenticated data-destruction path (`TRUNCATE` via `anon`) empirically demonstrated live. Brings `anon` to genuinely zero privileges on every Phase 1 table, matching every design document's stated intent. Brings `authenticated` to exactly `008`'s intended set, nothing wider. Prevents recurrence on every future `postgres`-created table via the corrected default ACL.
+**Consequences (−):** Does not close the `supabase_admin`-owned default ACL path (requires elevated access this project's ordinary migration role doesn't have — process safeguard instead) or the adjacent `service_role` grant gap (deliberately deferred, see above).
+
+**Alternatives considered:** Leaving `REFERENCES`/`TRIGGER`/`MAINTAIN` in place on the reasoning that they're not reachable via PostgREST today (rejected — "not currently reachable" is not the same as "safe," and every other privilege decision in this codebase has been made on a deny-by-default basis regardless of current reachability); revoking only `TRUNCATE` and leaving `REFERENCES`/`TRIGGER`/`MAINTAIN` untouched as lower priority (rejected — no legitimate use exists for any of the four, and a single combined correction is simpler to verify and audit than a partial one followed by a likely-forgotten follow-up); attempting to correct the `supabase_admin`-owned default ACL in the same migration (rejected — not achievable from the `postgres` role; would fail outright, not partially succeed, so excluded rather than attempted).
