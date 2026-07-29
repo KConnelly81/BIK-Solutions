@@ -119,9 +119,65 @@ Unless noted, "Actor" performs the action directly via SQL as that role — seve
 
 ---
 
+## Foundational access smoke test
+
+Added after the Phase 1 database review identified this was missing (finding C1) — run this **first**, before any other authenticated test in this document. Every test above implicitly assumes it passes.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 59 | Authenticated SELECT resolves the `internal` schema helpers | Any authenticated user with an active profile in an active organisation | `select * from projects` (or any RLS-protected table) | Succeeds and returns the caller's own organisation's rows (possibly zero rows if none exist yet) — critically, does **not** raise a permission-denied error resolving `internal.current_organisation_id()`. Confirms `grant usage on schema internal to authenticated` is in place. |
+
+## Profile status protection
+
+Added after the Phase 1 database review identified that `profiles.status` had no self-service protection (finding H1) and that `prevent_unauthorised_profile_role_change` was extended to cover it.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 60 | Suspended member cannot reactivate themselves | A member whose `status` an owner has set to `suspended` | `update profiles set status = 'active' where id = auth.uid()` | Rejected by `prevent_unauthorised_profile_role_change` — only an owner may change `status`. (Also independently blocked from ever reaching this point in practice, since a suspended member has no `current_organisation_id()` per finding H1's fix — but this test specifically exercises the trigger's own guard, in case a future change ever altered the RLS-level filtering.) |
+| 61 | Member cannot suspend themselves to manipulate lifecycle behaviour | An active member | `update profiles set status = 'suspended' where id = auth.uid()` | Rejected — same trigger, same reason. Prevents a member from, for example, self-suspending and later self-reactivating to reset some future status-dependent behaviour. |
+| 62 | Member can still update permitted personal fields | An active member | `update profiles set full_name = 'New Name', phone = '0400 000 000' where id = auth.uid()` | Succeeds — `role`, `status`, and `organisation_id` are all unchanged in this statement, so the trigger's condition (`IS DISTINCT FROM` on those three columns) never fires. |
+| 63 | Owner can suspend another member within the same organisation | Org A owner | `update profiles set status = 'suspended' where id = <Org A member>` | Succeeds — `profiles_update_self_or_owner`'s owner branch permits it, and the trigger permits a `status` change made by an owner. |
+| 64 | Owner can reactivate another member within the same organisation | Org A owner | `update profiles set status = 'active' where id = <the now-suspended Org A member>` | Succeeds, same reasoning as #63. |
+| 65 | Cross-organisation status change remains impossible | Org A owner | `update profiles set status = 'suspended' where id = <a profile belonging to Org B>` | 0 rows affected — `profiles_update_self_or_owner`'s owner branch requires the target row's `organisation_id` to already equal the acting owner's own `organisation_id`, so an Org B profile is never even visible to this UPDATE. |
+
+## Suspension access enforcement
+
+Added after ADR-013 (organisation/profile suspension enforced at the tenant-helper layer). These tests exercise the consequence of `internal.current_organisation_id()`/`current_role()` requiring both the caller's profile and their organisation to be `active`.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 66 | Suspended profile cannot read customers/projects | A member whose own `status = 'suspended'`, in an otherwise active Org A | `select * from customers` / `select * from projects` | 0 rows — `current_organisation_id()` returns `NULL` for this caller regardless of Org A's own status. |
+| 67 | Suspended profile cannot write customers/projects | Same actor as #66 | `insert into projects (organisation_id, name) values (<Org A>, 'Test')` | Rejected — `WITH CHECK` requires `organisation_id = (select internal.current_organisation_id())`, which is `NULL` for this caller. |
+| 68 | All members of a suspended organisation lose read access to operational data, even if their own profile is active | An owner or member with `status = 'active'`, but Org A itself is `status = 'suspended'` | `select * from customers` / `select * from projects` | 0 rows — `current_organisation_id()` returns `NULL` because the organisation side of the join fails, regardless of the caller's own profile status. |
+| 69 | All members of a suspended organisation lose access to their own organisation and profile rows | Same actor as #68, including the organisation's owner | `select * from organisations where id = <Org A>` / `select * from profiles where id = auth.uid()` | 0 rows for both — this is the accepted consequence documented in ADR-013: nobody, including the owner, can see their own suspended organisation or their own profile through the ordinary API once the organisation is suspended. |
+| 70 | Reactivation restores access only once both organisation and profile are active | `service_role` transitions Org A back to `status = 'active'`, but a specific member's own `profiles.status` remains `suspended` | That member attempts `select * from projects` | Still 0 rows — both sides of the join in `current_organisation_id()` must be active; the organisation being reactivated alone is not sufficient for a still-suspended member. |
+| 71 | Suspending Org A does not affect Org B | Org A is suspended via `service_role` | An Org B member runs `select * from projects` | Succeeds normally, returns Org B's own rows — `current_organisation_id()` for the Org B caller depends only on Org B's status, untouched by Org A's. |
+| 72 | Last-owner invariant (007) is unaffected by suspension-enforcement filtering | Code review, not a runtime call | Inspect `internal.assert_organisation_has_active_owner()` | Confirmed: it queries `organisations`/`profiles` directly by the `p_organisation_id` parameter, not through `internal.current_organisation_id()`/`current_role()` — so 005's suspension filtering has no effect on 007's behaviour. (Documented in `007`'s own comments as part of this correction pass.) |
+
+## Migration rerun behaviour
+
+Added after the Phase 1 database review identified `005`'s ten `CREATE POLICY` statements were not idempotent (finding M1, now corrected with `DROP POLICY IF EXISTS` guards).
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 73 | Re-running `005` a second time succeeds | `service_role` / migration runner, against a database where `001`-`007` already applied successfully once | Re-execute the full contents of `005_phase1_rls.sql` | Succeeds with no errors — every `DROP POLICY IF EXISTS` + `CREATE POLICY` pair, every `CREATE OR REPLACE FUNCTION`/`TRIGGER`, and every `GRANT`/`REVOKE` is safely repeatable. |
+| 74 | Re-running the full `001`-`007` set a second time succeeds | Same as #73 | Re-execute all seven migration files in order | Succeeds with no errors — confirms the rerunnability claim for the complete Phase 1 migration set, not just `005` in isolation. |
+
+## Transaction isolation
+
+Added per ADR-009's documented limitation and `007`'s isolation-level comment block. `007` was **not** redesigned as part of this — this section documents the existing, correct behaviour under `READ COMMITTED` and records `REPEATABLE READ` as an explicitly unsupported configuration, not something exercised further.
+
+| # | Test | Actor | Action | Expected Result |
+|---|---|---|---|---|
+| 75 | Concurrent same-organisation demotions under `READ COMMITTED` (the only isolation level any Phase 1 client, including `service_role`, actually runs at via PostgREST) | See tests #52 and #53 | (Retained, not duplicated — see above) | Exactly one of the two concurrent transactions succeeds. This **is** the confirmation that the invariant holds under the isolation level Phase 1 actually uses in production. |
+| 76 | Ownership-changing operation under explicit `REPEATABLE READ` | `service_role`, via a direct database connection (not reachable through PostgREST/the client SDK, which cannot set isolation level per request) | `BEGIN ISOLATION LEVEL REPEATABLE READ; ...` around a demotion racing a concurrent `READ COMMITTED` demotion of a different owner in the same organisation | **Documented as an unsupported configuration, not a target for correct behaviour.** May permit an outcome that leaves zero active owners — this is the known limitation in ADR-009/`007`'s comments, not a defect to be fixed by this test plan. Recorded here so it is never silently assumed to be covered by #75. |
+
+---
+
 ## Related documents
 
 - `supabase/migrations/005_phase1_rls.sql` — the policies under test
 - `supabase/migrations/006_create_organisation_bootstrap.sql` — the bootstrap RPC under test
 - `supabase/migrations/007_protect_last_owner.sql` — the last-owner protection under test
-- `docs/decisions/README.md` — ADR-008 (bootstrap RPC), ADR-009 (last-owner protection, implemented in 007), ADR-010 (soft delete strategy), ADR-011 (single organisation membership), ADR-012 (profile lifecycle bound to auth.users)
+- `docs/decisions/README.md` — ADR-008 (bootstrap RPC), ADR-009 (last-owner protection, implemented in 007, isolation-level limitation), ADR-010 (soft delete strategy), ADR-011 (single organisation membership), ADR-012 (profile lifecycle bound to auth.users), ADR-013 (suspension enforcement)
+- `docs/PHASE_1_DATABASE_REVIEW.md` — the review that identified findings C1, H1, H2, and M1, corrected in this revision

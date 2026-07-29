@@ -9,17 +9,19 @@
 
 ## 1. Executive Assessment
 
-## **NOT READY**
+## **NOT READY** — correction pass applied 2026-07-29; unchanged from READY per explicit instruction pending a full fresh re-review
 
-One confirmed defect in `005_phase1_rls.sql` will make every RLS-protected query fail for every authenticated user the moment these migrations are applied — not a subtle security gap, an outright functional break. Two further confirmed defects (a permissions gap in the suspension mechanism, and a non-idempotent migration) and one important but currently unreachable design gap round out the items that should be fixed before deployment. None of these require a redesign — all four are small, mechanical, well-understood corrections to migrations already written. Once corrected and re-reviewed, this schema is well-isolated, its tenant boundary is sound, and its most complex piece (last-owner protection) is correctly engineered for the isolation level Supabase actually uses in production.
+**Update (2026-07-29 correction pass):** C1 (the deployment-blocking missing schema grant), the `status`-reversal half of H1, and M1 (non-idempotent policies) have been corrected directly in their original migration files. Suspension has additionally been given real enforcement (see ADR-013) — a strictly larger fix than H1 originally called for, since the review's own finding noted suspension had *no* enforced access effect at all, not just a self-reversal gap. H2 (the `REPEATABLE READ` limitation) has been **documented, not redesigned**, per explicit instruction — it remains an accepted, currently-unreachable limitation, not a corrected defect. Per instruction, the executive assessment is **not** being upgraded to READY: a HIGH finding (H2) remains open by design, and this correction pass — while thorough — is not the same thing as the "reviewed again as a complete set" pass that would justify that upgrade. Practically, the severity of what remains open has dropped substantially: the one finding that would have broken the application outright is fixed, and everything remaining is either an accepted, documented, currently-unreachable limitation, or a lower-severity item not yet actioned. See §12 for the itemised status of every finding.
 
-This assessment is deliberately not softened by the amount of good work already in this schema — a NOT READY verdict on a critical, deployment-blocking finding is the accurate one, independent of how much else passed review.
+Original assessment, for context: one confirmed defect in `005_phase1_rls.sql` would have made every RLS-protected query fail for every authenticated user the moment these migrations were applied — not a subtle security gap, an outright functional break. That defect (C1) is now corrected. This assessment was, and remains, deliberately not softened by the amount of good work already in this schema.
 
 ---
 
 ## 2. Critical Findings
 
 ### C1 — Missing `GRANT USAGE ON SCHEMA internal TO authenticated` breaks every RLS policy for every authenticated request
+
+**Status: CORRECTED** (2026-07-29). `005_phase1_rls.sql` now explicitly sets the full privilege posture for `internal` — `revoke all on schema internal from public;`, `revoke all on schema internal from anon;`, `grant usage on schema internal to authenticated;` — immediately after the schema is created, rather than relying on (correct, but previously unstated) PostgreSQL defaults. `authenticated` receives `USAGE` only, never `CREATE`, so it cannot create objects inside `internal`. Test #59 added to confirm this empirically once applied. **Not yet empirically verified against a live database** (nothing has been applied) — remains the first item on the pre-deployment checklist.
 
 **Category:** Confirmed defect (deployment-blocking).
 
@@ -44,6 +46,8 @@ grant usage on schema internal to authenticated;
 
 ### H1 — `profiles.status` can be freely self-reversed; suspension has no enforced effect on data access
 
+**Status: CORRECTED, and expanded beyond the original finding.** Problem 1 (self-reversal) is fixed exactly as specified: `prevent_unauthorised_profile_role_change()` (`005`) now also guards `status`, alongside `role`/`organisation_id`. Problem 2 (suspension has no access consequence) was originally scoped as a "larger design item" for a follow-up — it has instead been resolved directly in this same correction pass, as **ADR-013**: `internal.current_organisation_id()`/`current_role()` now require both the caller's profile and their organisation to be `status = 'active'`, and every tenant-isolation policy inherits this automatically. See the new "Suspension access enforcement" section of `docs/phase1-rls-test-plan.md` (tests #66–72) and ADR-013 for the full consequence analysis, including the accepted trade-off that a suspended organisation's owner cannot reactivate it through the ordinary API.
+
 **Category:** Confirmed defect + design gap.
 
 **Two separate but related problems:**
@@ -66,6 +70,8 @@ end if;
 This closes problem 1. Problem 2 (suspension has no access consequence) is a larger design item — recommend explicitly scoping it for a follow-up migration (adding `and status = 'active'` to `current_organisation_id()`/`current_role()`'s lookups, or to the tenant-isolation policies directly) rather than folding it into this correction silently; it changes behaviour for every table, not just `profiles`, and deserves its own review pass.
 
 ### H2 — Last-owner protection's correctness depends on `READ COMMITTED`; silently unsafe under `REPEATABLE READ`
+
+**Status: ACCEPTED LIMITATION — documented, not redesigned, per explicit instruction.** `007_protect_last_owner.sql` now carries an explicit header comment stating the `READ COMMITTED` requirement, the `REPEATABLE READ` failure mode (a transaction may retain a stale snapshot after obtaining the advisory lock), and the `SERIALIZABLE` fallback behaviour, verbatim as analysed below. The same limitation is recorded in ADR-009. **No runtime guard was added to `007`** — this remains a documentation-only correction, deliberately, since redesigning `007` was explicitly out of scope for this pass. Recommendation carried forward unchanged: route any future ownership-management capability through a single controlled RPC known to run at `READ COMMITTED` (or `SERIALIZABLE` with retry handling) before exposing it more broadly. Test #76 added to `docs/phase1-rls-test-plan.md`, explicitly recorded as documenting the unsupported configuration rather than asserting correct behaviour.
 
 **Category:** Design trade-off / documentation gap (not currently reachable via the client-facing API — see confidence note).
 
@@ -90,6 +96,8 @@ This turns a silent correctness gap into a loud, immediate error for any future 
 
 ### M1 — `005_phase1_rls.sql`'s ten `CREATE POLICY` statements are not idempotent
 
+**Status: CORRECTED** (2026-07-29). Every `CREATE POLICY` in `005` is now preceded by a matching `DROP POLICY IF EXISTS`. With this fix, every object `005` creates or modifies (schema + grants, four helper functions, ten policies, the self-escalation trigger and its function) is genuinely rerunnable — `005`'s header comment now states this explicitly, using "rerunnable in the intended clean development workflow" rather than an unqualified "idempotent" claim, per instruction. Tests #73–74 added to `docs/phase1-rls-test-plan.md` to confirm this empirically once applied.
+
 **Category:** Confirmed defect (deviates from the original stated requirement that every migration be idempotent where practical).
 
 Every other migration in this set is safely re-runnable (`CREATE TABLE IF NOT EXISTS`, `CREATE OR REPLACE FUNCTION`, `CREATE OR REPLACE TRIGGER`, and — in `007` — `DROP TRIGGER IF EXISTS` before each `CREATE CONSTRAINT TRIGGER`, since constraint triggers have no `OR REPLACE` form). `005` does not follow this pattern for any of its ten policies (`organisations_select_own`, `organisations_update_owner_only`, `profiles_select_same_org`, `profiles_update_self_or_owner`, `customers_select_same_org`, `customers_insert_same_org`, `customers_update_same_org`, `projects_select_same_org`, `projects_insert_same_org`, `projects_update_same_org`) — Postgres has no `CREATE POLICY IF NOT EXISTS` or `CREATE OR REPLACE POLICY`, so re-running `005` against a database where it has already succeeded will fail with `policy "..." for table "..." already exists` on the first policy it reaches.
@@ -97,6 +105,8 @@ Every other migration in this set is safely re-runnable (`CREATE TABLE IF NOT EX
 **Exact correction:** add `drop policy if exists <name> on <table>;` immediately before each `create policy` statement (see §9 for the full list).
 
 ### M2 — Money storage mismatch between the SQL schema and the live client
+
+**Status: DEFERRED REQUIREMENT — decision now formally recorded in §8a, schema deliberately unchanged.** Per instruction, the database is not being altered to mirror the live client's decimal-dollar convention. The conversion-boundary decision itself has been made and documented (§8a): SQL keeps integer cents; the application layer converts at the boundary. The actual conversion code is not yet written — that remains deferred until a live field is connected to this schema.
 
 **Category:** Application-compatibility gap requiring a decision (not a schema defect).
 
@@ -106,6 +116,8 @@ This is not a bug in either place individually — cents-as-storage is the right
 
 ### M3 — Project status values: `complete` (live app) vs `completed` (schema), and no existing `draft` state
 
+**Status: DEFERRED REQUIREMENT — decision now formally recorded in §8a, schema deliberately unchanged.** The schema keeps `completed` (not changed to match the live app's `complete`) — per instruction, the database is the standard, and the legacy JS value is what gets mapped during migration, not the other way around. Recorded formally in §8a. The actual mapping/migration script is not yet written.
+
 **Category:** Confirmed mismatch, requires a data-migration decision.
 
 `js/toolkit/project-store.js`'s `PROJECT_STATUSES` uses `active` / `on-hold` / `complete` / `archived`. `projects_status_check` (`004`, per your explicit instruction to keep `on-hold`) uses `draft` / `active` / `on-hold` / `completed` / `archived`. Two concrete differences:
@@ -114,17 +126,23 @@ This is not a bug in either place individually — cents-as-storage is the right
 
 ### M4 — No existing `customers` data model to migrate from; extraction requires a dedup design, not a copy
 
+**Status: DEFERRED REQUIREMENT — decision now formally recorded in §8a.** `customers` (`003`) is confirmed as a newly introduced, persistent model with no legacy equivalent — it is the source of truth going forward, not one of two parallel models. The one-time extraction/backfill from scattered project-level fields remains a separate, deferred piece of work (its dedup strategy is not designed as part of this correction pass — recording the decision is not the same as designing the ETL).
+
 **Category:** Application-compatibility gap requiring a design decision.
 
 There is no `CustomerStore` or equivalent anywhere in `js/toolkit/` or `js/tools/` today (confirmed by search — no matches for `customer`/`Customer` in `js/toolkit`). Client data currently exists only as inline `clientName`/`clientEmail`/`clientPhone` fields duplicated across each `project-store.js` `Project` record and separately within every tool's own form state (`variation-notice`, `quote-builder`, etc., each with their own `clientName` field, unconnected to any shared identity). Populating `customers` from existing data is therefore not a straightforward table copy — it requires an explicit deduplication strategy (e.g., group by name + email within an organisation, decide a matching threshold, decide what happens to genuinely ambiguous cases) before `projects.customer_id` can be backfilled for any pre-existing project.
 
 ### M5 — `GET STACKED DIAGNOSTICS ... CONSTRAINT_NAME` behaviour for a partial unique *index* violation is unverified
 
+**Status: OPEN, unchanged.** Not addressed in this correction pass — remains an empirical verification item for first deployment (test #43).
+
 **Category:** Unverified assumption, low risk.
 
 `006`'s exception handler checks `v_constraint_name = 'organisations_abn_unique_idx'` to distinguish a duplicate-ABN conflict from any other uniqueness violation. `organisations_abn_unique_idx` is a `CREATE UNIQUE INDEX ... WHERE abn IS NOT NULL`, not a named table constraint added via `ALTER TABLE ... ADD CONSTRAINT`. PostgreSQL's internal unique-violation reporting (`errtableconstraint()`) is understood to populate the constraint-name diagnostic with the *index* name in both cases, which is why this was written this way — but this has not been empirically exercised against a live database in this review (nothing has been applied). Recommend this be the first thing explicitly tested once `006` is applied to a test project (duplicate-ABN test, plan #43), specifically checking that the friendly message — not the generic fallback — is what's returned.
 
 ### M6 — Deleting a sole owner's `auth.users` row will be silently rolled back, with a raw Postgres error
+
+**Status: OPEN, unchanged.** Not addressed in this correction pass. Now additionally relevant to ADR-013's recovery-RPC recommendation — whoever designs that RPC should read this finding alongside it, since the two interact (a recovery RPC touching a suspended organisation's ownership should account for this cascade behaviour too).
 
 **Category:** Undocumented operational consequence (beneficial side effect, but needs a runbook note).
 
@@ -136,13 +154,22 @@ There is no `CustomerStore` or equivalent anywhere in `js/toolkit/` or `js/tools
 
 ### L1 — Trigger functions retain the default `PUBLIC EXECUTE` grant
 
+**Status: OPEN, unchanged.** Not in scope for this correction pass (not listed in the corrections requested). Still recommended, still not exploitable.
+
+
 `public.set_updated_at()` (`001`), `public.prevent_unauthorised_profile_role_change()` (`005`), and `public.enforce_last_owner_on_profiles()` / `public.enforce_last_owner_on_organisations()` (`007`, both `SECURITY DEFINER`) never have their default Postgres `PUBLIC EXECUTE` grant revoked, unlike every other function in this schema. **Not practically exploitable** — PostgreSQL refuses to invoke a `trigger`-returning function outside of trigger context regardless of privileges, so this cannot be called directly via RPC or a raw connection. Recommend revoking anyway, for consistency with this schema's own stated least-privilege posture and to avoid a future reader assuming an inconsistency means something is missed.
 
 ### L2 — `007`'s stated migration dependencies are broader than what it actually requires
 
+**Status: OPEN, unchanged.** Not in scope for this correction pass.
+
+
 `007`'s header lists `005` and `006` as dependencies. At the SQL level, `007` only references objects from `001` (`organisations`) and `002` (`profiles`) — it creates its own `internal` schema idempotently and never calls anything `005` or `006` created. The stated dependency is a *logical* one (007 only makes sense once RLS and bootstrap exist), not a hard execution-order requirement. Minor documentation-accuracy note; does not affect correctness of the numerical run order.
 
 ### L3 — `enforce_last_owner_on_organisations` fires on every `UPDATE`, not just `status` changes
+
+**Status: OPEN, unchanged — and still not recommended to act on now**, consistent with the original finding's own instruction not to apply speculative optimisation.
+
 
 Harmless at Phase 1 scale (organisation update volume is tiny), and not recommended as a change now — flagged only per the review's instruction not to leave premature-optimisation opportunities undocumented. If organisation-settings updates ever become frequent, scoping this to `AFTER UPDATE OF status` would avoid a redundant owner-count check on every unrelated field edit.
 
@@ -156,9 +183,9 @@ Harmless at Phase 1 scale (organisation update volume is tiny), and not recommen
 | `002_create_profiles.sql` | Pass | 1:1 extension of `auth.users`, correct `ON DELETE CASCADE`, correct `ON DELETE RESTRICT` on `organisation_id`. Indexes match stated query patterns. |
 | `003_create_customers.sql` | Pass | `customer_type` correctly non-exclusive (per your review). No cross-org uniqueness, as intended. |
 | `004_create_projects.sql` | Pass | `on-hold` correctly restored (per your review). `customer_id` correctly nullable with `ON DELETE SET NULL`. See M2/M3 for compatibility items — not schema defects. |
-| `005_phase1_rls.sql` | **Fail** | Contains C1 (missing schema `USAGE` grant — deployment-blocking) and M1 (non-idempotent policies). Policy *logic* itself is correct — see §7. |
-| `006_create_organisation_bootstrap.sql` | Pass, with M5 as an open verification item | Privilege model, parameter validation, and concurrency handling are all sound. Unaffected by C1 (doesn't call any `internal.*` function). |
-| `007_protect_last_owner.sql` | Pass, with H2 as a documented constraint | Deferred constraint-trigger design is correct for `READ COMMITTED`. Unaffected by C1 (its `internal` function is only called from `SECURITY DEFINER` triggers owned by the schema-owning role, not from client-facing policy evaluation). |
+| `005_phase1_rls.sql` | **Corrected (2026-07-29)** — was Fail | C1 and M1 both corrected directly in this file; H1 corrected and expanded into ADR-013's suspension enforcement. Policy *logic* itself was, and remains, correct — see §7. Not yet empirically verified against a live database. |
+| `006_create_organisation_bootstrap.sql` | Pass, with M5 as an open verification item | Unchanged in this correction pass. Privilege model, parameter validation, and concurrency handling are all sound. Unaffected by C1 (doesn't call any `internal.*` function) and unaffected by ADR-013 (doesn't call `internal.current_organisation_id()`/`current_role()` either — it derives identity from `auth.uid()` directly). |
+| `007_protect_last_owner.sql` | Pass, with H2 as a documented (not redesigned) constraint | Isolation-level limitation now explicitly documented in-file, per instruction not to redesign. Confirmed unaffected by ADR-013's suspension filtering — `internal.assert_organisation_has_active_owner()` queries by direct parameter, not through the now-filtered session helpers (documented in-file as part of this pass). Unaffected by C1 for the same reason as before. |
 
 ---
 
@@ -216,6 +243,16 @@ Trigger event coverage (`INSERT`/`UPDATE`/`DELETE` on `profiles`, `INSERT`/`UPDA
 
 **Summary of required decisions before replacing `localStorage`:** M2 (money boundary), M3 (status value mapping + bulk-migration default), M4 (customer dedup strategy), and a decision on `contractRef`'s SQL mapping. None of these are schema defects — they are product/engineering decisions this schema correctly leaves open rather than guessing at.
 
+### 8a. Application Migration Decisions (Recorded, 2026-07-29)
+
+The database schema is **not** being changed to mirror the live JavaScript app's inconsistencies (per explicit instruction). Instead, the following are recorded here as the formal, binding decisions for whoever connects live code to this schema — a dedicated checklist, not a re-statement of M2–M4's problem descriptions above.
+
+1. **Money is stored as integer cents in SQL; the application's decimal-dollar values must be converted at the boundary.** `projects.estimated_contract_value_cents` (and any future money column) remains cents-native. The live calculator (`js/toolkit/calculator.js`) is not required to become cents-native in Phase 1 — the conversion (`dollars * 100` on write, `cents / 100` on read) happens at whatever layer connects the client to this schema (a thin API/service function, not scattered across call sites). This decision does not yet have an implementation; it exists so the implementation, when written, has one specified boundary rather than an improvised one.
+2. **Project status is standardised on `completed`, not `complete`.** The SQL schema's spelling is authoritative. Any data-migration path that reads an existing localStorage project must map `complete → completed` explicitly — copying the value verbatim will violate `projects_status_check` and reject the row. Existing projects must **not** default to the new `draft` status during migration (no existing project is a draft); each should map to its current value (translated per the above) or, at minimum, default to `active` if its current status is otherwise ambiguous.
+3. **Customer data migration starts from `customers` as a newly introduced, persistent model** — there is no existing customer store to reconcile against or keep in parallel. `customers` is the single source of truth going forward. The one-time extraction of customer identity from today's scattered per-project `clientName`/`clientEmail`/`clientPhone` fields (and the deduplication strategy that requires) is separate, deferred work — recording this decision is not the same as designing that extraction, which is explicitly out of scope here.
+
+None of the above required, or resulted in, any change to `001`–`007`.
+
 ---
 
 ## 9. Test Coverage Matrix
@@ -230,24 +267,21 @@ Every policy, function, trigger, and named architectural invariant, mapped to it
 | `profiles_select_same_org` | 4 | Covered |
 | `profiles_update_self_or_owner` | 27, 28 | Covered |
 | `prevent_unauthorised_profile_role_change` (role/org) | 25, 26 | Covered |
-| `prevent_unauthorised_profile_role_change` (status) | — | **Missing — see below** |
-| No `profiles` INSERT/DELETE policy | — | **Partially missing — no test confirms ordinary INSERT/DELETE is rejected pre-bootstrap** |
-| `customers_select/insert/update_same_org` | 3, 9, 10 (select/insert), 16 (pattern reused for projects, not customers directly) | **Partially missing — no explicit customer INSERT/UPDATE cross-org test analogous to #5/#6 for projects** |
+| `prevent_unauthorised_profile_role_change` (status) | 60, 61, 62, 63, 64, 65 | **Covered — added in the 2026-07-29 correction pass** |
+| No `profiles` INSERT/DELETE policy | — | **Still partially missing — no test confirms ordinary INSERT/DELETE is rejected pre-bootstrap.** Not addressed in this correction pass (not in scope). |
+| `customers_select/insert/update_same_org` | 3, 9, 10 (select/insert), 16 (pattern reused for projects, not customers directly) | **Still partially missing — no explicit customer INSERT/UPDATE cross-org test analogous to #5/#6 for projects.** Not addressed in this correction pass (not in scope). |
 | No `customers`/`projects` DELETE policy | 17–24 | Covered |
-| `internal.current_organisation_id/role/is_owner/is_admin` `USAGE` grant | — | **Missing — see C1** |
+| `internal.current_organisation_id/role/is_owner/is_admin` `USAGE` grant | 59 | **Covered — added in the 2026-07-29 correction pass (closes C1)** |
+| `internal.current_organisation_id/role` active-profile/active-organisation filtering (ADR-013) | 66–72 | **Covered — added in the 2026-07-29 correction pass** |
 | `bootstrap_organisation()` — all aspects | 35–45 | Covered |
 | `007` triggers — all named scenarios | 46–58 | Covered |
-| `READ COMMITTED` correctness | 52, 53 (implicitly, since ordinary client sessions run at `READ COMMITTED`) | Covered implicitly |
-| `REPEATABLE READ` / `SERIALIZABLE` behaviour | — | **Missing — see H2** |
-| Migration idempotency (re-run each file twice) | — | **Missing — see M1** |
+| `READ COMMITTED` correctness | 52, 53, and now explicitly cross-referenced as test 75 | Covered |
+| `REPEATABLE READ` / `SERIALIZABLE` behaviour | 76 | **Documented as an unsupported configuration (H2, accepted limitation) — not asserted as correct, recorded so it is never assumed to be covered by 75** |
+| Migration idempotency (re-run each file twice) | 73, 74 | **Covered — added in the 2026-07-29 correction pass (closes M1)** |
 
-### Missing tests to add
+### Tests added in the 2026-07-29 correction pass
 
-1. **Foundational schema-usage smoke test** — "as an ordinary `authenticated` user with a valid profile, run `select 1` filtered through any RLS policy that calls an `internal.*` function (e.g. `select * from projects`)." This single test would have caught C1 immediately; it does not currently exist as an explicit, first test in the plan — the plan's tests assume this works and build on it.
-2. **`profiles.status` self-reversal test** — "a suspended member updates their own `status` back to `active`" (currently succeeds — should be rejected once H1 is fixed).
-3. **Suspended-member access test** — "a suspended member can still `select`/`insert`/`update` `customers`/`projects` in their organisation" (currently succeeds — documents the second half of H1 until the broader access-scoping decision is made).
-4. **Idempotency test** — re-apply each of `001`–`007` a second time against a database where they've already succeeded; confirm no errors. Would have caught M1.
-5. **Isolation-level test** (lower priority, given H2's limited practical reachability) — attempt an ownership-changing operation inside an explicit `SET TRANSACTION ISOLATION LEVEL REPEATABLE READ` block and confirm the outcome matches whatever H2's eventual resolution specifies (either a documented "not supported" error, or explicit acceptance of the risk).
+Tests 59 (schema-usage smoke test), 60–65 (profile status protection), 66–72 (suspension access enforcement), 73–74 (migration rerun behaviour), and 75–76 (transaction isolation) were all added directly to `docs/phase1-rls-test-plan.md` as part of this correction pass — see that document for full detail. This closes every item from the original "Missing tests to add" list except the two still-open, not-in-scope items noted above (`profiles` INSERT/DELETE pre-bootstrap rejection; explicit `customers` cross-org INSERT/UPDATE tests analogous to the existing `projects` ones).
 
 ### Tests requiring two users or two organisations
 
@@ -271,14 +305,17 @@ Every policy, function, trigger, and named architectural invariant, mapped to it
 
 ## 10. Exact Corrections Recommended
 
-Presented as the precise change each finding requires. **None of these have been applied — this is a specification for the next step, pending your approval.**
+**Status update (2026-07-29): C1, H1, and M1 have been applied exactly as specified below, directly in their original migration files. H2 was documented, not applied as a runtime guard, per explicit instruction. M2/M3/M4 were resolved as recorded decisions (§8a), not SQL changes. L1 remains open, not in scope for this pass.**
 
-**C1 — add to `005_phase1_rls.sql`**, immediately after `create schema if not exists internal;`:
+**C1 — applied to `005_phase1_rls.sql`**, immediately after `create schema if not exists internal;`:
 ```sql
+revoke all on schema internal from public;
+revoke all on schema internal from anon;
 grant usage on schema internal to authenticated;
 ```
+(Expanded slightly beyond the original one-line specification to also explicitly revoke from `public`/`anon`, per the correction instructions' requirement to "explicitly review and set schema privileges rather than relying on PostgreSQL defaults.")
 
-**H1 — replace the condition in `public.prevent_unauthorised_profile_role_change()` (`005`):**
+**H1 — applied, the condition in `public.prevent_unauthorised_profile_role_change()` (`005`) now reads:**
 ```sql
 if (new.role is distinct from old.role
     or new.organisation_id is distinct from old.organisation_id
@@ -287,33 +324,15 @@ if (new.role is distinct from old.role
   raise exception 'Only an organisation owner may change a member''s role, status, or organisation.';
 end if;
 ```
-(The broader "suspension has no access consequence" half of H1 is a separate, larger decision — recommend scoping as its own follow-up, not silently bundled into this fix.)
+The broader "suspension has no access consequence" half of H1 was **also resolved** in this pass, via ADR-013 (see the updated H1 finding in §3 and the exact function changes in `005`), not left as a separate follow-up as originally suggested.
 
-**H2 — add to `internal.assert_organisation_has_active_owner()` (`007`), as the first statement in the function body:**
-```sql
-if current_setting('transaction_isolation') = 'repeatable read' then
-  raise exception 'Ownership-changing operations are not supported at REPEATABLE READ isolation.'
-    using errcode = '25001';
-end if;
-```
-(Pending your confirmation this guard is wanted — the alternative is documentation-only, accepting the current-zero-practical-reachability assessment.)
+**H2 — documentation only, applied to `007_protect_last_owner.sql`, ADR-009, and this document.** The runtime guard (`current_setting('transaction_isolation') = 'repeatable read'`) proposed as an option in the original review was **not** applied — explicit instruction was to document, not redesign, `007`.
 
-**M1 — add before each of the ten `CREATE POLICY` statements in `005`**, e.g.:
-```sql
-drop policy if exists organisations_select_own on public.organisations;
-create policy organisations_select_own ...
-```
-(repeated for all ten: `organisations_select_own`, `organisations_update_owner_only`, `profiles_select_same_org`, `profiles_update_self_or_owner`, `customers_select_same_org`, `customers_insert_same_org`, `customers_update_same_org`, `projects_select_same_org`, `projects_insert_same_org`, `projects_update_same_org`).
+**M1 — applied**, every one of the ten `CREATE POLICY` statements in `005` is now preceded by a matching `DROP POLICY IF EXISTS`.
 
-**L1 — add for each trigger function**, e.g.:
-```sql
-revoke all on function public.set_updated_at() from public;
-revoke all on function public.prevent_unauthorised_profile_role_change() from public;
-revoke all on function public.enforce_last_owner_on_profiles() from public;
-revoke all on function public.enforce_last_owner_on_organisations() from public;
-```
+**L1 — not applied, still open.** Not requested in the correction instructions for this pass.
 
-**M2, M3, M4 — not SQL corrections.** These require product/engineering decisions (documented in §8) before any corresponding SQL or migration script is written. Recommend resolving them as explicit, separate decisions — not guessed at while fixing the items above.
+**M2, M3, M4 — not SQL corrections, as originally noted.** Resolved as recorded decisions in §8a. No schema change made or recommended.
 
 ---
 
@@ -327,26 +346,31 @@ Documented approach only, per your instruction — no destructive scripts create
 
 **If bootstrap creates unexpected data:** `bootstrap_organisation()` only ever creates one `organisations` row and one `profiles` row per call, both traceable via `created_by = <the calling user's auth.uid()>`. Recovery is a manual, `service_role`-executed `DELETE` of the specific rows (the `organisations` row can only be deleted once its `profiles` row is gone first, per the `RESTRICT` FK — delete `profiles` first, then `organisations`). This is a manual support action, not something to script generically, since "unexpected" data by definition needs human judgement about what's actually wrong before removing anything.
 
+**If a suspended organisation needs to be reactivated (new, per ADR-013):** this is now an expected, documented state, not a failure. Once `internal.current_organisation_id()`/`current_role()` require both profile and organisation to be `active` (§3, H1/ADR-013), a suspended organisation's owner has no path back to `active` through the ordinary client API — `organisations_update_owner_only` depends on the same now-`NULL` function. Recovery requires either `service_role` administration (`update organisations set status = 'active' where id = ...`, executed directly, bypassing RLS) or — not yet built — a dedicated, reviewed `SECURITY DEFINER` recovery RPC (ADR-013 explicitly recommends this be designed separately, with its own authorisation model, rather than improvised here). Until that RPC exists, reactivation is a manual `service_role` action, and should be treated with the same care as any other privileged, RLS-bypassing operation — logged, and performed by someone who has verified the organisation's suspension reason has genuinely been resolved.
+
 **If the ownership trigger (`007`) blocks legitimate administration** (e.g. a genuine need to remove an organisation's sole owner without an immediate replacement — the ADR-010/ADR-012 suspended-org scenario): the documented path is to first set `organisations.status = 'suspended'` (which the trigger's own scope, per H2's confirmation that the invariant only applies to `status = 'active'`, correctly permits with zero owners), perform the necessary profile changes, then either reactivate with a valid owner in place or leave the organisation suspended. There is deliberately no bypass mechanism for the trigger itself while an organisation remains `active` — that would defeat the invariant's purpose. If a genuine emergency requires overriding it on an active organisation, the only correct path is a privileged, logged, one-off `SET session_replication_role = replica;` (superuser only, disables all ordinary triggers for the session) immediately followed by manual restoration of the invariant and `SET session_replication_role = default;` — this should never be routine, and should be treated as an incident requiring its own record, not a documented "normal" recovery step.
 
 ---
 
 ## 12. Final Pre-Deployment Checklist
 
-- [ ] Apply C1's correction to `005` (schema `USAGE` grant) — **blocking**.
-- [ ] Apply H1's correction to `005` (extend the self-escalation trigger to cover `status`) — recommended before deployment.
-- [ ] Decide on H2's defensive guard (add it, or accept documentation-only given current zero API-reachability) — recommended before deployment, not strictly blocking.
-- [ ] Apply M1's correction to `005` (idempotent policies) — recommended before deployment.
-- [ ] Apply L1's correction (revoke default grants on trigger functions) — optional, hygiene.
-- [ ] Apply all corrected migrations to a **test/staging** Supabase project first — never the live project as the first application.
-- [ ] Re-run every migration file a second time against the now-migrated test project, confirming full idempotency (this specifically re-validates M1's fix and the general idempotency claim made throughout this migration set).
-- [ ] Execute the full `docs/phase1-rls-test-plan.md` (tests 1–58) against the test project, as the specified roles — not as `service_role` for any test that doesn't call for it.
-- [ ] Execute the four newly identified missing tests from §9 (schema-usage smoke test, `profiles.status` self-reversal, suspended-member access, idempotency re-run).
+- [x] Apply C1's correction to `005` (schema `USAGE` grant) — **blocking**. **Done 2026-07-29**, not yet empirically verified (see test #59).
+- [x] Apply H1's correction to `005` (extend the self-escalation trigger to cover `status`, and enforce suspension at the tenant-helper layer per ADR-013). **Done 2026-07-29**, not yet empirically verified (see tests #60–72).
+- [x] Decide on H2's defensive guard — **decided: documentation-only**, per explicit instruction not to redesign `007`. Recorded in `007`, ADR-009, and this document.
+- [x] Apply M1's correction to `005` (idempotent policies). **Done 2026-07-29**, not yet empirically verified (see tests #73–74).
+- [ ] Apply L1's correction (revoke default grants on trigger functions) — optional, hygiene, still open, not in scope for this pass.
+- [ ] Apply all corrected migrations to a **test/staging** Supabase project first — never the live project as the first application. **Still required — nothing has been applied.**
+- [ ] Re-run every migration file a second time against the now-migrated test project, confirming full idempotency (tests #73–74 — this specifically re-validates M1's fix and the general rerunnability claim made throughout this migration set).
+- [ ] Execute the full `docs/phase1-rls-test-plan.md` (tests 1–76, including the 18 tests added in this correction pass) against the test project, as the specified roles — not as `service_role` for any test that doesn't call for it.
+- [ ] Execute test #59 **first**, before any other authenticated test — this is the empirical confirmation of C1's fix, and every other authenticated test implicitly depends on it passing.
+- [ ] Execute tests #60–72 to empirically confirm ADR-013's suspension enforcement and H1's `status`-protection fix.
 - [ ] Explicitly verify M5 (the `organisations_abn_unique_idx` diagnostic-name behaviour) via test #43.
 - [ ] Confirm the actual deployment process: which role runs these migrations against the real project (`hpcqncghvdrlvufxfdnd`), and confirm that role owns every `SECURITY DEFINER` function it creates — this is a property of the deployment process, not of the SQL, and this review cannot confirm it without knowing how migrations will actually be applied (Supabase Dashboard SQL editor, CLI, or the MCP `apply_migration` tool all use the connected role, which should be confirmed to be the intended one).
-- [ ] Resolve M2 (money boundary decision), M3 (status mapping + bulk-migration default), and M4 (customer dedup strategy) before connecting any live UI to this schema — not blocking for applying the schema itself, but blocking for the localStorage replacement work that motivated it.
-- [ ] Decide `contractRef`'s mapping (`external_reference` vs `project_number` vs a new column) before any project data migration script is written.
-- [ ] Only after all of the above: apply to the live project (`hpcqncghvdrlvufxfdnd`), with `docs/phase1-rls-test-plan.md` re-run against it as a final confirmation.
+- [ ] Before connecting any live UI to this schema: implement the money-boundary conversion (§8a decision 1), the status-value mapping (§8a decision 2), and the customer-extraction/dedup design (§8a decision 3) — the decisions are now recorded; the implementations are not yet written.
+- [ ] Decide `contractRef`'s mapping (`external_reference` vs `project_number` vs a new column) before any project data migration script is written — still open, not addressed in this correction pass.
+- [ ] Design the suspended-organisation recovery RPC recommended in ADR-013 before suspension is used operationally beyond `service_role`-administered cases — still open, deliberately not built in this pass.
+- [ ] Only after all of the above, **and a full fresh re-review of the complete corrected migration set** (not just this targeted correction pass): consider upgrading the executive assessment from NOT READY, per the standing instruction not to do so prematurely.
+- [ ] Only after that: apply to the live project (`hpcqncghvdrlvufxfdnd`), with `docs/phase1-rls-test-plan.md` re-run against it as a final confirmation.
 
 ---
 
