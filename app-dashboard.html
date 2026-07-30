@@ -308,6 +308,22 @@
       }
     });
 
+    // Covers logout (or an expired/invalidated session) happening while
+    // this tab is sitting on the dashboard — e.g. signed out from
+    // another tab, or a refresh token that stops working — by sending
+    // the user back to signin.html instead of leaving a stale,
+    // now-unauthenticated dashboard on screen. Session *restoration* on
+    // load/refresh needs no extra handling here: the client is
+    // configured with persistSession/autoRefreshToken (js/supabase/
+    // client.js), so requireSession() below already finds a still-valid
+    // session after a refresh or a fresh page load without any of this
+    // page's own code re-implementing that.
+    supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        window.location.replace('signin.html');
+      }
+    });
+
     (async () => {
       const session = await requireSession('signin.html');
       if (!session) return; // requireSession already redirected
