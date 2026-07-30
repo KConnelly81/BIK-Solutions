@@ -109,18 +109,25 @@ Full detail, verification queries, and results for each: see
 
 ## 6. Known limitations
 
-- **Live browser testing not yet performed.** All Phase 2 frontend work
-  was verified by schema/RLS cross-check and full manual code-path review,
-  not by a real browser hitting the live project — the build session's
-  sandbox blocks outbound access to the Supabase project's public API host.
-  This does not affect the deployed site or real users, only that build
-  session's own environment. **This release should not be considered fully
-  proven until the manual checklist below has actually been run.**
-- **Email-confirmation landing page unconfirmed.** If email confirmation
-  is enabled on the Supabase project, the confirmation link's redirect
-  destination depends on that project's configured Site URL / redirect
-  settings, which weren't changed as part of this work. A confirmed user
-  may need to navigate to `signin.html` manually the first time.
+- **Live browser testing not performed during the build session** — that
+  sandbox blocks outbound access to the Supabase project's public API host,
+  so all Phase 2 frontend work there was verified by schema/RLS cross-check
+  and full manual code-path review only. **Live testing against the real
+  deployment has since started** and already found one real defect (email
+  confirmation redirect — see below, fixed); the manual checklist should
+  still be run in full before treating this release as proven.
+- ~~Email-confirmation landing page unconfirmed~~ — **found and fixed.**
+  Live signup testing showed the confirmation link redirecting to
+  `http://localhost:3000` (the Supabase Auth project's Site URL was still
+  the development default; `signup.html` also didn't specify
+  `emailRedirectTo`). Fixed on both sides: `signup.html` now passes
+  `emailRedirectTo: \`${window.location.origin}/signin.html\`` explicitly
+  (derived from origin, not hard-coded — see `docs/changelog.md`), and
+  Supabase Auth → URL Configuration's Site URL / allowed redirect URLs were
+  updated to `https://biksolutions.com.au`. Confirmed users now land on
+  `signin.html`, which processes the session and routes to organisation
+  setup or `app-dashboard.html`. **Not yet retested end-to-end** — awaiting
+  a fresh confirmation email against the corrected configuration.
 - **No public navigation link** points at `signup.html`/`signin.html` yet
   — reachable only by direct URL. Intentional for this release.
 - **No customer-linking UI** on the new project-create form (the schema

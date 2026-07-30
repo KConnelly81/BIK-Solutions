@@ -125,7 +125,19 @@
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { full_name: fullName } }
+          options: {
+            data: { full_name: fullName },
+            // Derived from window.location.origin, not hard-coded: this
+            // can never resolve to localhost in production, because
+            // production only ever serves this page from its real
+            // origin. In any other environment (local dev, a preview
+            // deploy) it correctly points back at that environment
+            // instead of hard-coding one specific domain everywhere.
+            // Must match an allowed redirect URL configured in Supabase
+            // Auth -> URL Configuration for the confirmation link to
+            // work at all.
+            emailRedirectTo: `${window.location.origin}/signin.html`
+          }
         });
 
         if (error) {

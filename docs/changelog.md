@@ -19,6 +19,9 @@
 
 ## [Unreleased] — In Progress
 
+### Fixed
+- **Live acceptance-test defect: email confirmation redirected to `localhost:3000`.** First real signup against the live deployment found that Supabase's confirmation email sent users to `http://localhost:3000` instead of the production site, because `signup.html`'s `supabase.auth.signUp()` call never specified `emailRedirectTo` — Supabase fell back to the project's Auth "Site URL", which was still the development default. Fixed by explicitly passing `emailRedirectTo: \`${window.location.origin}/signin.html\`` (`signup.html`), derived from the page's own origin rather than a hard-coded domain, so it can never resolve to `localhost` when actually served from production. Paired with an infrastructure-side fix (Supabase Auth → URL Configuration: Site URL and allowed redirect URLs updated to `https://biksolutions.com.au`). No other email-auth flow exists yet in the codebase (checked: no password-reset/magic-link/OTP calls anywhere) — the same `window.location.origin`-derived pattern must be used if/when one is added.
+
 ### Added
 - **Supabase frontend integration (Phase 2, separate-page approach)** — first working end-to-end journey against the live Phase 1 backend (`hpcqncghvdrlvufxfdnd`): sign up, confirm email if required, create an organisation via `bootstrap_organisation()`, reach a protected dashboard, create and list projects, survive a refresh, log out, log back in, still see the same organisation and project
   - `js/vendor/supabase-js.min.js` — official `@supabase/supabase-js` 2.111.0 UMD build, vendored (not CDN-loaded) so the app has no runtime dependency on a third-party host for the login path
