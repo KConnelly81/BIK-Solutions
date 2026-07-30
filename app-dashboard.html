@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BIK Solutions — your organisation dashboard." />
+  <meta name="robots" content="noindex" />
+  <title>Dashboard — BIK Solutions</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/supabase-app.css" />
+</head>
+<body>
+
+  <!-- Shown immediately; protected content below stays [hidden] until the
+       session + profile check resolves, so nothing protected ever paints
+       before it's confirmed the visitor is allowed to see it. -->
+  <div class="app-loading" id="loading">Loading your dashboard…</div>
+
+  <!-- Authenticated but no profile yet (fresh signup, or an interrupted
+       bootstrap): collect/confirm organisation details and retry. -->
+  <div class="setup-shell" id="setup-shell" hidden>
+    <h1 class="auth-title">Set up your organisation</h1>
+    <p class="auth-subtitle">You're signed in — one more step to create your organisation.</p>
+
+    <div class="banner banner--error" id="setup-error-banner" hidden role="alert"></div>
+
+    <form class="auth-form" id="setup-form">
+      <div class="form-group">
+        <label for="setup-full-name">Full name</label>
+        <input type="text" id="setup-full-name" name="fullName" autocomplete="name" required />
+      </div>
+      <div class="form-group">
+        <label for="setup-org-name">Organisation name</label>
+        <input type="text" id="setup-org-name" name="organisationName" autocomplete="organization" required />
+      </div>
+      <div class="form-group">
+        <label for="setup-org-abn">ABN <span class="text-muted">(optional)</span></label>
+        <input type="text" id="setup-org-abn" name="organisationAbn" inputmode="numeric" placeholder="11 digits, no spaces" />
+      </div>
+      <button type="submit" class="btn btn--coral" id="setup-submit-btn">Create organisation</button>
+    </form>
+  </div>
+
+  <!-- Real dashboard, only for an authenticated user with a profile. -->
+  <div id="app" hidden>
+    <header class="dash-header" role="banner">
+      <div class="dash-header-inner">
+        <div class="dash-org">
+          <div class="logo-mark" aria-hidden="true">B</div>
+          <div class="dash-org-name" id="org-name">—</div>
+        </div>
+        <div class="dash-user">
+          <span class="dash-user-name" id="user-name">—</span>
+          <button type="button" class="btn btn--ghost" id="logout-btn">Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main" id="app-main">
+      <div class="app-section-header">
+        <h1>Projects</h1>
+        <button type="button" class="btn btn--coral" id="new-project-btn">New project</button>
+      </div>
+
+      <div class="banner banner--error" id="projects-error-banner" hidden role="alert"></div>
+
+      <form class="auth-form setup-shell" id="create-project-form" hidden style="margin:0 0 24px;max-width:none;padding:24px;">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="project-name">Project name</label>
+            <input type="text" id="project-name" name="name" required />
+          </div>
+          <div class="form-group">
+            <label for="project-status">Status</label>
+            <select id="project-status" name="status">
+              <option value="draft">Draft</option>
+              <option value="active" selected>Active</option>
+              <option value="on-hold">On hold</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="project-address">Site address <span class="text-muted">(optional)</span></label>
+          <input type="text" id="project-address" name="siteAddress" />
+        </div>
+        <div class="form-group">
+          <label for="project-description">Description <span class="text-muted">(optional)</span></label>
+          <textarea id="project-description" name="description"></textarea>
+        </div>
+        <div style="display:flex;gap:12px;">
+          <button type="submit" class="btn btn--coral" id="create-project-submit">Create project</button>
+          <button type="button" class="btn btn--ghost-dark" id="cancel-project-btn">Cancel</button>
+        </div>
+      </form>
+
+      <p class="text-muted" id="projects-loading">Loading projects…</p>
+
+      <div class="empty-state" id="projects-empty" hidden>
+        <p>No projects yet.</p>
+        <button type="button" class="btn btn--coral" id="empty-new-project-btn">Create your first project</button>
+      </div>
+
+      <div class="project-grid" id="project-grid" hidden></div>
+    </main>
+  </div>
+
+  <script src="js/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { supabase } from './js/supabase/client.js';
+    import {
+      requireSession,
+      getCurrentProfile,
+      signOut,
+      friendlyAuthError,
+      readPendingOrgSetup,
+      savePendingOrgSetup,
+      clearPendingOrgSetup
+    } from './js/supabase/session.js';
+
+    const loadingEl = document.getElementById('loading');
+    const setupShell = document.getElementById('setup-shell');
+    const appEl = document.getElementById('app');
+
+    const setupForm = document.getElementById('setup-form');
+    const setupErrorBanner = document.getElementById('setup-error-banner');
+    const setupSubmitBtn = document.getElementById('setup-submit-btn');
+
+    const orgNameEl = document.getElementById('org-name');
+    const userNameEl = document.getElementById('user-name');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    const newProjectBtn = document.getElementById('new-project-btn');
+    const emptyNewProjectBtn = document.getElementById('empty-new-project-btn');
+    const cancelProjectBtn = document.getElementById('cancel-project-btn');
+    const createProjectForm = document.getElementById('create-project-form');
+    const createProjectSubmit = document.getElementById('create-project-submit');
+    const projectsErrorBanner = document.getElementById('projects-error-banner');
+    const projectsLoadingEl = document.getElementById('projects-loading');
+    const projectsEmptyEl = document.getElementById('projects-empty');
+    const projectGridEl = document.getElementById('project-grid');
+
+    logoutBtn.addEventListener('click', () => signOut('signin.html'));
+
+    let currentOrganisationId = null;
+    let currentUserId = null;
+
+    function showDashboard(profile) {
+      currentOrganisationId = profile.organisation_id;
+      currentUserId = profile.id;
+      orgNameEl.textContent = profile.organisations?.name || 'Your organisation';
+      userNameEl.textContent = profile.full_name || profile.email || 'Signed in';
+      loadingEl.hidden = true;
+      setupShell.hidden = true;
+      appEl.hidden = false;
+      loadProjects();
+    }
+
+    function toggleCreateForm(show) {
+      createProjectForm.hidden = !show;
+      if (show) {
+        createProjectForm.querySelector('#project-name').focus();
+      } else {
+        createProjectForm.reset();
+        createProjectForm.querySelector('#project-status').value = 'active';
+      }
+    }
+    newProjectBtn.addEventListener('click', () => toggleCreateForm(true));
+    emptyNewProjectBtn.addEventListener('click', () => toggleCreateForm(true));
+    cancelProjectBtn.addEventListener('click', () => toggleCreateForm(false));
+
+    function renderProjects(projects) {
+      projectsLoadingEl.hidden = true;
+      if (!projects.length) {
+        projectsEmptyEl.hidden = false;
+        projectGridEl.hidden = true;
+        return;
+      }
+      projectsEmptyEl.hidden = true;
+      projectGridEl.hidden = false;
+      projectGridEl.innerHTML = projects.map((project) => {
+        const statusLabel = project.status.replace('-', ' ');
+        return `
+          <div class="project-card">
+            <div class="project-card-name">${escapeHtml(project.name)}</div>
+            ${project.site_address ? `<div class="project-card-address">${escapeHtml(project.site_address)}</div>` : ''}
+            <span class="status-pill status-pill--${project.status}">${escapeHtml(statusLabel)}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement('div');
+      div.textContent = value ?? '';
+      return div.innerHTML;
+    }
+
+    async function loadProjects() {
+      projectsErrorBanner.hidden = true;
+      projectsLoadingEl.hidden = false;
+      projectsEmptyEl.hidden = true;
+      projectGridEl.hidden = true;
+
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name, status, site_address, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        projectsLoadingEl.hidden = true;
+        projectsErrorBanner.textContent = friendlyAuthError(error);
+        projectsErrorBanner.hidden = false;
+        return;
+      }
+      renderProjects(data);
+    }
+
+    createProjectForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      projectsErrorBanner.hidden = true;
+
+      const name = createProjectForm.name.value.trim();
+      const status = createProjectForm.status.value;
+      const siteAddress = createProjectForm.siteAddress.value.trim();
+      const description = createProjectForm.description.value.trim();
+
+      createProjectSubmit.disabled = true;
+      createProjectSubmit.textContent = 'Creating…';
+      try {
+        const { error } = await supabase.from('projects').insert({
+          organisation_id: currentOrganisationId,
+          name,
+          status,
+          site_address: siteAddress || null,
+          description: description || null,
+          created_by: currentUserId,
+          updated_by: currentUserId
+        });
+        if (error) {
+          projectsErrorBanner.textContent = friendlyAuthError(error);
+          projectsErrorBanner.hidden = false;
+          return;
+        }
+        toggleCreateForm(false);
+        await loadProjects();
+      } catch (err) {
+        projectsErrorBanner.textContent = friendlyAuthError(err);
+        projectsErrorBanner.hidden = false;
+      } finally {
+        createProjectSubmit.disabled = false;
+        createProjectSubmit.textContent = 'Create project';
+      }
+    });
+
+    function showSetup() {
+      const pending = readPendingOrgSetup();
+      if (pending) {
+        setupForm.fullName.value = pending.fullName || '';
+        setupForm.organisationName.value = pending.organisationName || '';
+        setupForm.organisationAbn.value = pending.abn || '';
+      }
+      loadingEl.hidden = true;
+      appEl.hidden = true;
+      setupShell.hidden = false;
+    }
+
+    setupForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setupErrorBanner.hidden = true;
+
+      const fullName = setupForm.fullName.value.trim();
+      const organisationName = setupForm.organisationName.value.trim();
+      const organisationAbn = setupForm.organisationAbn.value.trim().replace(/[\s-]/g, '');
+
+      if (organisationAbn && !/^\d{11}$/.test(organisationAbn)) {
+        setupErrorBanner.textContent = 'ABN must be 11 digits.';
+        setupErrorBanner.hidden = false;
+        return;
+      }
+
+      setupSubmitBtn.disabled = true;
+      setupSubmitBtn.textContent = 'Creating organisation…';
+      try {
+        savePendingOrgSetup({ fullName, organisationName, abn: organisationAbn || null });
+        const { error } = await supabase.rpc('bootstrap_organisation', {
+          p_organisation_name: organisationName,
+          p_full_name: fullName,
+          p_organisation_abn: organisationAbn || null
+        });
+        // "A profile already exists" means a profile now exists for this
+        // user, one way or another (e.g. a prior submit actually
+        // succeeded and only the client-side confirmation was lost) —
+        // that is the outcome this step wants, so treat it as success
+        // rather than a blocking error.
+        if (error && !/A profile already exists for this account/i.test(error.message || '')) {
+          setupErrorBanner.textContent = friendlyAuthError(error);
+          setupErrorBanner.hidden = false;
+          return;
+        }
+        clearPendingOrgSetup();
+        const profile = await getCurrentProfile();
+        if (profile) {
+          showDashboard(profile);
+        } else {
+          // bootstrap_organisation() succeeded but the row isn't visible
+          // yet in this request context — reload to pick it up cleanly.
+          window.location.reload();
+        }
+      } catch (err) {
+        setupErrorBanner.textContent = friendlyAuthError(err);
+        setupErrorBanner.hidden = false;
+      } finally {
+        setupSubmitBtn.disabled = false;
+        setupSubmitBtn.textContent = 'Create organisation';
+      }
+    });
+
+    // Covers logout (or an expired/invalidated session) happening while
+    // this tab is sitting on the dashboard — e.g. signed out from
+    // another tab, or a refresh token that stops working — by sending
+    // the user back to signin.html instead of leaving a stale,
+    // now-unauthenticated dashboard on screen. Session *restoration* on
+    // load/refresh needs no extra handling here: the client is
+    // configured with persistSession/autoRefreshToken (js/supabase/
+    // client.js), so requireSession() below already finds a still-valid
+    // session after a refresh or a fresh page load without any of this
+    // page's own code re-implementing that.
+    supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        window.location.replace('signin.html');
+      }
+    });
+
+    (async () => {
+      const session = await requireSession('signin.html');
+      if (!session) return; // requireSession already redirected
+
+      try {
+        const profile = await getCurrentProfile();
+        if (profile) {
+          showDashboard(profile);
+        } else {
+          showSetup();
+        }
+      } catch (err) {
+        loadingEl.textContent = friendlyAuthError(err);
+      }
+    })();
+  </script>
+</body>
+</html>

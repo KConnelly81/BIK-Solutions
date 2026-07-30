@@ -1,0 +1,268 @@
+/* ============================================
+   BIK Solutions — supabase-app.css
+   Shared styles for the Supabase-backed app pages:
+   signup.html, signin.html, app-dashboard.html.
+   Builds on the tokens and .btn/.form-group rules already
+   defined in css/styles.css — link that file first.
+   ============================================ */
+
+/* ── Auth shell (signup.html / signin.html) ───────────────── */
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: var(--cream);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  background: #fff;
+  border: 1px solid #e8e4de;
+  border-radius: 10px;
+  padding: 36px 32px;
+  box-shadow: 0 4px 24px rgba(37, 35, 32, 0.06);
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.auth-logo .logo-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--charcoal);
+  color: var(--cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.auth-logo-name { font-weight: 700; font-size: 1rem; color: var(--charcoal); }
+.auth-logo-tag  { font-size: 0.75rem; color: var(--stone); }
+
+.auth-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 6px;
+}
+
+.auth-subtitle {
+  font-size: 0.9rem;
+  color: var(--stone);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.auth-form { display: flex; flex-direction: column; gap: 18px; }
+
+.auth-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.auth-form .btn { justify-content: center; width: 100%; margin-top: 4px; }
+
+.auth-footer {
+  margin-top: 22px;
+  font-size: 0.88rem;
+  color: var(--stone);
+  text-align: center;
+}
+
+.auth-footer a { color: var(--coral); font-weight: 600; }
+.auth-footer a:hover { text-decoration: underline; }
+
+.field-hint {
+  font-size: 0.76rem;
+  color: var(--stone);
+  margin-top: -10px;
+}
+
+.field-error {
+  font-size: 0.8rem;
+  color: #c0392b;
+  margin-top: -10px;
+}
+
+/* ── Status banners (error / success / info) ─────────────── */
+
+.banner {
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.banner--error   { background: #fbeae7; border: 1px solid #e3aca1; color: #9a2f1f; }
+.banner--success { background: #eaf5ec; border: 1px solid #a9d4b0; color: #1f6b2a; }
+.banner--info     { background: #f0ede6; border: 1px solid #d5d0c8; color: var(--dark-stone); }
+.banner[hidden] { display: none; }
+
+/* ── Buttons: loading state ──────────────────────────────── */
+
+.btn[data-loading="true"] {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* ── App shell (app-dashboard.html) ──────────────────────── */
+
+.app-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--stone);
+  font-size: 0.95rem;
+}
+
+.dash-header {
+  background: var(--charcoal);
+  padding: 0 24px;
+}
+
+.dash-header-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dash-org {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--cream);
+  min-width: 0;
+}
+
+.dash-org-name {
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.dash-user-name {
+  color: rgba(245, 240, 232, 0.75);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.app-main {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.app-main[hidden], .app-loading[hidden] { display: none; }
+
+.app-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.app-section-header h1 {
+  font-size: 1.3rem;
+  color: var(--charcoal);
+}
+
+/* ── Project list ─────────────────────────────────────────── */
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.project-card {
+  background: #fff;
+  border: 1px solid #e8e4de;
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.project-card-name {
+  font-weight: 700;
+  color: var(--charcoal);
+  margin-bottom: 6px;
+}
+
+.project-card-address {
+  font-size: 0.84rem;
+  color: var(--stone);
+  margin-bottom: 12px;
+}
+
+.status-pill {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.status-pill--draft     { background: #ece7de; color: var(--dark-stone); }
+.status-pill--active    { background: #e3f2e5; color: #2b9e3f; }
+.status-pill--on-hold   { background: #fbe9d8; color: #e67e22; }
+.status-pill--completed { background: #dbe9fa; color: #2c7dd4; }
+.status-pill--archived  { background: #e8e4de; color: var(--stone); }
+
+.empty-state {
+  text-align: center;
+  padding: 56px 24px;
+  color: var(--stone);
+  background: #fff;
+  border: 1px dashed #d5d0c8;
+  border-radius: 8px;
+}
+
+.empty-state p { margin-bottom: 16px; }
+
+/* ── Inline org-setup step (authenticated, no profile yet) ── */
+
+.setup-shell {
+  max-width: 480px;
+  margin: 48px auto;
+  background: #fff;
+  border: 1px solid #e8e4de;
+  border-radius: 10px;
+  padding: 32px;
+}
+
+/* ── Small helpers ────────────────────────────────────────── */
+
+.text-muted { color: var(--stone); font-size: 0.86rem; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }

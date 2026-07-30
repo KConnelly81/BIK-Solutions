@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Create your BIK Solutions account." />
+  <meta name="robots" content="noindex" />
+  <title>Sign up — BIK Solutions</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/supabase-app.css" />
+</head>
+<body>
+
+  <div class="auth-shell">
+    <div class="auth-card" id="auth-card" hidden>
+      <div class="auth-logo">
+        <div class="logo-mark" aria-hidden="true">B</div>
+        <div>
+          <div class="auth-logo-name">BIK Solutions</div>
+          <div class="auth-logo-tag">Beyond Industry Knowledge</div>
+        </div>
+      </div>
+
+      <h1 class="auth-title">Create your account</h1>
+      <p class="auth-subtitle">Set up your organisation and start managing projects in one place.</p>
+
+      <div class="banner banner--error" id="error-banner" hidden role="alert"></div>
+      <div class="banner banner--success" id="success-banner" hidden role="status"></div>
+
+      <form class="auth-form" id="signup-form">
+        <div class="form-group">
+          <label for="full-name">Full name</label>
+          <input type="text" id="full-name" name="fullName" autocomplete="name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" autocomplete="new-password" minlength="8" required />
+          </div>
+          <div class="form-group">
+            <label for="confirm-password">Confirm password</label>
+            <input type="password" id="confirm-password" name="confirmPassword" autocomplete="new-password" minlength="8" required />
+          </div>
+        </div>
+        <p class="field-hint">At least 8 characters.</p>
+
+        <div class="form-group">
+          <label for="org-name">Organisation name</label>
+          <input type="text" id="org-name" name="organisationName" autocomplete="organization" required />
+        </div>
+
+        <div class="form-group">
+          <label for="org-abn">ABN <span class="text-muted">(optional)</span></label>
+          <input type="text" id="org-abn" name="organisationAbn" inputmode="numeric" placeholder="11 digits, no spaces" />
+        </div>
+
+        <button type="submit" class="btn btn--coral" id="submit-btn">Create account</button>
+      </form>
+
+      <p class="auth-footer">Already have an account? <a href="signin.html">Sign in</a></p>
+    </div>
+  </div>
+
+  <script src="js/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { supabase } from './js/supabase/client.js';
+    import { redirectIfSignedIn, savePendingOrgSetup, friendlyAuthError } from './js/supabase/session.js';
+
+    const card = document.getElementById('auth-card');
+    const form = document.getElementById('signup-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const errorBanner = document.getElementById('error-banner');
+    const successBanner = document.getElementById('success-banner');
+
+    function showError(message) {
+      errorBanner.textContent = message;
+      errorBanner.hidden = false;
+      successBanner.hidden = true;
+    }
+
+    function clearBanners() {
+      errorBanner.hidden = true;
+      successBanner.hidden = true;
+    }
+
+    function setLoading(loading) {
+      submitBtn.disabled = loading;
+      submitBtn.dataset.loading = String(loading);
+      submitBtn.textContent = loading ? 'Creating account…' : 'Create account';
+    }
+
+    (async () => {
+      const alreadySignedIn = await redirectIfSignedIn('app-dashboard.html');
+      if (!alreadySignedIn) card.hidden = false;
+    })();
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      clearBanners();
+
+      const fullName = form.fullName.value.trim();
+      const email = form.email.value.trim();
+      const password = form.password.value;
+      const confirmPassword = form.confirmPassword.value;
+      const organisationName = form.organisationName.value.trim();
+      const organisationAbn = form.organisationAbn.value.trim().replace(/[\s-]/g, '');
+
+      if (password !== confirmPassword) {
+        showError('Passwords do not match.');
+        return;
+      }
+      if (organisationAbn && !/^\d{11}$/.test(organisationAbn)) {
+        showError('ABN must be 11 digits.');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: fullName },
+            // Derived from window.location.origin, not hard-coded: this
+            // can never resolve to localhost in production, because
+            // production only ever serves this page from its real
+            // origin. In any other environment (local dev, a preview
+            // deploy) it correctly points back at that environment
+            // instead of hard-coding one specific domain everywhere.
+            // Must match an allowed redirect URL configured in Supabase
+            // Auth -> URL Configuration for the confirmation link to
+            // work at all.
+            emailRedirectTo: `${window.location.origin}/signin.html`
+          }
+        });
+
+        if (error) {
+          showError(friendlyAuthError(error));
+          return;
+        }
+
+        const pendingSetup = { organisationName, fullName, abn: organisationAbn || null };
+
+        if (!data.session) {
+          // Email confirmation is required — no session yet, so
+          // bootstrap_organisation() cannot be called (it needs
+          // auth.uid()). Preserve the organisation details for when the
+          // user returns, and stop here without redirecting.
+          savePendingOrgSetup(pendingSetup);
+          form.hidden = true;
+          successBanner.textContent =
+            'Check your email to confirm your account. Once confirmed, sign in and we’ll finish setting up your organisation.';
+          successBanner.hidden = false;
+          return;
+        }
+
+        // Session issued immediately (email confirmation not required
+        // on this project) — set up the organisation now, in the same
+        // flow, while we still have this session in hand.
+        savePendingOrgSetup(pendingSetup);
+        await supabase.rpc('bootstrap_organisation', {
+          p_organisation_name: pendingSetup.organisationName,
+          p_full_name: pendingSetup.fullName,
+          p_organisation_abn: pendingSetup.abn
+        });
+        // Whether bootstrap just succeeded, or failed (e.g. a duplicate
+        // ABN), the dashboard is the single place that both shows the
+        // real dashboard and, if no profile exists yet, the org-setup
+        // retry step — so it is always the right next stop once a
+        // session exists.
+        window.location.href = 'app-dashboard.html';
+      } catch (err) {
+        showError(friendlyAuthError(err));
+      } finally {
+        setLoading(false);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -3,11 +3,12 @@
  * Shared service for AI-assisted professional document text.
  * Reusable across Variation Generator, Quotes, Defect Reports, etc.
  *
- * Phase 1: Direct browser → Anthropic API (user supplies own key).
+ * All requests are routed through the BIK AI proxy (Cloudflare Worker).
+ * No API key is stored in the browser or shipped in this file.
  *
  * AI_WRITING_ENGINE_INTEGRATION_POINT:
- *   In Phase 2, replace _callAPI() with a call to your backend proxy
- *   and replace key management with session auth. No other changes needed.
+ *   Update PROXY_URL below after deploying the Cloudflare Worker.
+ *   In future, replace with a session-authenticated endpoint.
  *
  * Usage:
  *   import { AIWriter } from '../../toolkit/ai-writer.js';
@@ -15,10 +16,13 @@
  *   const result = await writer.write(text, 'professional', { projectName, clientName });
  */
 
-const KEY_STORAGE   = 'bik-ai-key';
-const API_URL       = 'https://api.anthropic.com/v1/messages';
-const MODEL         = 'claude-haiku-4-5-20251001';
-const MAX_TOKENS    = 1024;
+// ── AI_WRITING_ENGINE_INTEGRATION_POINT ─────────────────────────────────────
+// Replace this URL with your deployed Cloudflare Worker URL after running:
+//   wrangler deploy
+// Example: 'https://bik-ai-proxy.<your-account>.workers.dev'
+const PROXY_URL  = 'https://bik-ai-proxy.biksolutions.workers.dev';
+const MODEL      = 'claude-haiku-4-5-20251001';
+const MAX_TOKENS = 1024;
 
 // ── System prompts per writing mode ─────────────────────────
 
@@ -93,35 +97,6 @@ Output ONLY the rewritten text. No preamble, no explanation.`
 
 export class AIWriter {
 
-  constructor() {
-    this._cachedKey = null;
-  }
-
-  /** Returns the stored API key, or null. */
-  getKey() {
-    if (this._cachedKey) return this._cachedKey;
-    try { this._cachedKey = localStorage.getItem(KEY_STORAGE) || null; } catch (_) {}
-    return this._cachedKey;
-  }
-
-  /** Store a new API key. */
-  setKey(key) {
-    this._cachedKey = key ? key.trim() : null;
-    try {
-      if (this._cachedKey) {
-        localStorage.setItem(KEY_STORAGE, this._cachedKey);
-      } else {
-        localStorage.removeItem(KEY_STORAGE);
-      }
-    } catch (_) {}
-  }
-
-  /** Remove stored API key. */
-  clearKey() { this.setKey(null); }
-
-  /** True if an API key is stored. */
-  hasKey() { return !!this.getKey(); }
-
   /**
    * Rewrite text using AI.
    *
@@ -129,15 +104,15 @@ export class AIWriter {
    * @param {'professional'|'contract-protection'|'spell-grammar'|'simplify-client'|'formal'|'plain-english'} mode
    * @param {{ projectName?: string, clientName?: string, toolName?: string }} [context]
    * @returns {Promise<string>} rewritten text
-   * @throws {Error} message === 'NO_KEY'      — no API key stored
-   * @throws {Error} message === 'INVALID_KEY' — 401 from API
-   * @throws {Error} message === string        — other API or network error
+   * @throws {Error} message === 'PROXY_NOT_CONFIGURED' — PROXY_URL placeholder not yet replaced
+   * @throws {Error} message === string                  — API or network error
    */
   async write(text, mode, context = {}) {
     if (!text?.trim()) throw new Error('No text provided');
 
-    const key = this.getKey();
-    if (!key) throw new Error('NO_KEY');
+    if (PROXY_URL.includes('<your-account>')) {
+      throw new Error('PROXY_NOT_CONFIGURED');
+    }
 
     const system = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.professional;
 
@@ -148,39 +123,34 @@ export class AIWriter {
       ? `${parts.join('\n')}\n\nText to rewrite:\n${text}`
       : text;
 
-    return this._callAPI(key, system, userMessage);
+    return this._callProxy(system, userMessage);
   }
 
   /**
    * AI_WRITING_ENGINE_INTEGRATION_POINT
-   * Replace this method with a call to your backend proxy in Phase 2.
-   * Signature must remain: (key, system, userMessage) => Promise<string>
+   * Calls the BIK AI proxy. No API key required here — the Worker holds it.
+   * In a future authenticated version, add a session token to the headers.
    */
-  async _callAPI(key, system, userMessage) {
+  async _callProxy(system, userMessage) {
     let response;
     try {
-      response = await fetch(API_URL, {
+      response = await fetch(PROXY_URL, {
         method: 'POST',
-        headers: {
-          'x-api-key':                              key,
-          'anthropic-version':                      '2023-06-01',
-          'content-type':                           'application/json',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model:      MODEL,
           max_tokens: MAX_TOKENS,
           system,
-          messages: [{ role: 'user', content: userMessage }]
-        })
+          messages: [{ role: 'user', content: userMessage }],
+        }),
       });
-    } catch (networkErr) {
+    } catch {
       throw new Error('Network error — check your connection and try again.');
     }
 
     if (!response.ok) {
-      if (response.status === 401) throw new Error('INVALID_KEY');
-      let msg = `API error ${response.status}`;
+      if (response.status === 429) throw new Error('Too many requests — please wait a moment and try again.');
+      let msg = `AI service error (${response.status})`;
       try { const e = await response.json(); msg = e?.error?.message || msg; } catch (_) {}
       throw new Error(msg);
     }
@@ -190,4 +160,12 @@ export class AIWriter {
     if (!result) throw new Error('AI returned an empty response — please try again.');
     return result;
   }
+
+  // ── Key management methods kept for backward compatibility ───────────────
+  // These are no-ops now that the proxy holds the key. Safe to remove in a
+  // future cleanup once all callers have been updated.
+  getKey()   { return null; }
+  hasKey()   { return true; }  // proxy is always available once deployed
+  setKey()   {}
+  clearKey() {}
 }
