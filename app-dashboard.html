@@ -144,9 +144,11 @@
     logoutBtn.addEventListener('click', () => signOut('signin.html'));
 
     let currentOrganisationId = null;
+    let currentUserId = null;
 
     function showDashboard(profile) {
       currentOrganisationId = profile.organisation_id;
+      currentUserId = profile.id;
       orgNameEl.textContent = profile.organisations?.name || 'Your organisation';
       userNameEl.textContent = profile.full_name || profile.email || 'Signed in';
       loadingEl.hidden = true;
@@ -232,7 +234,9 @@
           name,
           status,
           site_address: siteAddress || null,
-          description: description || null
+          description: description || null,
+          created_by: currentUserId,
+          updated_by: currentUserId
         });
         if (error) {
           projectsErrorBanner.textContent = friendlyAuthError(error);
@@ -285,7 +289,12 @@
           p_full_name: fullName,
           p_organisation_abn: organisationAbn || null
         });
-        if (error) {
+        // "A profile already exists" means a profile now exists for this
+        // user, one way or another (e.g. a prior submit actually
+        // succeeded and only the client-side confirmation was lost) —
+        // that is the outcome this step wants, so treat it as success
+        // rather than a blocking error.
+        if (error && !/A profile already exists for this account/i.test(error.message || '')) {
           setupErrorBanner.textContent = friendlyAuthError(error);
           setupErrorBanner.hidden = false;
           return;
