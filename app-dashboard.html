@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="BIK Solutions — your organisation dashboard." />
+  <meta name="robots" content="noindex" />
+  <title>Dashboard — BIK Solutions</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/supabase-app.css" />
+</head>
+<body>
+
+  <!-- Shown immediately; protected content below stays [hidden] until the
+       session + profile check resolves, so nothing protected ever paints
+       before it's confirmed the visitor is allowed to see it. -->
+  <div class="app-loading" id="loading">Loading your dashboard…</div>
+
+  <!-- Authenticated but no profile yet (fresh signup, or an interrupted
+       bootstrap): collect/confirm organisation details and retry. -->
+  <div class="setup-shell" id="setup-shell" hidden>
+    <h1 class="auth-title">Set up your organisation</h1>
+    <p class="auth-subtitle">You're signed in — one more step to create your organisation.</p>
+
+    <div class="banner banner--error" id="setup-error-banner" hidden role="alert"></div>
+
+    <form class="auth-form" id="setup-form">
+      <div class="form-group">
+        <label for="setup-full-name">Full name</label>
+        <input type="text" id="setup-full-name" name="fullName" autocomplete="name" required />
+      </div>
+      <div class="form-group">
+        <label for="setup-org-name">Organisation name</label>
+        <input type="text" id="setup-org-name" name="organisationName" autocomplete="organization" required />
+      </div>
+      <div class="form-group">
+        <label for="setup-org-abn">ABN <span class="text-muted">(optional)</span></label>
+        <input type="text" id="setup-org-abn" name="organisationAbn" inputmode="numeric" placeholder="11 digits, no spaces" />
+      </div>
+      <button type="submit" class="btn btn--coral" id="setup-submit-btn">Create organisation</button>
+    </form>
+  </div>
+
+  <!-- Real dashboard, only for an authenticated user with a profile. -->
+  <div id="app" hidden>
+    <header class="dash-header" role="banner">
+      <div class="dash-header-inner">
+        <div class="dash-org">
+          <div class="logo-mark" aria-hidden="true">B</div>
+          <div class="dash-org-name" id="org-name">—</div>
+        </div>
+        <div class="dash-user">
+          <span class="dash-user-name" id="user-name">—</span>
+          <button type="button" class="btn btn--ghost" id="logout-btn">Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main" id="app-main">
+      <div class="app-section-header">
+        <h1>Projects</h1>
+      </div>
+      <p class="text-muted" id="projects-placeholder">Project list coming up next.</p>
+    </main>
+  </div>
+
+  <script src="js/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { supabase } from './js/supabase/client.js';
+    import {
+      requireSession,
+      getCurrentProfile,
+      signOut,
+      friendlyAuthError,
+      readPendingOrgSetup,
+      savePendingOrgSetup,
+      clearPendingOrgSetup
+    } from './js/supabase/session.js';
+
+    const loadingEl = document.getElementById('loading');
+    const setupShell = document.getElementById('setup-shell');
+    const appEl = document.getElementById('app');
+
+    const setupForm = document.getElementById('setup-form');
+    const setupErrorBanner = document.getElementById('setup-error-banner');
+    const setupSubmitBtn = document.getElementById('setup-submit-btn');
+
+    const orgNameEl = document.getElementById('org-name');
+    const userNameEl = document.getElementById('user-name');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    logoutBtn.addEventListener('click', () => signOut('signin.html'));
+
+    function showDashboard(profile) {
+      orgNameEl.textContent = profile.organisations?.name || 'Your organisation';
+      userNameEl.textContent = profile.full_name || profile.email || 'Signed in';
+      loadingEl.hidden = true;
+      setupShell.hidden = true;
+      appEl.hidden = false;
+    }
+
+    function showSetup() {
+      const pending = readPendingOrgSetup();
+      if (pending) {
+        setupForm.fullName.value = pending.fullName || '';
+        setupForm.organisationName.value = pending.organisationName || '';
+        setupForm.organisationAbn.value = pending.abn || '';
+      }
+      loadingEl.hidden = true;
+      appEl.hidden = true;
+      setupShell.hidden = false;
+    }
+
+    setupForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      setupErrorBanner.hidden = true;
+
+      const fullName = setupForm.fullName.value.trim();
+      const organisationName = setupForm.organisationName.value.trim();
+      const organisationAbn = setupForm.organisationAbn.value.trim().replace(/[\s-]/g, '');
+
+      if (organisationAbn && !/^\d{11}$/.test(organisationAbn)) {
+        setupErrorBanner.textContent = 'ABN must be 11 digits.';
+        setupErrorBanner.hidden = false;
+        return;
+      }
+
+      setupSubmitBtn.disabled = true;
+      setupSubmitBtn.textContent = 'Creating organisation…';
+      try {
+        savePendingOrgSetup({ fullName, organisationName, abn: organisationAbn || null });
+        const { error } = await supabase.rpc('bootstrap_organisation', {
+          p_organisation_name: organisationName,
+          p_full_name: fullName,
+          p_organisation_abn: organisationAbn || null
+        });
+        if (error) {
+          setupErrorBanner.textContent = friendlyAuthError(error);
+          setupErrorBanner.hidden = false;
+          return;
+        }
+        clearPendingOrgSetup();
+        const profile = await getCurrentProfile();
+        if (profile) {
+          showDashboard(profile);
+        } else {
+          // bootstrap_organisation() succeeded but the row isn't visible
+          // yet in this request context — reload to pick it up cleanly.
+          window.location.reload();
+        }
+      } catch (err) {
+        setupErrorBanner.textContent = friendlyAuthError(err);
+        setupErrorBanner.hidden = false;
+      } finally {
+        setupSubmitBtn.disabled = false;
+        setupSubmitBtn.textContent = 'Create organisation';
+      }
+    });
+
+    (async () => {
+      const session = await requireSession('signin.html');
+      if (!session) return; // requireSession already redirected
+
+      try {
+        const profile = await getCurrentProfile();
+        if (profile) {
+          showDashboard(profile);
+        } else {
+          showSetup();
+        }
+      } catch (err) {
+        loadingEl.textContent = friendlyAuthError(err);
+      }
+    })();
+  </script>
+</body>
+</html>
