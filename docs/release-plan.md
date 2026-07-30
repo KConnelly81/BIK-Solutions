@@ -1,15 +1,28 @@
 # Release Plan
 
 **Purpose:** Release schedule, launch checklists, and deployment process for BIK Solutions.
-**Last Updated:** 2026-07-15
+**Last Updated:** 2026-07-31
 **Status:** Active
 **Owner:** BIK Solutions Pty Ltd
 
 ---
 
+## Branching workflow (current, as of 2026-07-31)
+
+`main` is the single production branch and the branch GitHub Pages
+deploys from. `claude/bik-solutions-website-yevsuk` was the working
+branch for a long stretch of development (see dated sprint docs below
+for that history) and has since been reconciled into `main` — it is kept
+as a backup, not deleted, but is no longer where new work happens or
+where deployment reads from.
+
+Going forward: develop on a feature branch, open a PR into `main`, test,
+then merge. Do not push directly to `main` for anything beyond a
+reviewed merge or an urgent, clearly-flagged hotfix.
+
 ## Current Release: Phase 1 Website Build
 
-**Branch:** `claude/bik-solutions-website-yevsuk`
+**Branch:** `main`
 **Target:** biksolutions.com.au
 **Hosting:** GitHub Pages
 **Status:** In Progress
@@ -45,15 +58,15 @@
 3. **Commit** with descriptive message
 4. **Push** to branch:
    ```bash
-   git push -u origin claude/bik-solutions-website-yevsuk
+   git push -u origin main
    ```
 5. GitHub Pages auto-deploys within ~2 minutes
 6. **Verify live** at biksolutions.com.au
 
 ### If Push Rejected (Remote Ahead)
 ```bash
-git pull origin claude/bik-solutions-website-yevsuk --rebase
-git push -u origin claude/bik-solutions-website-yevsuk
+git pull origin main --rebase
+git push -u origin main
 ```
 
 ---
@@ -118,7 +131,7 @@ If a deployment breaks the live site:
 2. Revert to it:
    ```bash
    git revert HEAD
-   git push -u origin claude/bik-solutions-website-yevsuk
+   git push -u origin main
    ```
    (Do not use `git reset --hard` without confirmation — it discards history.)
 

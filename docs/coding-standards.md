@@ -125,9 +125,15 @@ Each feature is wrapped in an IIFE with a comment header:
 ## Git Conventions
 
 ### Branch Naming
+- `main` is the single production branch — GitHub Pages deploys from it.
+  Develop on a feature branch, open a PR, test, then merge; don't push
+  directly to `main` outside a reviewed merge or a clearly-flagged hotfix.
 - Feature branches: `feature/short-description`
 - Fix branches: `fix/short-description`
-- Current working branch: `claude/bik-solutions-website-yevsuk`
+- `claude/bik-solutions-website-yevsuk` was the working branch through a
+  long stretch of earlier development and has been reconciled into
+  `main` (2026-07-31) — kept as a backup, no longer where new work
+  happens or where Pages deploys from.
 
 ### Commit Messages
 ```

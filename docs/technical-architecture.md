@@ -1,7 +1,7 @@
 # Technical Architecture
 
 **Purpose:** Describe the system design, technology stack, and infrastructure decisions for BIK Solutions.
-**Last Updated:** 2026-07-30
+**Last Updated:** 2026-07-31
 **Status:** Active
 **Owner:** BIK Solutions Pty Ltd
 
@@ -51,6 +51,29 @@ remain as-planned, not yet built.
   localStorage. No public nav link points at the new pages yet — migrating
   the existing toolkit to Supabase-backed projects is a separate,
   not-yet-scheduled piece of work.
+
+### Branch reconciliation (2026-07-31)
+
+This work was originally merged onto `claude/bik-solutions-website-yevsuk`,
+believed at the time to be the GitHub Pages deployment branch (it was
+GitHub's configured repository default branch, and the branch this work
+had itself been built on top of). It was not: GitHub Pages actually
+deploys from `main`, which had diverged from `yevsuk` by 25 commits of
+its own — a full design-system rollout (`css/bik-design-system.css`)
+across nearly every tool page, plus dashboard/attendance/checkin/checkout
+redesigns — none of which existed on `yevsuk`. `yevsuk` in turn had 36
+commits `main` lacked: all of Phase 1/2 above, plus a security fix
+(`js/toolkit/ai-writer.js`/`ai-writer-ui.js` routed through a Cloudflare
+Worker proxy, removing a client-side-exposed API key) that `main` was
+still missing.
+
+Reconciled by merging `yevsuk` into `main` (verified first via a local,
+unpushed trial merge): zero conflicts, zero files deleted relative to
+either side, `ai-writer.js` confirmed to resolve to the secure proxy
+version post-merge. `main` is now the single production branch and the
+branch GitHub Pages deploys from; `yevsuk` is kept as a backup, not
+deleted or rewritten. See `docs/RELEASE_NOTES_V0.1_PLATFORM.md` for the
+full detail and the corrected rollback procedure.
 
 ### Repository Structure
 ```

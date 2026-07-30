@@ -1,7 +1,7 @@
 # Changelog
 
 **Purpose:** Version history and record of significant changes to the BIK Solutions platform.
-**Last Updated:** 2026-07-30
+**Last Updated:** 2026-07-31
 **Status:** Active
 **Owner:** BIK Solutions Pty Ltd
 
@@ -20,6 +20,7 @@
 ## [Unreleased] — In Progress
 
 ### Fixed
+- **`main`/`claude/bik-solutions-website-yevsuk` branch reconciliation.** All Phase 1/2 Supabase work (this changelog's entries below) had been merged and pushed only to `claude/bik-solutions-website-yevsuk`, believed to be the GitHub Pages deployment branch. It wasn't — GitHub Pages actually deploys from `main`, which had diverged by 25 commits of its own (a full design-system rollout across nearly every tool page) and had none of this work. Reconciled via a verified merge (zero conflicts, zero files lost from either side, confirmed the Cloudflare Worker AI-proxy security fix survived) of `yevsuk` into `main`; `main` is now the actual production branch with everything below live on it, `yevsuk` kept as a backup. Full detail: `docs/technical-architecture.md` ("Branch reconciliation") and `docs/RELEASE_NOTES_V0.1_PLATFORM.md`.
 - **Live acceptance-test defect: email confirmation redirected to `localhost:3000`.** First real signup against the live deployment found that Supabase's confirmation email sent users to `http://localhost:3000` instead of the production site, because `signup.html`'s `supabase.auth.signUp()` call never specified `emailRedirectTo` — Supabase fell back to the project's Auth "Site URL", which was still the development default. Fixed by explicitly passing `emailRedirectTo: \`${window.location.origin}/signin.html\`` (`signup.html`), derived from the page's own origin rather than a hard-coded domain, so it can never resolve to `localhost` when actually served from production. Paired with an infrastructure-side fix (Supabase Auth → URL Configuration: Site URL and allowed redirect URLs updated to `https://biksolutions.com.au`). No other email-auth flow exists yet in the codebase (checked: no password-reset/magic-link/OTP calls anywhere) — the same `window.location.origin`-derived pattern must be used if/when one is added.
 
 ### Added

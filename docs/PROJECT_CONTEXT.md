@@ -11,8 +11,14 @@
 
 **Live site:** biksolutions.com.au  
 **Repo:** `kconnelly81/bik-solutions`  
-**Branch:** `claude/bik-solutions-website-yevsuk`  
-**Latest commit:** `0be5e37` — Sprint 2 Customer MVP (5 tools + dashboard complete)
+**Branch:** `main` — the single production branch; GitHub Pages deploys from
+it. `claude/bik-solutions-website-yevsuk` was the working branch through
+a long stretch of earlier development and was reconciled into `main` on
+2026-07-31 (kept as a backup, no longer where new work happens). This
+file's "Latest commit" below and the architecture description are not
+kept continuously current — see `docs/RELEASE_NOTES_V0.1_PLATFORM.md`
+and `docs/changelog.md` for what's actually live.
+**Latest commit (as of this note):** `0be5e37` — Sprint 2 Customer MVP (5 tools + dashboard complete)
 
 ---
 
@@ -265,4 +271,4 @@ Import only from `js/integrations/index.js` (public API surface).
 - Ask before architectural decisions
 - No backend code in Phase 1
 - Update `docs/changelog.md` and `docs/product-roadmap.md` after each sprint
-- After committing: `git push -u origin claude/bik-solutions-website-yevsuk`
+- Develop on a feature branch, PR into `main`, test, then merge — don't push directly to `main` outside a reviewed merge or a clearly-flagged hotfix

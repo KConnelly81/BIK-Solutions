@@ -1,11 +1,18 @@
 # Release Notes — v0.1 Platform
 
 **Purpose:** Summary of the Phase 1 (Supabase backend) + Phase 2 (frontend
-integration) work merged into production on 2026-07-30 — the first release
-where BIK has a real multi-tenant backend behind any part of the site.
-**Status:** Merged to `claude/bik-solutions-website-yevsuk` (production
-branch) and pushed. Manual verification against the live deployment is
-still outstanding — see "Manual test checklist" below.
+integration) work, first merged on 2026-07-30 — the first release where
+BIK has a real multi-tenant backend behind any part of the site.
+**Status:** Originally merged and pushed to
+`claude/bik-solutions-website-yevsuk`, believed at the time to be the
+GitHub Pages deployment branch. On 2026-07-31 this was corrected: GitHub
+Pages actually deploys from `main`, which had diverged significantly and
+did not yet have any of this work. `main` and `yevsuk` were reconciled
+(see `docs/technical-architecture.md`'s "Branch reconciliation" note) and
+this work is now merged and pushed to `main` — the real production
+branch. `yevsuk` is kept as a backup, not deleted. Manual verification
+against the live deployment is still outstanding — see "Manual test
+checklist" below.
 **Owner:** BIK Solutions Pty Ltd
 
 ---
@@ -163,18 +170,27 @@ pages themselves being reachable by direct URL.
 
 **Frontend rollback (safe, non-destructive — recommended):**
 ```bash
-git checkout claude/bik-solutions-website-yevsuk
-git pull origin claude/bik-solutions-website-yevsuk
-# Revert the merged commit range (fd5701f..e0eb4c1) as new commits,
-# rather than resetting/force-pushing:
-git revert --no-commit fd5701f..e0eb4c1
-git commit -m "Revert v0.1 Platform: Supabase frontend integration"
-git push origin claude/bik-solutions-website-yevsuk
+git checkout main
+git pull origin main
+# main's history is: ...(main's own commits) -> 001e4d8 (the merge of
+# claude/bik-solutions-website-yevsuk, bringing in this entire release).
+# Revert that merge commit as a new commit, specifying -m 1 so it
+# reverts relative to main's own line of history (parent 1), not
+# yevsuk's (parent 2):
+git revert -m 1 001e4d8
+git push origin main
 ```
 This removes the new pages/files from production history going forward
 while preserving the full record of what was tried. Prefer this over
 `git reset --hard` + force-push, which rewrites shared history and can
-discard anyone else's work that landed on top of it in the meantime.
+discard anyone else's work that landed on top of it in the meantime. If
+later commits on `main` have touched any of the same files (e.g. a
+retested fix, or any change to `js/toolkit/ai-writer.js`/`ai-writer-ui.js`
+— see the "Branch reconciliation" note in `docs/technical-architecture.md`
+for why those files are part of this merge too), `git revert` will stop
+and ask you to resolve that overlap by hand rather than silently guessing
+— resolve it in favour of keeping whichever version is actually correct
+at rollback time, not automatically in favour of either side.
 
 **Backend rollback (only if a genuine defect is found in the schema —
 more disruptive, do not do this reflexively):**
