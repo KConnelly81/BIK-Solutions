@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sign in to your BIK Solutions account." />
+  <meta name="robots" content="noindex" />
+  <title>Sign in — BIK Solutions</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/supabase-app.css" />
+</head>
+<body>
+
+  <div class="auth-shell">
+    <div class="auth-card" id="auth-card" hidden>
+      <div class="auth-logo">
+        <div class="logo-mark" aria-hidden="true">B</div>
+        <div>
+          <div class="auth-logo-name">BIK Solutions</div>
+          <div class="auth-logo-tag">Beyond Industry Knowledge</div>
+        </div>
+      </div>
+
+      <h1 class="auth-title">Sign in</h1>
+      <p class="auth-subtitle">Welcome back. Sign in to reach your dashboard.</p>
+
+      <div class="banner banner--error" id="error-banner" hidden role="alert"></div>
+
+      <form class="auth-form" id="signin-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required />
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+        </div>
+
+        <button type="submit" class="btn btn--coral" id="submit-btn">Sign in</button>
+      </form>
+
+      <p class="auth-footer">Don’t have an account? <a href="signup.html">Sign up</a></p>
+    </div>
+  </div>
+
+  <script src="js/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { supabase } from './js/supabase/client.js';
+    import { redirectIfSignedIn, friendlyAuthError } from './js/supabase/session.js';
+
+    const card = document.getElementById('auth-card');
+    const form = document.getElementById('signin-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const errorBanner = document.getElementById('error-banner');
+
+    function showError(message) {
+      errorBanner.textContent = message;
+      errorBanner.hidden = false;
+    }
+
+    function setLoading(loading) {
+      submitBtn.disabled = loading;
+      submitBtn.dataset.loading = String(loading);
+      submitBtn.textContent = loading ? 'Signing in…' : 'Sign in';
+    }
+
+    (async () => {
+      const alreadySignedIn = await redirectIfSignedIn('app-dashboard.html');
+      if (!alreadySignedIn) card.hidden = false;
+    })();
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      errorBanner.hidden = true;
+
+      const email = form.email.value.trim();
+      const password = form.password.value;
+
+      setLoading(true);
+      try {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          showError(friendlyAuthError(error));
+          return;
+        }
+        // app-dashboard.html itself decides whether to show the real
+        // dashboard or the org-setup step, based on whether a profile
+        // exists — signin.html does not need to know which.
+        window.location.href = 'app-dashboard.html';
+      } catch (err) {
+        showError(friendlyAuthError(err));
+      } finally {
+        setLoading(false);
+      }
+    });
+  </script>
+</body>
+</html>
