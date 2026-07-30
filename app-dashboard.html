@@ -59,8 +59,50 @@
     <main class="app-main" id="app-main">
       <div class="app-section-header">
         <h1>Projects</h1>
+        <button type="button" class="btn btn--coral" id="new-project-btn">New project</button>
       </div>
-      <p class="text-muted" id="projects-placeholder">Project list coming up next.</p>
+
+      <div class="banner banner--error" id="projects-error-banner" hidden role="alert"></div>
+
+      <form class="auth-form setup-shell" id="create-project-form" hidden style="margin:0 0 24px;max-width:none;padding:24px;">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="project-name">Project name</label>
+            <input type="text" id="project-name" name="name" required />
+          </div>
+          <div class="form-group">
+            <label for="project-status">Status</label>
+            <select id="project-status" name="status">
+              <option value="draft">Draft</option>
+              <option value="active" selected>Active</option>
+              <option value="on-hold">On hold</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="project-address">Site address <span class="text-muted">(optional)</span></label>
+          <input type="text" id="project-address" name="siteAddress" />
+        </div>
+        <div class="form-group">
+          <label for="project-description">Description <span class="text-muted">(optional)</span></label>
+          <textarea id="project-description" name="description"></textarea>
+        </div>
+        <div style="display:flex;gap:12px;">
+          <button type="submit" class="btn btn--coral" id="create-project-submit">Create project</button>
+          <button type="button" class="btn btn--ghost-dark" id="cancel-project-btn">Cancel</button>
+        </div>
+      </form>
+
+      <p class="text-muted" id="projects-loading">Loading projects…</p>
+
+      <div class="empty-state" id="projects-empty" hidden>
+        <p>No projects yet.</p>
+        <button type="button" class="btn btn--coral" id="empty-new-project-btn">Create your first project</button>
+      </div>
+
+      <div class="project-grid" id="project-grid" hidden></div>
     </main>
   </div>
 
@@ -89,15 +131,124 @@
     const userNameEl = document.getElementById('user-name');
     const logoutBtn = document.getElementById('logout-btn');
 
+    const newProjectBtn = document.getElementById('new-project-btn');
+    const emptyNewProjectBtn = document.getElementById('empty-new-project-btn');
+    const cancelProjectBtn = document.getElementById('cancel-project-btn');
+    const createProjectForm = document.getElementById('create-project-form');
+    const createProjectSubmit = document.getElementById('create-project-submit');
+    const projectsErrorBanner = document.getElementById('projects-error-banner');
+    const projectsLoadingEl = document.getElementById('projects-loading');
+    const projectsEmptyEl = document.getElementById('projects-empty');
+    const projectGridEl = document.getElementById('project-grid');
+
     logoutBtn.addEventListener('click', () => signOut('signin.html'));
 
+    let currentOrganisationId = null;
+
     function showDashboard(profile) {
+      currentOrganisationId = profile.organisation_id;
       orgNameEl.textContent = profile.organisations?.name || 'Your organisation';
       userNameEl.textContent = profile.full_name || profile.email || 'Signed in';
       loadingEl.hidden = true;
       setupShell.hidden = true;
       appEl.hidden = false;
+      loadProjects();
     }
+
+    function toggleCreateForm(show) {
+      createProjectForm.hidden = !show;
+      if (show) {
+        createProjectForm.querySelector('#project-name').focus();
+      } else {
+        createProjectForm.reset();
+        createProjectForm.querySelector('#project-status').value = 'active';
+      }
+    }
+    newProjectBtn.addEventListener('click', () => toggleCreateForm(true));
+    emptyNewProjectBtn.addEventListener('click', () => toggleCreateForm(true));
+    cancelProjectBtn.addEventListener('click', () => toggleCreateForm(false));
+
+    function renderProjects(projects) {
+      projectsLoadingEl.hidden = true;
+      if (!projects.length) {
+        projectsEmptyEl.hidden = false;
+        projectGridEl.hidden = true;
+        return;
+      }
+      projectsEmptyEl.hidden = true;
+      projectGridEl.hidden = false;
+      projectGridEl.innerHTML = projects.map((project) => {
+        const statusLabel = project.status.replace('-', ' ');
+        return `
+          <div class="project-card">
+            <div class="project-card-name">${escapeHtml(project.name)}</div>
+            ${project.site_address ? `<div class="project-card-address">${escapeHtml(project.site_address)}</div>` : ''}
+            <span class="status-pill status-pill--${project.status}">${escapeHtml(statusLabel)}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(value) {
+      const div = document.createElement('div');
+      div.textContent = value ?? '';
+      return div.innerHTML;
+    }
+
+    async function loadProjects() {
+      projectsErrorBanner.hidden = true;
+      projectsLoadingEl.hidden = false;
+      projectsEmptyEl.hidden = true;
+      projectGridEl.hidden = true;
+
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name, status, site_address, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        projectsLoadingEl.hidden = true;
+        projectsErrorBanner.textContent = friendlyAuthError(error);
+        projectsErrorBanner.hidden = false;
+        return;
+      }
+      renderProjects(data);
+    }
+
+    createProjectForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      projectsErrorBanner.hidden = true;
+
+      const name = createProjectForm.name.value.trim();
+      const status = createProjectForm.status.value;
+      const siteAddress = createProjectForm.siteAddress.value.trim();
+      const description = createProjectForm.description.value.trim();
+
+      createProjectSubmit.disabled = true;
+      createProjectSubmit.textContent = 'Creating…';
+      try {
+        const { error } = await supabase.from('projects').insert({
+          organisation_id: currentOrganisationId,
+          name,
+          status,
+          site_address: siteAddress || null,
+          description: description || null
+        });
+        if (error) {
+          projectsErrorBanner.textContent = friendlyAuthError(error);
+          projectsErrorBanner.hidden = false;
+          return;
+        }
+        toggleCreateForm(false);
+        await loadProjects();
+      } catch (err) {
+        projectsErrorBanner.textContent = friendlyAuthError(err);
+        projectsErrorBanner.hidden = false;
+      } finally {
+        createProjectSubmit.disabled = false;
+        createProjectSubmit.textContent = 'Create project';
+      }
+    });
 
     function showSetup() {
       const pending = readPendingOrgSetup();
