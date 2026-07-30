@@ -1,7 +1,7 @@
 # Technical Architecture
 
 **Purpose:** Describe the system design, technology stack, and infrastructure decisions for BIK Solutions.
-**Last Updated:** 2026-07-15
+**Last Updated:** 2026-07-30
 **Status:** Active
 **Owner:** BIK Solutions Pty Ltd
 
@@ -24,6 +24,33 @@ Static HTML/CSS/JavaScript website hosted on GitHub Pages. No backend, no databa
 | Forms | Formspree (endpoint: xojonaww) | Zero-backend form handling |
 | E-commerce | Gumroad | Digital product sales; no payment infrastructure |
 | Analytics | (Planned: Plausible or Fathom) | Privacy-first; no cookie banner needed |
+
+### Supabase Integration (implemented 2026-07-30)
+
+The Phase 2 "Auth" and "Database" rows below moved from planned to
+implemented, ahead of the rest of that section (Stripe, PDF generation,
+hosting migration) — this was scoped narrowly to one thing: a disposable
+authenticated user can sign up, create one organisation, and manage
+projects, isolated from every other organisation by Postgres Row Level
+Security. Hosting, framework choice, and every other Phase 2 item below
+remain as-planned, not yet built.
+
+- **Backend:** Supabase project `hpcqncghvdrlvufxfdnd` — `organisations`,
+  `profiles`, `customers`, `projects` tables, RLS on all four, a single
+  `bootstrap_organisation()` RPC as the only path that creates an
+  organisation. See `supabase/migrations/`, `docs/PHASE_1_DATABASE_REVIEW.md`,
+  and `docs/PHASE_1_DEPLOYMENT_RUNBOOK.md`.
+- **Frontend:** still static HTML + native ES modules, no framework/bundler
+  — `js/supabase/client.js` (one shared client, publishable key only),
+  `js/supabase/session.js` (auth/session helpers), `signup.html`,
+  `signin.html`, `app-dashboard.html`. The Supabase JS SDK is vendored at
+  `js/vendor/supabase-js.min.js` (official npm build, loaded via a plain
+  `<script>` tag) rather than pulled from a CDN at runtime.
+- **Not yet connected:** `dashboard.html`, `project.html`, and
+  `js/toolkit/project-store.js` are unchanged and still run entirely on
+  localStorage. No public nav link points at the new pages yet — migrating
+  the existing toolkit to Supabase-backed projects is a separate,
+  not-yet-scheduled piece of work.
 
 ### Repository Structure
 ```
@@ -157,8 +184,8 @@ js/integrations/
 | Layer | Technology | Notes |
 |---|---|---|
 | Frontend | Remain static HTML + JS | Avoid framework lock-in; keep it simple |
-| Auth | Supabase Auth | Simple, free tier generous |
-| Database | Supabase (PostgreSQL) | Stores users, documents, subscriptions |
+| Auth | Supabase Auth | **Implemented 2026-07-30** — see "Supabase Integration" above |
+| Database | Supabase (PostgreSQL) | **Implemented 2026-07-30** for organisations/profiles/customers/projects — see "Supabase Integration" above. Document/subscription storage still planned. |
 | AI API | Anthropic Claude API | Document generation |
 | PDF generation | Puppeteer / Playwright (serverless) | Render HTML → PDF |
 | Payments | Stripe | Subscription management |

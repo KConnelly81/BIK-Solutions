@@ -1,7 +1,7 @@
 # Changelog
 
 **Purpose:** Version history and record of significant changes to the BIK Solutions platform.
-**Last Updated:** 2026-07-15
+**Last Updated:** 2026-07-30
 **Status:** Active
 **Owner:** BIK Solutions Pty Ltd
 
@@ -20,6 +20,16 @@
 ## [Unreleased] — In Progress
 
 ### Added
+- **Supabase frontend integration (Phase 2, separate-page approach)** — first working end-to-end journey against the live Phase 1 backend (`hpcqncghvdrlvufxfdnd`): sign up, confirm email if required, create an organisation via `bootstrap_organisation()`, reach a protected dashboard, create and list projects, survive a refresh, log out, log back in, still see the same organisation and project
+  - `js/vendor/supabase-js.min.js` — official `@supabase/supabase-js` 2.111.0 UMD build, vendored (not CDN-loaded) so the app has no runtime dependency on a third-party host for the login path
+  - `js/supabase/client.js` — one shared Supabase client for the whole app, configured with only the project URL and publishable key (never service-role)
+  - `js/supabase/session.js` — session/auth helpers: protected-page gating with no pre-check flash, profile+organisation lookup, sign-out, friendly error text
+  - `signup.html` — full name/email/password/confirm/organisation name/ABN; handles both immediate-session and email-confirmation-required signup, non-sensitive organisation details preserved across the confirmation redirect
+  - `signin.html` — email/password sign-in
+  - `app-dashboard.html` — protected dashboard: organisation name, signed-in user, project list/create/logout; inline organisation-setup step for an authenticated user with no profile yet (fresh signup or an interrupted bootstrap)
+  - `css/supabase-app.css` — shared styles for the three new pages, built on `css/styles.css`'s existing tokens
+  - Projects created through this flow use the schema's real status values (`draft`/`active`/`on-hold`/`completed`/`archived` — `completed`, not the legacy toolkit's `complete`) and are scoped entirely by RLS, not by any client-supplied organisation id
+  - `dashboard.html`, `project.html`, `js/toolkit/project-store.js`, and every existing localStorage tool are unchanged; no public nav link points at the new pages yet
 - **AI Professional Writer** — reusable AI writing engine powering the Variation Generator
   - `js/toolkit/ai-writer.js` — `AIWriter` class: shared service, mode-based system prompts, direct Anthropic API call with `anthropic-dangerous-direct-browser-access` header, API key management in `bik-ai-key` localStorage, typed error codes (`NO_KEY`, `INVALID_KEY`)
   - Two AI writing modes: "Rewrite Professionally" (clear, formal Australian construction language) and "Strengthen for Contract Protection" (defensible, unambiguous, legally grounded)
