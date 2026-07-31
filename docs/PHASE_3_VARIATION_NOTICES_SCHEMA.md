@@ -1,7 +1,7 @@
 # Phase 3 — `variation_notices` Table Design Note
 
 **Purpose:** Design overview for `public.variation_notices`, the schema backing the Variation Notices pilot migration — the first tool moved from `localStorage` onto the authenticated project model.
-**Status:** Migration `010_create_variation_notices.sql` (commit `3211d3b`) **applied and fully verified** against `hpcqncghvdrlvufxfdnd` on 2026-07-31 — see "Live deployment verification" below for the complete results. `011_variation_notice_number_generator.sql` (the concurrency-safe number generator, including the transactional `create_variation_notice()` RPC and, as of the third review round, a canonical `"VAR-NNN"` format with manual-entry normalisation) has been through three review rounds, is **fully locally tested against the checklist below, not yet applied** — see "Variation number generation (011)" below. The frontend is still **not wired up** — that remains a separate, explicitly gated step.
+**Status:** Both migrations **applied and fully verified live** against `hpcqncghvdrlvufxfdnd` on 2026-07-31. `010_create_variation_notices.sql` (commit `3211d3b`) — see "Live deployment verification" below. `011_variation_notice_number_generator.sql` (the concurrency-safe number generator, the transactional `create_variation_notice()` RPC, and the canonical `"VAR-NNN"` format with manual-entry normalisation) — applied as commit `d6ac0ed`, see "Live deployment verification (011)" below. The frontend is still **not wired up** — that remains a separate, explicitly gated step (Sprint 3), pending review of this report.
 **Owner:** BIK Solutions Pty Ltd
 
 ---
@@ -101,7 +101,7 @@ Applied to `hpcqncghvdrlvufxfdnd` via `apply_migration`, exact content of commit
 
 **Recommendation: Go for beginning frontend integration**, once explicitly authorised — the schema itself is fully verified live, with no discrepancy from review. Two things remain before wiring, both already tracked above, not new: `variation_number` generation needs a concurrency-safe server-side solution (the existing tool's `localStorage` counter cannot be carried over), and the frontend must supply the one-time client/project snapshot at creation (Confirmation 4) since the schema deliberately does not do this itself.
 
-## Variation number generation (011, drafted and locally tested through a third review round, not yet applied)
+## Variation number generation (011, applied and fully verified live)
 
 **The problem this closes:** the existing tool generates the next variation number in the browser (`js/tools/variation-notice/config.js`'s `nextVariationNumber()`, a per-browser `localStorage` counter). Two people in the same organisation creating a variation at the same time would both read the same "next" value, both attempt to save it, and one would fail on `variation_notices_org_project_number_unique_idx` (010) with a raw constraint-violation error — confusing, and entirely avoidable by not computing the number in JavaScript at all.
 
@@ -177,11 +177,43 @@ Full regression of every round-two item (project deletion cascade, counter non-d
 
 **Not built:** reassignment or re-normalisation on `UPDATE` (the trigger is `INSERT`-only; clearing an existing row's number back to blank, or editing it directly, does not trigger a fresh auto-assignment or normalisation pass — a direct `UPDATE` bypasses both, the same way it bypasses auto-assignment); reclaiming/compacting numbers from abandoned drafts (gaps are expected and accepted — the guarantee is no collision, ever, not no gaps, same as invoice numbering in any accounting system); resetting a project's counter (no product requirement yet); any attempt to recognise or reformat a genuinely custom reference (`"CLIENT-VO-10"` and similar are intentionally left exactly as typed, forever).
 
+## Live deployment verification (011, 2026-07-31)
+
+Applied to `hpcqncghvdrlvufxfdnd` via `apply_migration`, exact content of commit `d6ac0ed` on `feature/phase-3-documents-schema`. All checks below were run live against the real project.
+
+**Catalog checks — all passed:**
+- `internal.variation_number_counters`, `internal.format_variation_number()`, `internal.normalize_variation_number()`, `public.assign_variation_notice_number()`, `public.create_variation_notice()`, `internal.prevent_variation_number_counter_decrease()` — all exist.
+- RLS enabled on `internal.variation_number_counters` (`relrowsecurity = true`), zero policies — same secure-by-default posture as the local sandbox.
+- Both triggers present and enabled (`tgenabled = 'O'`): `variation_notices_assign_number` on `variation_notices`, `variation_number_counters_prevent_decrease` on `internal.variation_number_counters`.
+- `search_path = ''` fixed on all four functions (`assign_variation_notice_number`, `create_variation_notice`, `internal.format_variation_number`, `internal.normalize_variation_number`); `assign_variation_notice_number` confirmed `SECURITY DEFINER`, the other three confirmed `SECURITY INVOKER`.
+- Grants confirmed via `has_function_privilege`: `anon` can execute none of `create_variation_notice`, `normalize_variation_number`, `format_variation_number`, or the trigger function; `authenticated` can execute exactly `create_variation_notice()` and `internal.normalize_variation_number()` (the latter deliberately, so the RPC can report canonical-form collision errors), and nothing else.
+- `internal.variation_number_counters` holds zero grants of any kind for `anon`/`authenticated`/`public` — only the table owner.
+
+**Functional checks, using disposable data (two organisations, two disposable `auth.users` owners, five projects) — all passed:**
+- Automatic creation via `create_variation_notice()` returned `"VAR-001"`.
+- Counter primed to `999` directly; next auto-assign correctly produced `"VAR-1000"`.
+- Manual `"010"` normalised to `"VAR-010"`; manual `"var-010"` (different project) also normalised to `"VAR-010"`.
+- A second, differently-typed equivalent reference (`"VAR 010"`, space separator) on the same project as an existing `"VAR-010"` was correctly rejected: `"A variation numbered \"VAR-010\" already exists for this project. Choose a different number."` — the failed attempt rolled back cleanly with no residue.
+- A genuinely custom reference (`"CLIENT-VO-10"`) was stored exactly as typed.
+- Counter-skip demonstrated directly: two auto-assigns (`"VAR-001"`, `"VAR-002"`), a manual `"VAR-005"`, then three more auto-assigns correctly produced `"VAR-003"`, `"VAR-004"`, and skipped straight to `"VAR-006"` — no collision, no error.
+- Cross-organisation project rejection via `create_variation_notice()` confirmed: `"Project not found in your organisation."`.
+- Counter non-decrease confirmed: a direct privileged `UPDATE` lowering `next_number` was rejected by `prevent_variation_number_counter_decrease()`.
+- Zero duplicate `(project_id, variation_number)` pairs across all disposable data at the end of testing — confirmed by direct query, not inferred.
+- Project-deletion cascade confirmed as a side effect of cleanup itself: after deleting all disposable `variation_notices` rows and projects, `internal.variation_number_counters` for those projects dropped to zero rows, matching the `ON DELETE CASCADE` design.
+
+**Concurrency behaviour — verified where practical, not re-proven live.** The MCP tool interface used for live verification executes one statement group per call against a fresh connection; it cannot hold a transaction open across separate tool calls the way a local `psql` session can, so the genuine overlapping-transaction methodology used in local testing (background transaction holds a row lock for a measured duration, foreground transaction is only started after confirming the lock is held, block time is measured) is not reproducible against the live project through this interface. What was practical and was done: every functional test above ran through the identical, byte-for-byte migration content that was already proven race-free locally (4.951s block, correct sequential numbering, no collision — see "Round three" above), and the atomic `INSERT ... ON CONFLICT (project_id) DO UPDATE ... RETURNING` primitive the guarantee rests on is a single Postgres statement, not application-level logic that could behave differently between environments. No live discrepancy from the local result is expected or was observed in any of the sequential functional tests run above (all of which exercised the same code path).
+
+**Discrepancies between local and live behaviour: none.** Every catalog and functional result matched the local Postgres 16 sandbox exactly.
+
+**Test data cleanup:** confirmed complete. All disposable `variation_notices`/`projects`/`profiles`/`organisations`/`auth.users` rows removed; re-queried at zero afterward, including the counters table (cascade-cleaned live, as noted above). The one pre-existing real organisation/profile/project/auth-users pair (from the user's own live signup testing) was confirmed unchanged — identical counts (1/1/1/2) before and after this verification.
+
+**Recommendation: Go for Sprint 3 frontend integration**, once explicitly authorised — both `010` and `011` are now fully verified live with no discrepancy from review, on `feature/phase-3-documents-schema`, not merged to `main`.
+
 ## Next steps
 
 1. ~~Review this note, ADR-016, and `supabase/migrations/010_create_variation_notices.sql` together.~~ Done.
 2. ~~Apply `010` to `hpcqncghvdrlvufxfdnd` and verify.~~ Done — see "Live deployment verification" above.
-3. ~~Solve `variation_number` generation server-side.~~ Drafted and locally tested through three review rounds (`011`), including a transactional `create_variation_notice()` RPC and a full 10-point test checklist — see "Variation number generation" above. **Not yet applied to `hpcqncghvdrlvufxfdnd`**, pending review.
-4. Wire Variation Generator to it: gate `variation-generator.html` with the same `requireSession()`/no-flash pattern as `app-dashboard.html`, reuse `project-store.js`'s marked `PROJECT_STORAGE_POINT` extension point for the actual read/write calls, launch the tool from `app-dashboard.html` (pick or create a project first) rather than from `dashboard.html`. Drop the now-redundant `builderName`/`builderABN`/etc. and `projectName` fields from the form itself, sourcing them from the join instead. **Not started — explicitly held pending review of `011` and the lifecycle diagram, per standing instruction.**
+3. ~~Solve `variation_number` generation server-side.~~ Done — `011` applied to `hpcqncghvdrlvufxfdnd` and fully verified live on 2026-07-31, see "Live deployment verification (011)" above.
+4. Wire Variation Generator to it (Sprint 3): gate `variation-generator.html` with the same `requireSession()`/no-flash pattern as `app-dashboard.html`, reuse `project-store.js`'s marked `PROJECT_STORAGE_POINT` extension point for the actual read/write calls, launch the tool from `app-dashboard.html` (pick or create a project first) rather than from `dashboard.html`. Drop the now-redundant `builderName`/`builderABN`/etc. and `projectName` fields from the form itself, sourcing them from the join instead. **Not started — explicitly held pending review of this live deployment report, per standing instruction.**
 5. Manual test checklist, same rigor as `docs/PHASE_2_FRONTEND_TEST_CHECKLIST.md` — create, list, refresh, issue, and the cross-tenant isolation check (a second organisation must not see the first's variation notices).
 6. Write up the resulting pattern as a short playbook so Batch 1 (quote-builder, progress-claim, payment-reminder, subcontractor-agreement, contract-termination) becomes close to mechanical.
