@@ -100,3 +100,28 @@ export function addDays(iso, days) {
 function round2(n) {
   return Math.round(n * 100) / 100;
 }
+
+/**
+ * Dollars (string/number, as typed in a form) -> integer cents, the
+ * money convention used by every Supabase-backed table on this platform
+ * (avoids float rounding — see integration-architecture.md). Never
+ * negative, never NaN.
+ * @param {number|string} value
+ * @returns {number}
+ */
+export function dollarsToCents(value) {
+  const n = parseFloat(value);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.round(n * 100);
+}
+
+/**
+ * Integer cents -> dollars (number), the inverse of dollarsToCents, for
+ * display via formatAUD().
+ * @param {number} cents
+ * @returns {number}
+ */
+export function centsToDollars(cents) {
+  const n = Number(cents);
+  return Number.isFinite(n) ? n / 100 : 0;
+}

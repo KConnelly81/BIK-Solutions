@@ -8,8 +8,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  dollarsToCents,
-  centsToDollars,
   buildRpcParams,
   buildUpdatePayload,
   validateForSave,
@@ -17,40 +15,9 @@ import {
   deriveClientSnapshot
 } from '../variation-save-logic.js';
 
-// ── dollarsToCents / centsToDollars ─────────────────────────────
-
-test('dollarsToCents: converts a plain dollar amount', () => {
-  assert.equal(dollarsToCents('1000'), 100000);
-  assert.equal(dollarsToCents(1000), 100000);
-});
-
-test('dollarsToCents: rounds fractional cents', () => {
-  assert.equal(dollarsToCents('10.005'), 1001); // rounds, doesn't truncate
-  assert.equal(dollarsToCents('10.004'), 1000);
-});
-
-test('dollarsToCents: rejects negative and non-numeric input as 0', () => {
-  assert.equal(dollarsToCents('-5'), 0);
-  assert.equal(dollarsToCents('not a number'), 0);
-  assert.equal(dollarsToCents(''), 0);
-  assert.equal(dollarsToCents(undefined), 0);
-});
-
-test('dollarsToCents: zero is a valid, distinct value (nil-cost variation)', () => {
-  assert.equal(dollarsToCents('0'), 0);
-  assert.equal(dollarsToCents(0), 0);
-});
-
-test('centsToDollars: inverse of dollarsToCents for whole and fractional cents', () => {
-  assert.equal(centsToDollars(100000), 1000);
-  assert.equal(centsToDollars(110000), 1100);
-  assert.equal(centsToDollars(0), 0);
-});
-
-test('centsToDollars: non-numeric input is treated as 0', () => {
-  assert.equal(centsToDollars(undefined), 0);
-  assert.equal(centsToDollars(null), 0);
-});
+// dollarsToCents/centsToDollars moved to js/toolkit/calculator.js in Sprint 4
+// (every Supabase-backed tool needs them, not just this one) — see
+// js/toolkit/__tests__/calculator.test.js for their tests.
 
 // ── buildRpcParams ───────────────────────────────────────────────
 
