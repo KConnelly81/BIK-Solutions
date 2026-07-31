@@ -1,9 +1,8 @@
 # Sprint 3 — Variation Generator Frontend Integration: Manual Test Steps
 
 **Purpose:** Manual browser verification for `variation-generator.html`'s integration with the live Supabase project (`hpcqncghvdrlvufxfdnd`) via `public.create_variation_notice()` — the parts an automated unit test cannot cover (a real browser, a real session, real network calls). Same rationale as `docs/PHASE_2_FRONTEND_TEST_CHECKLIST.md`.
-**Status:** Not yet run. Code-level review and unit tests only (`js/tools/variation-notice/__tests__/variation-save-logic.test.js`, `node --test js/tools/variation-notice/__tests__/variation-save-logic.test.js`, 32/32 passing).
+**Status:** Passed. Run against the live Supabase project (`hpcqncghvdrlvufxfdnd`) and confirmed by the user before Sprint 3 was approved for merge. Unit tests: `js/tools/variation-notice/__tests__/variation-save-logic.test.js`, 32/32 passing.
 **Owner:** BIK Solutions Pty Ltd
-**Do not merge this branch to `main` until this checklist has been run and passed.**
 
 ---
 
