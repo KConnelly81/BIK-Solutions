@@ -1,7 +1,7 @@
 # Phase 3 — `variation_notices` Table Design Note
 
 **Purpose:** Design overview for `public.variation_notices`, the schema backing the Variation Notices pilot migration — the first tool moved from `localStorage` onto the authenticated project model.
-**Status:** Migration `010_create_variation_notices.sql` (commit `3211d3b`) **applied and fully verified** against `hpcqncghvdrlvufxfdnd` on 2026-07-31 — see "Live deployment verification" below for the complete results. The frontend is still **not wired up** — that remains a separate, explicitly gated step.
+**Status:** Migration `010_create_variation_notices.sql` (commit `3211d3b`) **applied and fully verified** against `hpcqncghvdrlvufxfdnd` on 2026-07-31 — see "Live deployment verification" below for the complete results. `011_variation_notice_number_generator.sql` (the concurrency-safe number generator) is **drafted and locally tested, not yet applied** — see "Variation number generation (011)" below. The frontend is still **not wired up** — that remains a separate, explicitly gated step.
 **Owner:** BIK Solutions Pty Ltd
 
 ---
@@ -69,7 +69,6 @@ Derived directly from `js/tools/variation-notice/config.js`'s `SCHEMA`.
 
 ## Deliberately not built here
 
-- Concurrency-safe per-organisation `variation_number` generation. The tool's current numbering is a per-browser `localStorage` counter (`bik-variation-counter`) — not safe to carry over unchanged into a shared, multi-user organisation (two users could generate the same next number concurrently). This needs an application-layer (or dedicated sequence/RPC) solution as part of wiring the frontend, not solved by this migration.
 - A full multi-transition audit/status-history table (`status_changed_at`/`by` captures only the latest transition).
 - Database-enforced immutability of the *other* typed columns (e.g. `reason_for_variation`, `cost_excl_gst_cents`) once a document is issued — left to the tool's own UI for now. `issued_snapshot` itself is the exception, now DB-enforced (Confirmation 1 above), precisely so a later edit to those still-mutable columns can never rewrite the historical record of what was actually sent.
 - A modelled multi-party approval workflow (`approved`/`rejected` are plain status values).
@@ -102,11 +101,27 @@ Applied to `hpcqncghvdrlvufxfdnd` via `apply_migration`, exact content of commit
 
 **Recommendation: Go for beginning frontend integration**, once explicitly authorised — the schema itself is fully verified live, with no discrepancy from review. Two things remain before wiring, both already tracked above, not new: `variation_number` generation needs a concurrency-safe server-side solution (the existing tool's `localStorage` counter cannot be carried over), and the frontend must supply the one-time client/project snapshot at creation (Confirmation 4) since the schema deliberately does not do this itself.
 
+## Variation number generation (011, drafted, locally tested, not yet applied)
+
+**The problem this closes:** the existing tool generates the next variation number in the browser (`js/tools/variation-notice/config.js`'s `nextVariationNumber()`, a per-browser `localStorage` counter). Two people in the same organisation creating a variation at the same time would both read the same "next" value, both attempt to save it, and one would fail on `variation_notices_org_project_number_unique_idx` (010) with a raw constraint-violation error — confusing, and entirely avoidable by not computing the number in JavaScript at all.
+
+**Design:** `supabase/migrations/011_variation_notice_number_generator.sql` adds:
+- `internal.variation_number_counters` — one row per project, `next_number integer`. Lives in `internal` (same reasoning as `internal.current_organisation_id()`, 005): not part of the API surface, unreachable via the Data API regardless, RLS-enabled with zero policies and zero grants to `anon`/`authenticated` as belt-and-braces on top of that.
+- `assign_variation_notice_number()` — a `BEFORE INSERT` trigger on `variation_notices`. If the client leaves `variation_number` blank, it atomically assigns the next number for that project via `INSERT ... ON CONFLICT (project_id) DO UPDATE ... RETURNING`, formatted to match the existing tool's convention exactly (zero-padded 3 digits, e.g. `"003"`). If the client supplies a non-blank value, it's respected as a manual override — the existing tool's own UI hint ("Auto-incremented. Edit if needed.") is preserved, not removed.
+
+**Why no advisory lock is needed here, unlike `bootstrap_organisation()` (006):** `bootstrap_organisation()` genuinely needs one because its race is a separate check-then-insert (two statements, a real window between them). This function does the entire read-and-increment as one atomic statement — Postgres itself serialises two concurrent upserts targeting the same primary key; there is no separate read for two callers to race on. Adding a lock on top would be redundant complexity with no correctness benefit.
+
+**This isn't just asserted — it's measured.** Sequential local tests confirmed the basic behaviour (auto-assign increments correctly per project, independent counters per project, manual override respected and doesn't disturb the auto-counter, blank-string treated the same as null). But the entire point of this migration is a *concurrency* guarantee, so a sequential test alone wouldn't actually prove it. Ran a genuine concurrent test instead: transaction A inserted (grabbing the counter row's lock) and held its transaction open, uncommitted, for 5 seconds; transaction B was only started after polling confirmed A's insert had already happened. Result: B's `INSERT` **blocked for the full 5 seconds** (measured wall-clock: `5.013s`) — B's own insert didn't complete until 1ms after A's commit — then correctly received the next number (`002`, following A's `001`), not a collision. That is the actual guarantee this migration exists to provide, confirmed under real concurrent load, not assumed from the code reading correct.
+
+Also confirmed: the `SECURITY DEFINER` chain works for a genuine `authenticated`-role caller with zero direct grants on `internal.variation_number_counters` (tested via `set local role authenticated` + a real JWT claim, not just as the Postgres superuser, which would trivially bypass grants regardless of whether the function's privilege escalation actually works).
+
+**Not built:** reassignment on `UPDATE` (this trigger is `INSERT`-only; clearing an existing row's number back to blank does not trigger a fresh auto-assignment); reclaiming/compacting numbers from abandoned drafts (gaps are expected and accepted — the guarantee is no collision, ever, not no gaps, same as invoice numbering in any accounting system); resetting a project's counter (no product requirement yet).
+
 ## Next steps
 
 1. ~~Review this note, ADR-016, and `supabase/migrations/010_create_variation_notices.sql` together.~~ Done.
 2. ~~Apply `010` to `hpcqncghvdrlvufxfdnd` and verify.~~ Done — see "Live deployment verification" above.
-3. Solve `variation_number` generation server-side (see "Deliberately not built here" above) before or alongside wiring the frontend.
-4. Wire Variation Generator to it: gate `variation-generator.html` with the same `requireSession()`/no-flash pattern as `app-dashboard.html`, reuse `project-store.js`'s marked `PROJECT_STORAGE_POINT` extension point for the actual read/write calls, launch the tool from `app-dashboard.html` (pick or create a project first) rather than from `dashboard.html`. Drop the now-redundant `builderName`/`builderABN`/etc. and `projectName` fields from the form itself, sourcing them from the join instead. **Not started — explicitly held pending separate review/authorisation of this report, per standing instruction.**
+3. ~~Solve `variation_number` generation server-side.~~ Drafted and locally tested (`011`) — see "Variation number generation" above. **Not yet applied to `hpcqncghvdrlvufxfdnd`**, pending review.
+4. Wire Variation Generator to it: gate `variation-generator.html` with the same `requireSession()`/no-flash pattern as `app-dashboard.html`, reuse `project-store.js`'s marked `PROJECT_STORAGE_POINT` extension point for the actual read/write calls, launch the tool from `app-dashboard.html` (pick or create a project first) rather than from `dashboard.html`. Drop the now-redundant `builderName`/`builderABN`/etc. and `projectName` fields from the form itself, sourcing them from the join instead. **Not started — explicitly held pending review of `011` and the lifecycle diagram, per standing instruction.**
 5. Manual test checklist, same rigor as `docs/PHASE_2_FRONTEND_TEST_CHECKLIST.md` — create, list, refresh, issue, and the cross-tenant isolation check (a second organisation must not see the first's variation notices).
 6. Write up the resulting pattern as a short playbook so Batch 1 (quote-builder, progress-claim, payment-reminder, subcontractor-agreement, contract-termination) becomes close to mechanical.
