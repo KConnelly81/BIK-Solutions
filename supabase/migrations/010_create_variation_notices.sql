@@ -21,6 +21,16 @@
 --            alongside docs/PHASE_3_VARIATION_NOTICES_SCHEMA.md and ADR-016
 --            before it is run, same draft-then-review-then-apply sequence
 --            every migration in this repo has gone through.
+--
+--            Corrected during review, before first application: variation
+--            number uniqueness is scoped per-project
+--            (organisation_id, project_id, variation_number), not
+--            organisation-wide — builders legitimately reuse numbers like
+--            VAR-001 across different projects. issued_snapshot's
+--            "generated only on issue, never touched otherwise" guarantee
+--            is now DB-enforced by a dedicated trigger, not left as an
+--            application-layer promise. See the relevant column/index/
+--            trigger comments below for detail on each.
 -- Phase:     3 (Tool migration — Variation Notices pilot)
 -- Depends on: 001_create_organisations.sql (set_updated_at() trigger),
 --             004_create_projects.sql (projects table),
@@ -68,15 +78,27 @@ create table if not exists public.variation_notices (
   -- notice says about the client is a fact about that document as issued,
   -- not something that should silently change if the linked customer
   -- record is edited later.
+  --
+  -- Confirmed independence: this migration defines no trigger, view, or
+  -- other mechanism that re-derives client_name/client_email/site_address
+  -- from the linked project or customer after insert — they are ordinary,
+  -- independently mutable columns like any other on this table. Expected
+  -- population is a one-time copy from the selected project's/customer's
+  -- current values, performed by the application at creation time (part of
+  -- the not-yet-built frontend wiring step, see docs/
+  -- PHASE_3_VARIATION_NOTICES_SCHEMA.md) — the schema itself guarantees the
+  -- decoupling; it does not and should not perform the initial copy.
   client_name               text not null,
   client_email              text,
 
   -- ── Project/document context ────────────────────────────────────────────
   -- site_address is kept as its own field (not sourced from projects.site_
-  -- address) because a variation can legitimately specify a different work
-  -- address than the project's own. contract_reference is likewise this
-  -- document's own stated reference, not necessarily identical to any
-  -- project-level reference field.
+  -- address) for the same reason as the client snapshot above: a variation
+  -- can legitimately specify a different work address than the project's
+  -- own, and a historical notice must not change if the project is edited
+  -- afterward. contract_reference is likewise this document's own stated
+  -- reference, not necessarily identical to any project-level reference
+  -- field.
   site_address              text,
   contract_reference        text,
   requested_by              text,
@@ -136,17 +158,28 @@ create table if not exists public.variation_notices (
   status_changed_at         timestamptz,
   status_changed_by         uuid references auth.users(id) on delete set null,
 
-  -- Frozen at the moment status first transitions draft -> issued
-  -- (application-layer responsibility, not a DB trigger in this migration).
-  -- The one deliberately jsonb column on this table: a serialized copy of
-  -- the typed columns above as they stood at issue time, so an edited draft
-  -- can never silently rewrite what was actually sent to the client. This
-  -- is genuinely variable/derived secondary data about the row, not the
-  -- row's primary content — unlike the earlier generic-documents draft,
-  -- where jsonb held the primary payload itself.
+  -- Captured automatically by the capture_variation_notice_issued_snapshot()
+  -- trigger below, exactly when status transitions to 'issued' — never by
+  -- direct client write. See that trigger for the enforced guarantee: not
+  -- populated on ordinary draft edits, not touched again by later edits
+  -- once set (including edits made after issue), only refreshed if the
+  -- notice is later reset and re-issued. The one deliberately jsonb column
+  -- on this table: a serialized copy of the typed columns above as they
+  -- stood at issue time, so an edited draft can never silently rewrite what
+  -- was actually sent to the client. This is genuinely variable/derived
+  -- secondary data about the row, not the row's primary content — unlike
+  -- the earlier generic-documents draft, where jsonb held the primary
+  -- payload itself.
   issued_snapshot           jsonb,
 
-  -- Audit fields, same convention as 001-004.
+  -- Audit fields, same convention as 001-004: reference auth.users directly,
+  -- ON DELETE SET NULL (not CASCADE, not RESTRICT). Confirmed safe if an
+  -- auth user is later deleted — the column simply becomes null; the
+  -- variation notice row itself is never deleted or blocked by this FK.
+  -- An audit trail must not disappear just because the acting user's
+  -- account was later removed (GDPR/Privacy Act erasure, ADR-010/ADR-012).
+  -- status_changed_by (above) uses the identical convention for the same
+  -- reason.
   created_at                timestamptz not null default now(),
   updated_at                timestamptz not null default now(),
   created_by                uuid references auth.users(id) on delete set null,
@@ -175,6 +208,21 @@ create table if not exists public.variation_notices (
   constraint variation_notices_dates_check
     check (revised_completion_date is null or revised_completion_date >= date_issued),
 
+  -- Deliberately loose format check, not a strict RFC 5322 validator — same
+  -- pattern already used for organisations.email/profiles.email/customers.
+  -- email. Confirmed permissive: allows +tags, multiple/consecutive dots,
+  -- and non-ASCII characters in either part (the character class excludes
+  -- only '@' and whitespace, nothing else); the only realistic gap is a
+  -- quoted local part containing a literal space (rare enough in practice,
+  -- essentially unseen for a construction-industry client contact field,
+  -- to accept as a known limitation rather than complicate this pattern).
+  -- Errs toward accepting a slightly malformed address over rejecting a
+  -- legitimate one — the safer direction for a plain contact-detail field,
+  -- since actual deliverability is a separate concern this check was never
+  -- meant to guarantee. Deliberately not stricter, per this field's own
+  -- review: prefer simple validation here and let the application layer
+  -- (and, ultimately, attempting to actually send mail) catch anything this
+  -- misses, rather than a database-level regex risking false rejections.
   constraint variation_notices_client_email_format_check
     check (client_email is null or client_email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$')
 );
@@ -184,7 +232,7 @@ comment on table public.variation_notices is
 comment on column public.variation_notices.client_name is
   'Snapshot of the client name as entered on this document, deliberately decoupled from any live customers record — see the migration header comment.';
 comment on column public.variation_notices.issued_snapshot is
-  'Frozen copy of this row''s typed field values at the moment status first became issued. The only jsonb column on this table, and deliberately so — see the migration header comment and ADR-016.';
+  'Frozen copy of this row''s typed field values, captured by the capture_variation_notice_issued_snapshot() trigger only on the write that transitions status to issued — never populated or altered on any other write, including ordinary draft edits. The only jsonb column on this table, and deliberately so — see the migration header comment and ADR-016.';
 comment on column public.variation_notices.variation_number is
   'Free-text variation number (e.g. "003"). Not DB-generated — see the migration header comment on why the tool''s existing localStorage counter cannot be carried over unchanged into a shared, multi-user organisation.';
 
@@ -247,6 +295,110 @@ revoke all on function public.enforce_variation_notice_project_same_organisation
 revoke all on function public.enforce_variation_notice_project_same_organisation() from authenticated;
 
 -- ----------------------------------------------------------------------------
+-- issued_snapshot capture: DB-enforced, not merely an application-layer
+-- promise. Guarantees, precisely:
+--   - issued_snapshot is populated only on the write that transitions
+--     status to 'issued' (from any other status, or set directly on
+--     insert) — never on any other write.
+--   - Any write that is NOT that transition — including an ordinary draft
+--     edit, and including an edit made after the notice has already been
+--     issued — leaves issued_snapshot exactly as it already was. A client
+--     cannot set or alter it directly; whatever value is supplied in the
+--     statement is discarded and replaced with OLD.issued_snapshot (or
+--     null, on an insert that isn't itself an issue).
+--   - If a notice is later reset to 'draft' and re-issued, the snapshot is
+--     refreshed to the new issue event — consistent with status_changed_at/
+--     status_changed_by above, which likewise track only the most recent
+--     transition, not a full history.
+--
+-- SECURITY INVOKER (the default) is correct here, unlike the org-
+-- consistency trigger above: this function only reads/writes columns of
+-- the row already being written by the caller's own statement, touching no
+-- other table, so there is nothing to bypass.
+-- Runs before public.set_updated_at() and the org-consistency trigger in
+-- firing order (Postgres fires same-event BEFORE triggers alphabetically by
+-- trigger name) — order does not matter here, since this function neither
+-- reads updated_at nor depends on the org-consistency check having already
+-- run; it only reads other NEW.* columns supplied directly by the caller's
+-- statement, all of which are already final by the time any BEFORE trigger
+-- runs.
+--
+-- Deliberately does not reference NEW.gst_cents/NEW.total_cents: generated
+-- columns are computed AFTER BEFORE triggers run, so their NEW values are
+-- not yet available here. The GST calculation is repeated inline instead —
+-- a third occurrence of the same expression already duplicated once between
+-- gst_cents and total_cents for the same underlying reason (see those
+-- columns' comment above).
+-- ----------------------------------------------------------------------------
+create or replace function public.capture_variation_notice_issued_snapshot()
+returns trigger
+language plpgsql
+as $$
+declare
+  v_transitioning_to_issued boolean;
+begin
+  v_transitioning_to_issued :=
+    new.status = 'issued'
+    and (tg_op = 'INSERT' or old.status is distinct from 'issued');
+
+  if v_transitioning_to_issued then
+    new.issued_snapshot := jsonb_build_object(
+      'variation_number',        new.variation_number,
+      'date_issued',             new.date_issued,
+      'client_name',              new.client_name,
+      'client_email',             new.client_email,
+      'site_address',             new.site_address,
+      'contract_reference',       new.contract_reference,
+      'requested_by',             new.requested_by,
+      'reason_for_variation',     new.reason_for_variation,
+      'description_of_work',      new.description_of_work,
+      'exclusions_assumptions',   new.exclusions_assumptions,
+      'materials_required',       new.materials_required,
+      'labour_required',          new.labour_required,
+      'cost_excl_gst_cents',      new.cost_excl_gst_cents,
+      'gst_applicable',           new.gst_applicable,
+      'gst_cents',                case when new.gst_applicable
+                                     then round(new.cost_excl_gst_cents * 0.1)::bigint
+                                     else 0::bigint
+                                   end,
+      'total_cents',              new.cost_excl_gst_cents + (
+                                     case when new.gst_applicable
+                                       then round(new.cost_excl_gst_cents * 0.1)::bigint
+                                       else 0::bigint
+                                     end
+                                   ),
+      'cost_type',                new.cost_type,
+      'extension_of_time_days',   new.extension_of_time_days,
+      'revised_completion_date',  new.revised_completion_date,
+      'payment_terms',            new.payment_terms,
+      'builder_notes',            new.builder_notes,
+      'builder_approval_name',    new.builder_approval_name,
+      'client_approval_name',     new.client_approval_name
+    );
+  elsif tg_op = 'UPDATE' then
+    new.issued_snapshot := old.issued_snapshot;
+  else
+    -- INSERT with a status other than 'issued': nothing to freeze yet.
+    new.issued_snapshot := null;
+  end if;
+
+  return new;
+end;
+$$;
+
+comment on function public.capture_variation_notice_issued_snapshot() is
+  'Populates issued_snapshot only on the write that transitions status to issued; every other write leaves it untouched regardless of what the client supplies. See this function''s header comment for the full guarantee.';
+
+create or replace trigger variation_notices_capture_issued_snapshot
+  before insert or update on public.variation_notices
+  for each row
+  execute function public.capture_variation_notice_issued_snapshot();
+
+revoke all on function public.capture_variation_notice_issued_snapshot() from public;
+revoke all on function public.capture_variation_notice_issued_snapshot() from anon;
+revoke all on function public.capture_variation_notice_issued_snapshot() from authenticated;
+
+-- ----------------------------------------------------------------------------
 -- Indexes
 -- ----------------------------------------------------------------------------
 
@@ -261,11 +413,19 @@ create index if not exists variation_notices_project_id_idx
 create index if not exists variation_notices_organisation_status_idx
   on public.variation_notices (organisation_id, status);
 
--- No duplicate variation numbers within one organisation. Not a partial
--- index (unlike projects.project_number) — variation_number is NOT NULL on
--- this table, so every row participates.
-create unique index if not exists variation_notices_organisation_number_unique_idx
-  on public.variation_notices (organisation_id, variation_number);
+-- No duplicate variation numbers within one PROJECT, not organisation-wide.
+-- Builders legitimately number variations per project (Project A's VAR-001
+-- and Project B's VAR-001 are different documents, not a collision) — this
+-- was scoped too broadly in an earlier draft of this migration (organisation
+-- only) and corrected here. Not a partial index (unlike projects.
+-- project_number) — variation_number is NOT NULL on this table, so every
+-- row participates. organisation_id is included in the index even though
+-- project_id alone would already be unique-safe (a project belongs to
+-- exactly one organisation) — matches every other organisation-scoped index
+-- on this table and keeps the index directly usable for organisation-level
+-- queries too.
+create unique index if not exists variation_notices_org_project_number_unique_idx
+  on public.variation_notices (organisation_id, project_id, variation_number);
 
 -- Supports "this client's variation history" lookups.
 create index if not exists variation_notices_organisation_client_name_idx
@@ -346,8 +506,13 @@ grant select, insert, update on public.variation_notices to authenticated;
 --     localStorage counter, not safe to carry over unchanged.
 --   - Full multi-transition audit/status-history table — status_changed_at/
 --     status_changed_by capture only the most recent transition.
---   - DB-enforced immutability of typed columns/issued_snapshot once a
---     variation notice is issued — left to the application layer for now.
+--   - DB-enforced immutability of the *other* typed columns (e.g.
+--     reason_for_variation, cost_excl_gst_cents) once a variation notice is
+--     issued — left to the application layer for now. issued_snapshot
+--     itself is the exception: it is DB-enforced (see
+--     capture_variation_notice_issued_snapshot() above) precisely so a
+--     later edit to those still-mutable columns can never rewrite the
+--     historical record of what was actually sent.
 --   - Approval workflow beyond a single status value (e.g. multi-party
 --     sign-off, approval comments) — 'approved'/'rejected' are plain status
 --     values, not a modelled workflow.

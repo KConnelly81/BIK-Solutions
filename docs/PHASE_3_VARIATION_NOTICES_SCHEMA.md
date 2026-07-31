@@ -1,7 +1,7 @@
 # Phase 3 — `variation_notices` Table Design Note
 
 **Purpose:** Design overview for `public.variation_notices`, the schema backing the Variation Notices pilot migration — the first tool moved from `localStorage` onto the authenticated project model.
-**Status:** Draft. Migration file exists (`supabase/migrations/010_create_variation_notices.sql`) but has **not been applied** to `hpcqncghvdrlvufxfdnd`, and the frontend is **not wired up**. This note, the migration, and ADR-016 are for review together before either happens.
+**Status:** Draft, second review round. Migration file exists (`supabase/migrations/010_create_variation_notices.sql`) but has **not been applied** to `hpcqncghvdrlvufxfdnd`, and the frontend is **not wired up**. Corrected this round: `variation_number` uniqueness is scoped per-project, not organisation-wide, and `issued_snapshot`'s "only set on issue" guarantee is now DB-enforced by a trigger rather than left as an application-layer promise. This note, the migration, and ADR-016 are for review together before either happens.
 **Owner:** BIK Solutions Pty Ltd
 
 ---
@@ -24,7 +24,7 @@ Derived directly from `js/tools/variation-notice/config.js`'s `SCHEMA`.
 |---|---|---|---|---|---|
 | *(none — via `organisation_id`)* | `builderName`, `builderABN`, `builderPhone`, `builderEmail`, `builderAddress` | — | — | Output only | Not persisted here — already fully covered by `organisations.name/abn/phone/email/address` (001). These are `profile: true` fields; sourcing them from the join means the document reflects the org's current details. |
 | *(none — via `project_id`)* | `projectName` | — | — | Output only | Not persisted — `projects.name` is authoritative once a real project is selected via `app-dashboard.html`. |
-| `variation_number` | `variationNumber` | `text not null` | Required | Reporting, output; unique per org | Typed — short, looked up and filtered by, uniqueness enforced |
+| `variation_number` | `variationNumber` | `text not null` | Required | Reporting, output; **unique per project**, not per organisation | Typed — short, looked up and filtered by, uniqueness enforced. Scoped `(organisation_id, project_id, variation_number)`: builders legitimately reuse the same number (e.g. VAR-001) across different projects — corrected from an earlier org-wide scoping. |
 | `date_issued` | `dateIssued` | `date not null default current_date` | Required | Reporting, output | Typed |
 | `client_name` | `clientName` | `text not null` | Required | Reporting, output | Typed — this is the client-details snapshot: a plain copy on the row, decoupled from any live `customers` record |
 | `client_email` | `clientEmail` | `text` (email format check) | Optional | Output | Typed, same snapshot reasoning |
@@ -48,14 +48,22 @@ Derived directly from `js/tools/variation-notice/config.js`'s `SCHEMA`.
 | `builder_approval_name` | `builderApprovalName` | `text` | Optional | **Status/approval, output** | Typed — the printed signatory name, distinct from `status_changed_by` (the authenticated app user) |
 | `client_approval_name` | `clientApprovalName` | `text` | Optional | **Status/approval, output** | Typed |
 | `status`, `status_changed_at`, `status_changed_by` | *(new)* | as before | — | **Status, workflow** | Typed |
-| `issued_snapshot` | *(new)* | `jsonb` | — | Audit | **The one genuinely jsonb-appropriate field** — a frozen serialized copy of the typed columns at the moment of issue, so an edited draft can never silently rewrite what was actually sent. Derived/secondary data about the row, not the row's primary content. |
+| `issued_snapshot` | *(new)* | `jsonb` | — | Audit | **The one genuinely jsonb-appropriate field** — a frozen serialized copy of the typed columns at the moment of issue, so an edited draft can never silently rewrite what was actually sent. Derived/secondary data about the row, not the row's primary content. **DB-enforced**, not an application-layer promise: `capture_variation_notice_issued_snapshot()` populates it only on the write that transitions `status` to `issued`, and forces it back to its prior value on every other write — a client cannot set or alter it directly. |
 
 **Net result:** every field with any bearing on calculation, filtering, reporting, status, or integration is a real typed column. `jsonb` appears exactly once, for exactly the case it's meant for.
+
+## Confirmations from this review round
+
+1. **`issued_snapshot` is generated only on transition to `issued`, never on ordinary draft edits.** DB-enforced by `capture_variation_notice_issued_snapshot()` (a `BEFORE INSERT OR UPDATE` trigger), not left as an application-layer promise. On the write that moves `status` to `'issued'` (from any other status, or set directly on insert), it's populated with a fresh serialized copy of the typed columns. On every other write — including a draft edit while `status` stays `'draft'`, and including an edit made after the notice has already been issued — the trigger forces `issued_snapshot` back to its prior value regardless of what the client's statement supplied, so it cannot be set or altered by any other path. If a notice is later reset to `'draft'` and re-issued, the snapshot refreshes to that new issue event, consistent with `status_changed_at`/`status_changed_by` tracking only the most recent transition.
+2. **The `client_email` format check is sufficiently permissive.** It's the identical pattern already used for `organisations.email`/`profiles.email`/`customers.email` — `^[^@\s]+@[^@\s]+\.[^@\s]+$`. Reviewed specifically for false rejections: it allows `+`-tags, consecutive/multiple dots, and non-ASCII characters in either part (the character class excludes only `@` and whitespace). The one realistic gap is a quoted local part containing a literal space — valid per RFC 5322 but essentially unseen for a construction-industry client contact field, accepted as a known limitation rather than a reason to complicate the pattern. It errs toward accepting a slightly malformed address over rejecting a legitimate one, which is the safer direction for a plain contact-detail field — this check was never meant to guarantee deliverability, only catch the obviously-wrong case (no `@`, no domain). Kept as a simple regex rather than removed in favour of purely application-layer validation, for consistency with the three other tables that already use it.
+3. **`status_changed_by`, `created_by`, and `updated_by` behave safely if an `auth.users` row is later deleted.** All three reference `auth.users(id) on delete set null` — identical to every other audit column in this schema (001-004). Deleting an auth user simply nulls these columns; the `variation_notices` row itself is never deleted or blocked by the FK. An audit trail must not disappear because the acting user's account was later removed (the same GDPR/Privacy Act erasure reasoning as ADR-010/ADR-012).
+4. **`site_address` and the client snapshot fields (`client_name`, `client_email`) are populated from the selected project at creation, but remain independently stored afterward.** Confirmed by construction: this migration defines no trigger, view, or other mechanism that re-derives these columns from the linked project or customer after insert — they are ordinary, independently mutable columns, so a historical notice cannot change just because the project is edited later. The one-time copy from the project's/customer's current values at creation time is an **application-layer** responsibility (part of the not-yet-built frontend wiring, see "Next steps" below) — this migration guarantees the decoupling, it does not and should not perform the initial copy itself.
 
 ## Security
 
 - RLS reuses `internal.current_organisation_id()` (005) directly — same read/create/update-within-own-org shape as `customers`/`projects`, no new helper function.
 - **Cross-tenant integrity check, unchanged from the earlier draft:** a `project_id` foreign key alone doesn't guarantee the referenced project belongs to the same organisation the row claims. `enforce_variation_notice_project_same_organisation()` (a `BEFORE INSERT OR UPDATE` trigger) closes that explicitly.
+- **`issued_snapshot` integrity**, new this round: `capture_variation_notice_issued_snapshot()` (also `BEFORE INSERT OR UPDATE`) guarantees it can only be set by the transition-to-issued write itself — see Confirmation 1 above.
 - Explicit `GRANT SELECT, INSERT, UPDATE ... TO authenticated` in the same migration — learned from C2/ADR-014: nothing is inherited by default for a new table.
 - No `DELETE` policy or grant — soft delete via `status = 'archived'`, per ADR-010.
 
@@ -63,7 +71,7 @@ Derived directly from `js/tools/variation-notice/config.js`'s `SCHEMA`.
 
 - Concurrency-safe per-organisation `variation_number` generation. The tool's current numbering is a per-browser `localStorage` counter (`bik-variation-counter`) — not safe to carry over unchanged into a shared, multi-user organisation (two users could generate the same next number concurrently). This needs an application-layer (or dedicated sequence/RPC) solution as part of wiring the frontend, not solved by this migration.
 - A full multi-transition audit/status-history table (`status_changed_at`/`by` captures only the latest transition).
-- Database-enforced immutability of typed columns/`issued_snapshot` once a document is issued (left to the tool's own UI for now).
+- Database-enforced immutability of the *other* typed columns (e.g. `reason_for_variation`, `cost_excl_gst_cents`) once a document is issued — left to the tool's own UI for now. `issued_snapshot` itself is the exception, now DB-enforced (Confirmation 1 above), precisely so a later edit to those still-mutable columns can never rewrite the historical record of what was actually sent.
 - A modelled multi-party approval workflow (`approved`/`rejected` are plain status values).
 - Snapshotting builder/business details onto this table — already fully covered by `organisation_id -> organisations`, no product requirement yet to decouple them from the live record.
 - The same table-per-type pattern for the next tool (Progress Claims, Quotes, etc.) — each gets its own dedicated table and migration when its turn comes, per ADR-016.
@@ -71,7 +79,7 @@ Derived directly from `js/tools/variation-notice/config.js`'s `SCHEMA`.
 ## Next steps
 
 1. Review this note, ADR-016, and `supabase/migrations/010_create_variation_notices.sql` together.
-2. Once approved, apply `010` to `hpcqncghvdrlvufxfdnd` and verify (table exists, RLS enabled, policies match, grants match, both triggers present and firing, generated columns compute correctly) — same verification discipline as `docs/PHASE_1_DEPLOYMENT_RUNBOOK.md`.
+2. Once approved, apply `010` to `hpcqncghvdrlvufxfdnd` and verify (table exists, RLS enabled, policies match, grants match, all three triggers present and firing — `set_updated_at`, the org-consistency check, and the `issued_snapshot` capture — generated columns compute correctly, unique index scoped per-project) — same verification discipline as `docs/PHASE_1_DEPLOYMENT_RUNBOOK.md`.
 3. Solve `variation_number` generation server-side (see "Deliberately not built here" above) before or alongside wiring the frontend.
 4. Wire Variation Generator to it: gate `variation-generator.html` with the same `requireSession()`/no-flash pattern as `app-dashboard.html`, reuse `project-store.js`'s marked `PROJECT_STORAGE_POINT` extension point for the actual read/write calls, launch the tool from `app-dashboard.html` (pick or create a project first) rather than from `dashboard.html`. Drop the now-redundant `builderName`/`builderABN`/etc. and `projectName` fields from the form itself, sourcing them from the join instead.
 5. Manual test checklist, same rigor as `docs/PHASE_2_FRONTEND_TEST_CHECKLIST.md` — create, list, refresh, issue, and the cross-tenant isolation check (a second organisation must not see the first's variation notices).
