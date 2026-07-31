@@ -223,6 +223,14 @@
   margin-bottom: 12px;
 }
 
+.project-card-actions {
+  margin-top: 12px;
+}
+.project-card-actions .btn {
+  font-size: 0.82rem;
+  padding: 6px 12px;
+}
+
 .status-pill {
   display: inline-block;
   font-size: 0.72rem;

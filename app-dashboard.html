@@ -186,6 +186,9 @@
             <div class="project-card-name">${escapeHtml(project.name)}</div>
             ${project.site_address ? `<div class="project-card-address">${escapeHtml(project.site_address)}</div>` : ''}
             <span class="status-pill status-pill--${project.status}">${escapeHtml(statusLabel)}</span>
+            <div class="project-card-actions">
+              <a class="btn btn--ghost" href="variation-generator.html?project=${encodeURIComponent(project.id)}">New Variation Notice</a>
+            </div>
           </div>
         `;
       }).join('');

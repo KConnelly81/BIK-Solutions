@@ -12,17 +12,18 @@
 
 import { calcGST, calcTotal, formatAUD, formatDateLong, todayISO, addDays } from '../../toolkit/calculator.js';
 
-// ── Variation number counter ─────────────────────────────────
-
-const COUNTER_KEY = 'bik-variation-counter';
-
-function nextVariationNumber() {
-  const n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
-  localStorage.setItem(COUNTER_KEY, String(n));
-  return String(n).padStart(3, '0');
-}
-
 // ── Schema ───────────────────────────────────────────────────
+//
+// variationNumber is deliberately NOT auto-filled client-side (Sprint 3):
+// the database is the sole source of the canonical "VAR-NNN" number
+// (supabase/migrations/011_variation_notice_number_generator.sql). Leaving
+// this field blank asks the backend to auto-assign on save; the form is
+// updated with the authoritative value returned by
+// public.create_variation_notice() once the save succeeds — see
+// js/tools/variation-notice/supabase-integration.js. A value typed here is
+// sent to the database as a manual reference exactly as entered; the
+// database (not this form) decides whether it is a standard reference to
+// normalise or a genuinely custom one to keep as-is.
 
 /**
  * SCHEMA — array of field definitions.
@@ -152,10 +153,9 @@ export const SCHEMA = [
     section: 'Project Details',
     type: 'text',
     width: 'half',
-    required: true,
-    defaultValue: nextVariationNumber,
-    hint: 'Auto-incremented. Edit if needed.',
-    errorMsg: 'Variation number is required'
+    required: false,
+    placeholder: 'Leave blank to auto-number',
+    hint: 'Leave blank for automatic numbering (VAR-001, VAR-002, ...) when saved. Or enter your own reference — numeric or "VAR-" style entries (e.g. "010", "var-010") are normalised to that same format; other references (e.g. "CLIENT-VO-10") are kept exactly as entered.'
   },
   {
     id: 'dateIssued',
@@ -360,12 +360,22 @@ export const DOC_CONFIG = {
   aiFields:        ['descriptionOfWork', 'reasonForVariation', 'exclusionsAssumptions'],
   printTitle:      'Variation Notice',
   approvalEnabled: true,
+  // Sprint 3: project context comes from the authenticated Supabase
+  // project (js/tools/variation-notice/supabase-integration.js), not the
+  // legacy localStorage project bar — see tool-controller.js.
+  disableLegacyProjectUI: true,
 
+  // variationNumber, once saved, already carries its own canonical prefix
+  // ("VAR-001") or is whatever custom reference the user entered — unlike
+  // the old client-side counter, it is never a bare number needing a
+  // "VN-" prefix added here. Unsaved is a real, expected state (not yet
+  // saved to the project), shown as such rather than a placeholder "??".
   getDocTitle(state) {
-    return `Variation Notice VN-${state.variationNumber || '??'} — ${state.projectName || state.clientName || 'Untitled'}`;
+    const ref = state.variationNumber || 'Unsaved variation';
+    return `Variation Notice — ${ref} — ${state.projectName || state.clientName || 'Untitled'}`;
   },
   getDocRef(state) {
-    return `VN-${state.variationNumber || '??'}`;
+    return state.variationNumber || 'Unsaved';
   },
   onCalcUpdate(state, engine, $) {
     const calcSummary = $('calc-summary');
@@ -443,7 +453,7 @@ export function generateDocument(data) {
     </div>
     <div class="doc-title-block">
       <h1 class="doc-title">Variation Notice</h1>
-      <div class="doc-subtitle">VN&ndash;${esc(data.variationNumber || '???')}</div>
+      <div class="doc-subtitle">${esc(data.variationNumber || 'Not yet saved to project')}</div>
     </div>
   </div>
 
