@@ -9,19 +9,44 @@
   <link rel="stylesheet" href="css/bik-design-system.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/toolkit-app.css" />
+  <link rel="stylesheet" href="css/supabase-app.css" />
+  <link rel="stylesheet" href="css/variation-supabase.css" />
 </head>
 <body>
 
-<div class="app-shell">
+<!-- Shown immediately; the tool itself stays hidden until the session and
+     project context checks resolve, so nothing that depends on them ever
+     paints before it's confirmed the visitor is allowed to see it — same
+     no-flash pattern as app-dashboard.html. -->
+<div class="app-loading" id="vn-loading">Loading…</div>
+
+<!-- No/invalid ?project= param, or the project isn't visible to this
+     organisation (RLS-filtered) — a dead end, not a silent redirect, so
+     the user understands why and can get back on track. -->
+<div class="empty-state" id="vn-project-error" hidden>
+  <p id="vn-project-error-text">This project could not be found.</p>
+  <a class="btn btn--coral" href="app-dashboard.html">Back to dashboard</a>
+</div>
+
+<div class="app-shell" id="vn-app-shell" hidden>
+
+  <!-- Project context — read-only: this tool's project comes from
+       app-dashboard.html's project picker, not a freeform field here. -->
+  <div class="project-context-bar" id="vn-project-context">
+    <span class="project-context-org" id="vn-context-org"></span>
+    <span class="project-context-sep" aria-hidden="true">·</span>
+    <span class="project-context-project" id="vn-context-project"></span>
+    <a class="project-context-change" href="app-dashboard.html">Change project</a>
+  </div>
 
   <!-- ====== APP HEADER ====== -->
   <header class="bik-app-header" role="banner">
 
-    <a href="dashboard.html" class="bik-app-header-logo" aria-label="BIK Solutions — dashboard">
+    <a href="app-dashboard.html" class="bik-app-header-logo" aria-label="BIK Solutions — dashboard">
       <div class="bik-logo-mark" aria-hidden="true">B</div>
       <div class="bik-logo-text">
         <span class="bik-logo-name">Variation Notice</span>
-        <a href="dashboard.html" class="bik-logo-tag" style="text-decoration:none">← Dashboard</a>
+        <a href="app-dashboard.html" class="bik-logo-tag" style="text-decoration:none">← Dashboard</a>
       </div>
     </a>
 
@@ -113,7 +138,7 @@
         <div class="privacy-notice" role="note">
           <span class="privacy-notice-icon" aria-hidden="true">🔒</span>
           <div>
-            <p>Your information stays on this device. Nothing you enter here is sent to a server. Drafts are saved in your browser's local storage only.</p>
+            <p>A draft of this form is kept in your browser's local storage as you type. Nothing is saved to this project until you click <strong>Save to project</strong> below — at that point the variation is stored against your organisation's project, visible to your team, not just this device.</p>
             <div class="draft-delete-wrap">
               <button id="btn-delete-draft" type="button" style="display:none"
                 aria-label="Delete saved draft from this device">
@@ -121,6 +146,32 @@
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- ====== SAVE TO PROJECT ====== -->
+        <div class="vn-save-panel" id="vn-save-panel">
+          <div class="vn-save-panel-row">
+            <div>
+              <div class="vn-save-panel-title">Save to project</div>
+              <div class="vn-save-panel-hint" id="vn-save-hint">Not yet saved to this project.</div>
+            </div>
+            <button class="bik-btn bik-btn--primary bik-btn--sm" id="vn-save-btn" type="button">
+              Save to project
+            </button>
+          </div>
+          <div class="banner banner--error" id="vn-save-error" hidden role="alert"></div>
+          <div class="banner banner--success" id="vn-save-success" hidden role="status" aria-live="polite"></div>
+        </div>
+
+        <!-- ====== VARIATIONS FOR THIS PROJECT ====== -->
+        <div class="vn-list-panel" id="vn-list-panel">
+          <div class="vn-list-panel-header">
+            <span>Variations for this project</span>
+            <span class="vn-list-total" id="vn-list-total"></span>
+          </div>
+          <p class="text-muted" id="vn-list-loading">Loading…</p>
+          <p class="text-muted" id="vn-list-empty" hidden>No variations saved to this project yet.</p>
+          <ul class="vn-list" id="vn-list" hidden></ul>
         </div>
 
         <!-- FormEngine renders sections here -->
@@ -192,14 +243,18 @@
 
 </div><!-- /.app-shell -->
 
+<script src="js/vendor/supabase-js.min.js"></script>
 <script type="module">
   import { init } from './js/tools/variation-notice/index.js';
+  import { initVariationSupabaseIntegration } from './js/tools/variation-notice/supabase-integration.js';
 
-  // Initialise when DOM is ready
+  // initVariationSupabaseIntegration() gates the page (session + project
+  // context) and, once resolved, mounts the tool itself via init() — the
+  // tool must not render before that gate resolves (no-flash pattern).
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => initVariationSupabaseIntegration(init));
   } else {
-    init();
+    initVariationSupabaseIntegration(init);
   }
 </script>
 

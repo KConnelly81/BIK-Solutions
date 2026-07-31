@@ -107,12 +107,22 @@ export class ToolController {
     this._engine.mount(formContainer);
 
     // ── Project context ───────────────────────────────────────
-    this._projectUI = new ProjectUI({
-      engine:  this._engine,
-      toastFn: msg => this._toast(msg)
-    });
-    this._projectUI.mountBar(formContainer);
-    this._projectUI.readURLParam();
+    // Opt-out for tools wired to the authenticated Supabase project model
+    // (e.g. variation-notice, Sprint 3): that flow owns its own project
+    // context — a real, org-scoped Supabase project selected on
+    // app-dashboard.html — and reads the same `?project=` URL param this
+    // legacy, localStorage-backed bar also reads, for an unrelated,
+    // local-only project concept (js/toolkit/project-store.js). Mounting
+    // both would be a confusing duplicate UI and a URL-param collision.
+    // Every other tool leaves this unset and is unaffected.
+    if (!cfg.disableLegacyProjectUI) {
+      this._projectUI = new ProjectUI({
+        engine:  this._engine,
+        toastFn: msg => this._toast(msg)
+      });
+      this._projectUI.mountBar(formContainer);
+      this._projectUI.readURLParam();
+    }
 
     // ── After-mount hook (e.g. inject custom sections) ────────
     const actions = {
