@@ -1,7 +1,7 @@
 # Phase 3 — `variation_notices` Table Design Note
 
 **Purpose:** Design overview for `public.variation_notices`, the schema backing the Variation Notices pilot migration — the first tool moved from `localStorage` onto the authenticated project model.
-**Status:** Draft, second review round. Migration file exists (`supabase/migrations/010_create_variation_notices.sql`) but has **not been applied** to `hpcqncghvdrlvufxfdnd`, and the frontend is **not wired up**. Corrected this round: `variation_number` uniqueness is scoped per-project, not organisation-wide, and `issued_snapshot`'s "only set on issue" guarantee is now DB-enforced by a trigger rather than left as an application-layer promise. This note, the migration, and ADR-016 are for review together before either happens.
+**Status:** Migration `010_create_variation_notices.sql` (commit `3211d3b`) **applied and fully verified** against `hpcqncghvdrlvufxfdnd` on 2026-07-31 — see "Live deployment verification" below for the complete results. The frontend is still **not wired up** — that remains a separate, explicitly gated step.
 **Owner:** BIK Solutions Pty Ltd
 
 ---
@@ -76,11 +76,37 @@ Derived directly from `js/tools/variation-notice/config.js`'s `SCHEMA`.
 - Snapshotting builder/business details onto this table — already fully covered by `organisation_id -> organisations`, no product requirement yet to decouple them from the live record.
 - The same table-per-type pattern for the next tool (Progress Claims, Quotes, etc.) — each gets its own dedicated table and migration when its turn comes, per ADR-016.
 
+## Live deployment verification (2026-07-31)
+
+Applied to `hpcqncghvdrlvufxfdnd` via `apply_migration`, exact content of commit `3211d3b`. All checks below were run live against the real project, not inferred from the local Postgres dry run in earlier review rounds (that earlier local check remains valid as a pre-application sanity pass; this is the actual live confirmation).
+
+**Catalog/schema checks — all passed:**
+- `public.variation_notices` exists.
+- RLS enabled (`pg_class.relrowsecurity = true`).
+- `authenticated` holds exactly `SELECT`, `INSERT`, `UPDATE` — no `DELETE`, nothing else.
+- `anon` holds nothing on this table (no rows at all in `role_table_grants` for `anon`).
+- All three RLS policies present and correctly scoped — `variation_notices_select_same_org`/`_insert_same_org`/`_update_same_org`, each `organisation_id = (SELECT internal.current_organisation_id())` in `USING`/`WITH CHECK` as designed.
+- All three triggers present, correctly mapped to their functions — `variation_notices_set_updated_at` → `set_updated_at`, `variation_notices_enforce_project_same_organisation` → `enforce_variation_notice_project_same_organisation`, `variation_notices_capture_issued_snapshot` → `capture_variation_notice_issued_snapshot`.
+- `created_by`, `updated_by`, `status_changed_by` all confirmed `ON DELETE SET NULL` via `information_schema.referential_constraints`.
+- Unique index confirmed as exactly `(organisation_id, project_id, variation_number)`.
+
+**Functional checks, using disposable data (two organisations, three projects, two disposable `auth.users` rows as owners — required because `007`'s last-owner invariant fires on any organisation left without an active owner at commit) — all passed:**
+- GST/total computed correctly: $1000 ex-GST with GST on → `gst_cents=10000`, `total_cents=110000`. GST-off case: `gst_cents=0`, `total_cents` unchanged from cost.
+- Same `variation_number` (`VAR-001`) in two different projects of the *same* organisation succeeded (per-project scope confirmed) — a duplicate within the *same* project correctly failed on `variation_notices_org_project_number_unique_idx`.
+- A `project_id` from one organisation with `organisation_id` claiming another was correctly rejected by `enforce_variation_notice_project_same_organisation()`.
+- `issued_snapshot` full lifecycle: null on a fresh draft; a draft edit — including a client attempting to smuggle a value into `issued_snapshot` in the same statement — left it null; transitioning to `issued` populated it correctly (captured the live values at that moment); editing a field *after* issue left the snapshot frozen while the live column diverged; resetting to `draft` and re-issuing refreshed the snapshot to the new issue event.
+
+**Discrepancies between local and live behaviour: none.** Every result matched the local Postgres 16 dry-run exactly — same numbers, same error messages, same pass/fail outcomes on every case.
+
+**Test data cleanup:** confirmed complete. All disposable `variation_notices`/`projects`/`profiles`/`organisations`/`auth.users` rows removed; re-queried at zero afterward. The one pre-existing real organisation/profile/project (from the user's own live signup testing) was never touched — confirmed unchanged (still exactly 1 row each) before and after this verification.
+
+**Recommendation: Go for beginning frontend integration**, once explicitly authorised — the schema itself is fully verified live, with no discrepancy from review. Two things remain before wiring, both already tracked above, not new: `variation_number` generation needs a concurrency-safe server-side solution (the existing tool's `localStorage` counter cannot be carried over), and the frontend must supply the one-time client/project snapshot at creation (Confirmation 4) since the schema deliberately does not do this itself.
+
 ## Next steps
 
-1. Review this note, ADR-016, and `supabase/migrations/010_create_variation_notices.sql` together.
-2. Once approved, apply `010` to `hpcqncghvdrlvufxfdnd` and verify (table exists, RLS enabled, policies match, grants match, all three triggers present and firing — `set_updated_at`, the org-consistency check, and the `issued_snapshot` capture — generated columns compute correctly, unique index scoped per-project) — same verification discipline as `docs/PHASE_1_DEPLOYMENT_RUNBOOK.md`.
+1. ~~Review this note, ADR-016, and `supabase/migrations/010_create_variation_notices.sql` together.~~ Done.
+2. ~~Apply `010` to `hpcqncghvdrlvufxfdnd` and verify.~~ Done — see "Live deployment verification" above.
 3. Solve `variation_number` generation server-side (see "Deliberately not built here" above) before or alongside wiring the frontend.
-4. Wire Variation Generator to it: gate `variation-generator.html` with the same `requireSession()`/no-flash pattern as `app-dashboard.html`, reuse `project-store.js`'s marked `PROJECT_STORAGE_POINT` extension point for the actual read/write calls, launch the tool from `app-dashboard.html` (pick or create a project first) rather than from `dashboard.html`. Drop the now-redundant `builderName`/`builderABN`/etc. and `projectName` fields from the form itself, sourcing them from the join instead.
+4. Wire Variation Generator to it: gate `variation-generator.html` with the same `requireSession()`/no-flash pattern as `app-dashboard.html`, reuse `project-store.js`'s marked `PROJECT_STORAGE_POINT` extension point for the actual read/write calls, launch the tool from `app-dashboard.html` (pick or create a project first) rather than from `dashboard.html`. Drop the now-redundant `builderName`/`builderABN`/etc. and `projectName` fields from the form itself, sourcing them from the join instead. **Not started — explicitly held pending separate review/authorisation of this report, per standing instruction.**
 5. Manual test checklist, same rigor as `docs/PHASE_2_FRONTEND_TEST_CHECKLIST.md` — create, list, refresh, issue, and the cross-tenant isolation check (a second organisation must not see the first's variation notices).
 6. Write up the resulting pattern as a short playbook so Batch 1 (quote-builder, progress-claim, payment-reminder, subcontractor-agreement, contract-termination) becomes close to mechanical.
