@@ -45,10 +45,10 @@ import { requireSession, friendlyAuthError } from '../supabase/session.js';
  *   no client-snapshot concept.
  * @param {(project: Object, mountTool: Function) => void} opts.onGated —
  *   called once session + project are confirmed. Receives the loaded
- *   project row (including organisation_id and, if requested, the
- *   embedded customer) and the same mountTool passed in, so the caller
- *   decides what to do with both (typically: derive a snapshot, mount
- *   the tool, wire its save panel).
+ *   project row (id, name, status, site_address, organisation_id, and,
+ *   if requested, the embedded customer) and the same mountTool passed
+ *   in, so the caller decides what to do with both (typically: derive a
+ *   snapshot, mount the tool, wire its save panel).
  * @param {string} [opts.signInUrl='signin.html']
  */
 export async function gateOnSupabaseProject({ mountTool, customerFields, onGated, signInUrl = 'signin.html' }) {
@@ -70,7 +70,7 @@ export async function gateOnSupabaseProject({ mountTool, customerFields, onGated
   const customerEmbed = customerFields ? `, customers ( ${customerFields} )` : '';
   const { data: project, error: projectError } = await supabase
     .from('projects')
-    .select(`id, name, site_address, organisation_id, organisations ( name )${customerEmbed}`)
+    .select(`id, name, status, site_address, organisation_id, organisations ( name )${customerEmbed}`)
     .eq('id', projectId)
     .maybeSingle();
 

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Open any BIK tool for this project and see its saved documents in one place." />
+  <meta name="robots" content="noindex" />
+  <title>Project — BIK Business Toolkit</title>
+  <link rel="stylesheet" href="css/bik-design-system.css" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/supabase-app.css" />
+  <link rel="stylesheet" href="css/supabase-tool-panel.css" />
+  <link rel="stylesheet" href="css/project-hub.css" />
+</head>
+<body>
+
+<!-- Shown immediately; the hub itself stays hidden until the session and
+     project context checks resolve — same no-flash pattern as
+     app-dashboard.html and every Supabase-backed tool page. -->
+<div class="app-loading" id="sb-loading">Loading…</div>
+
+<!-- No/invalid ?project= param, or the project isn't visible to this
+     organisation (RLS-filtered). -->
+<div class="empty-state" id="sb-project-error" hidden>
+  <p id="sb-project-error-text">This project could not be found.</p>
+  <a class="btn btn--coral" href="app-dashboard.html">Back to dashboard</a>
+</div>
+
+<div class="hub-shell" id="sb-app-shell" hidden>
+
+  <div class="project-context-bar" id="sb-project-context">
+    <span class="project-context-org" id="sb-context-org"></span>
+    <span class="project-context-sep" aria-hidden="true">·</span>
+    <span class="project-context-project" id="sb-context-project"></span>
+    <a class="project-context-change" href="app-dashboard.html">All projects</a>
+  </div>
+
+  <header class="bik-app-header" role="banner">
+    <a href="app-dashboard.html" class="bik-app-header-logo" aria-label="Back to dashboard">
+      <div class="bik-logo-mark" aria-hidden="true">B</div>
+      <div class="bik-logo-text">
+        <span class="bik-logo-name">BIK Business Toolkit</span>
+        <span class="bik-logo-tag">Beyond Industry Knowledge</span>
+      </div>
+    </a>
+    <div class="bik-app-header-spacer"></div>
+  </header>
+
+  <main class="hub-main">
+
+    <div class="hub-header">
+      <span class="status-pill" id="hub-status-pill"></span>
+      <h1 class="hub-project-name" id="hub-project-name"></h1>
+      <div class="hub-project-meta" id="hub-project-meta"></div>
+    </div>
+
+    <!-- ====== TOOL LAUNCH ROW ======
+         The single source of navigation for this project's tools
+         (Sprint 5a). New tools get added here as they're connected to
+         the Supabase project model — see docs/PHASE_5A_DESIGN_PROPOSAL.md. -->
+    <section class="hub-tools-row">
+      <div class="hub-tools-label">Open in tool</div>
+      <div class="hub-tools-grid" id="hub-tools-grid"><!-- rendered by JS --></div>
+    </section>
+
+    <!-- ====== VARIATION NOTICES FOR THIS PROJECT ======
+         Only tool with a real Supabase table so far. Quotes and Progress
+         Claims get their own list panels here once migrations 012/013
+         land — at that point supabase-record-panel.js's fixed #sb-list-*
+         ids will need parameterising so more than one list can live on
+         this page at once; not built ahead of that need. -->
+    <section class="sb-list-panel" id="sb-list-panel">
+      <div class="sb-list-panel-header">
+        <span>Variation notices for this project</span>
+        <span class="sb-list-total" id="sb-list-total"></span>
+      </div>
+      <p class="text-muted" id="sb-list-loading">Loading…</p>
+      <p class="text-muted" id="sb-list-empty" hidden>No variation notices saved to this project yet.</p>
+      <ul class="sb-list" id="sb-list" hidden></ul>
+    </section>
+
+    <p class="hub-more-note">Quotes and Progress Claims will appear here once those tools are connected to projects.</p>
+
+  </main>
+
+</div>
+
+<script src="js/vendor/supabase-js.min.js"></script>
+<script type="module">
+  import { gateOnSupabaseProject } from './js/toolkit/supabase-project-context.js';
+  import { refreshRecordList, escapeHtml } from './js/toolkit/supabase-record-panel.js';
+  import { formatAUD, centsToDollars } from './js/toolkit/calculator.js';
+
+  const STATUS_LABELS = {
+    draft: 'Draft',
+    active: 'Active',
+    'on-hold': 'On hold',
+    completed: 'Completed',
+    archived: 'Archived'
+  };
+
+  function renderProjectHeader(project) {
+    const statusPill = document.getElementById('hub-status-pill');
+    const statusLabel = STATUS_LABELS[project.status] || project.status;
+    statusPill.textContent = statusLabel;
+    statusPill.className = `status-pill status-pill--${project.status}`;
+
+    document.getElementById('hub-project-name').textContent = project.name;
+    document.getElementById('hub-project-meta').textContent = project.site_address || '';
+  }
+
+  function renderToolLaunchRow(project) {
+    const grid = document.getElementById('hub-tools-grid');
+    const projectParam = encodeURIComponent(project.id);
+    grid.innerHTML = `
+      <a class="hub-tool-btn" href="variation-generator.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">📝</span>
+        <span>New Variation Notice</span>
+      </a>
+      <span class="hub-tool-btn" aria-disabled="true">
+        <span class="hub-tool-icon" aria-hidden="true">💷</span>
+        <span>New Quote</span>
+        <span class="hub-tool-btn-soon">Coming soon</span>
+      </span>
+      <span class="hub-tool-btn" aria-disabled="true">
+        <span class="hub-tool-icon" aria-hidden="true">📈</span>
+        <span>New Progress Claim</span>
+        <span class="hub-tool-btn-soon">Coming soon</span>
+      </span>
+    `;
+  }
+
+  function renderVariationRow(row) {
+    return `
+      <li class="sb-list-item">
+        <span class="sb-list-item-number">${escapeHtml(row.variation_number || 'Draft')}</span>
+        <span class="sb-list-item-client">${escapeHtml(row.client_name || '')}</span>
+        <span class="status-pill status-pill--${escapeHtml(row.status)}">${escapeHtml(row.status)}</span>
+        <span class="sb-list-item-amount">${formatAUD(centsToDollars(row.total_cents || 0))}</span>
+      </li>
+    `;
+  }
+
+  gateOnSupabaseProject({
+    mountTool: () => {}, // the hub isn't a FormEngine tool — nothing to mount
+    onGated(project) {
+      renderProjectHeader(project);
+      renderToolLaunchRow(project);
+
+      refreshRecordList({
+        table: 'variation_notices',
+        projectId: project.id,
+        selectColumns: 'id, variation_number, client_name, status, total_cents',
+        renderRow: renderVariationRow,
+        renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.total_cents || 0), 0)))}`,
+        emptyMessage: 'No variation notices saved to this project yet.'
+      });
+    }
+  });
+</script>
+
+<script type="module" src="./js/toolkit/beta-banner.js"></script>
+</body>
+</html>

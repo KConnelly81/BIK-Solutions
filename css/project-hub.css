@@ -1,0 +1,104 @@
+/* ============================================
+   project-hub.css
+   Sprint 5a — the authenticated Project Hub (project-hub.html), the
+   single navigation point for a project's tools and saved documents.
+   Builds on tokens/classes from bik-design-system.css, styles.css and
+   supabase-app.css (.app-loading, .empty-state, .status-pill,
+   .project-context-bar, .btn) and supabase-tool-panel.css (.sb-list-panel
+   for the document lists). This file only holds what's specific to the
+   hub page itself: the shell, the project header, and the tool-launch
+   grid. Intentionally not shared with css/project.css, which styles the
+   separate legacy localStorage project-detail page (project.html) — see
+   "Two project systems" in docs/technical-architecture.md.
+   ============================================ */
+
+.hub-shell {
+  min-height: 100vh;
+  background: var(--cream, #f7f4ee);
+}
+
+.hub-main {
+  max-width: var(--max-width, 1080px);
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+/* ── Project header ───────────────────────────────────────────── */
+
+.hub-header {
+  margin-bottom: 28px;
+}
+.hub-project-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--charcoal, #1a1a1a);
+  margin: 8px 0 6px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.hub-project-meta {
+  font-size: 0.85rem;
+  color: var(--stone, #666);
+}
+
+/* ── Tool launch row ──────────────────────────────────────────── */
+
+.hub-tools-row {
+  background: #fff;
+  border: 1px solid #e0ddd9;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+.hub-tools-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 10px;
+}
+.hub-tools-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hub-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: #f5f3f0;
+  border: 1px solid #e0ddd9;
+  border-radius: 7px;
+  text-decoration: none;
+  color: #333;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+}
+.hub-tool-btn:hover {
+  background: #eeece9;
+  border-color: #ccc;
+  color: var(--coral, #c05a0f);
+}
+.hub-tool-btn[aria-disabled="true"] {
+  color: #aaa;
+  cursor: default;
+  pointer-events: none;
+}
+.hub-tool-btn-soon {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #b3ab9f;
+}
+
+/* ── Trailing note about tools not yet connected ─────────────── */
+
+.hub-more-note {
+  font-size: 0.8rem;
+  color: var(--stone, #888);
+  margin-top: 8px;
+}
