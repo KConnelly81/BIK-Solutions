@@ -22,9 +22,17 @@
  * supabase-project-context.js):
  *   Save panel:  #sb-save-btn, #sb-save-hint, #sb-save-error, #sb-save-success
  *   List panel:  #sb-list-loading, #sb-list-empty, #sb-list, #sb-list-total
+ *
+ * refreshRecordList()'s branching (loading -> populated/empty/error) is a
+ * thin DOM-applying wrapper around record-list-logic.js's
+ * determineListOutcome() — that pure function is what's unit tested
+ * (js/toolkit/__tests__/record-list-logic.test.js), this file's own DOM
+ * wiring is not (requires a browser — see
+ * docs/PHASE_3_SPRINT_3_MANUAL_TEST_STEPS.md for the manual coverage).
  */
 
 import { supabase } from '../supabase/client.js';
+import { determineListOutcome } from './record-list-logic.js';
 
 /**
  * Wires the "Save to project" button. First click creates the record
@@ -142,6 +150,11 @@ export function wireSaveButton(cfg) {
  * @param {(row: Object) => string} cfg.renderRow — HTML for one `<li class="sb-list-item">...`
  * @param {(rows: Object[]) => (string|null)} [cfg.renderTotal] — text for #sb-list-total, or null to leave it blank
  * @param {string} [cfg.emptyMessage]
+ * @param {string} [cfg.errorMessage] — shown in #sb-list-empty when the query fails, for either
+ *   reason (a resolved {error} result or a thrown/rejected promise — see the try/catch below,
+ *   added after PR #7's live testing found that a rejected query left this function exiting
+ *   before `loadingEl.hidden = true` was ever reached, so the panel stayed on "Loading…"
+ *   permanently with no error surfaced at all)
  */
 export async function refreshRecordList(cfg) {
   const $ = (id) => document.getElementById(id);
@@ -154,33 +167,47 @@ export async function refreshRecordList(cfg) {
   emptyEl.hidden = true;
   listEl.hidden = true;
 
-  const { data, error } = await supabase
-    .from(cfg.table)
-    .select(cfg.selectColumns)
-    .eq('project_id', cfg.projectId)
-    .order('created_at', { ascending: false });
+  // try/catch is deliberate, not defensive boilerplate: a query that
+  // rejects (network failure, a thrown exception inside the client
+  // library) rather than resolving with {data, error} must still reach
+  // `loadingEl.hidden = true` below — otherwise the panel is stuck on its
+  // initial "Loading…" state forever, with no error ever shown. This is
+  // the exact defect PR #7's live testing found.
+  let data, error, thrown;
+  try {
+    ({ data, error } = await supabase
+      .from(cfg.table)
+      .select(cfg.selectColumns)
+      .eq('project_id', cfg.projectId)
+      .order('created_at', { ascending: false }));
+  } catch (err) {
+    thrown = err;
+  }
 
   loadingEl.hidden = true;
 
-  if (error) {
+  const outcome = determineListOutcome({ data, error, thrown });
+
+  if (outcome.state === 'error') {
     // Non-fatal for the page as a whole — the save panel above is the
     // primary flow. Keep this quiet rather than stacking a second error
     // banner on top of whatever the save panel already shows.
-    console.error(`[BIK] Failed to load project records from ${cfg.table}:`, error);
-    emptyEl.textContent = 'Could not load this list.';
+    console.error(`[BIK] Failed to load project records from ${cfg.table}:`, error || thrown);
+    emptyEl.textContent = cfg.errorMessage || 'Could not load this list. Refresh the page to try again.';
     emptyEl.hidden = false;
+    if (totalEl) totalEl.textContent = '';
     return;
   }
 
-  if (!data.length) {
+  if (outcome.state === 'empty') {
     emptyEl.textContent = cfg.emptyMessage || 'Nothing saved to this project yet.';
     emptyEl.hidden = false;
     if (totalEl) totalEl.textContent = '';
     return;
   }
 
-  if (totalEl) totalEl.textContent = cfg.renderTotal ? (cfg.renderTotal(data) || '') : '';
-  listEl.innerHTML = data.map(cfg.renderRow).join('');
+  if (totalEl) totalEl.textContent = cfg.renderTotal ? (cfg.renderTotal(outcome.rows) || '') : '';
+  listEl.innerHTML = outcome.rows.map(cfg.renderRow).join('');
   listEl.hidden = false;
 }
 
