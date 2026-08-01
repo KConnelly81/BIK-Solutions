@@ -1,6 +1,16 @@
 # Migration 012 Review — `public.quotes` / `public.quote_line_items`
 
-**Migration file:** `supabase/migrations/012_create_quotes.sql` (draft, **not applied**)
+**UPDATE (restructure round):** the single `012` this review was written against has been split
+into three layered migrations — `012_create_quotes.sql` (core), `013_create_quote_numbering.sql`,
+`014_create_quote_issue_workflow.sql` — see `docs/PHASE_5A_DESIGN_PROPOSAL.md` §12 for the full
+layering and §13 for the `SECURITY DEFINER` audit. Two facts below are now **superseded**, not
+just relocated: the status enum gained `void`/`archived` (closing the archive gap this review
+originally flagged), and `issue_quote()` now additionally requires `quote_type`, a `valid_until`
+date, and `client_email` — see `docs/PHASE_5A_DESIGN_PROPOSAL.md` for the authoritative current
+requirements. The rest of this document (calculation ownership, RLS, grants shape, concurrency
+analysis) is unchanged in substance by the restructure — content moved files, the design didn't.
+**Migration files:** `012_create_quotes.sql` / `013_create_quote_numbering.sql` /
+`014_create_quote_issue_workflow.sql` (draft, **not applied**)
 **Status:** Reviewed in isolation from Progress Claims per request. Verdict at the end.
 **Companion:** `docs/PHASE_5A_DESIGN_PROPOSAL.md` (full design history), `docs/PHASE_5A_PROGRESS_CLAIMS_MIGRATION_REVIEW.md`.
 
@@ -91,21 +101,23 @@ correct if the platform default rate ever changes.
 
 ## Issue requirements
 
-Enforced inside `enforce_quote_status_transition()`'s `draft → issued` branch (see "Issue-
-transition redesign" below for *who* can reach this branch):
+**RESOLVED (restructure round)** — the ambiguity originally flagged here (quote_type/valid_until
+not required at issue) has been closed by explicit direction. Enforced inside
+`enforce_quote_status_transition()`'s `draft → issued` branch (`014_create_quote_issue_workflow.sql`),
+checked in this order:
 
-1. `client_name` non-blank.
-2. At least one `quote_line_items` row exists.
-3. `total_cents = subtotal_cents + gst_cents` (defensive re-check — should already hold by
-   construction, re-verified at the one irreversible moment rather than only trusted).
+1. `quote_type` is not `null`.
+2. `valid_until` is not `null`, and `valid_until >= quote_date`.
+3. `client_name` non-blank.
+4. `client_email` non-blank (new — "recipient details complete" is interpreted as name **and**
+   email; `client_phone`/`client_address` remain optional — a judgement call on an open
+   instruction, flagged in the migration's own header comment).
+5. At least one `quote_line_items` row exists.
+6. `total_cents = subtotal_cents + gst_cents` (defensive re-check).
 
-**Ambiguity worth flagging:** nothing requires `quote_type`, `quote_date` sanity, or `valid_until`
-to be set before issue. `quote_date` always has a default so it's never actually blank, but a
-quote can be issued with `quote_type` still `null` and no `valid_until` at all — i.e., a quote
-with no expiry date and no stated pricing basis (fixed/estimate/cost-plus) can legally issue.
-This may be entirely acceptable (both are informational, not calculation-affecting), but it's a
-product decision, not a technical one, and isn't explicitly confirmed anywhere. Flagging rather
-than silently deciding either way.
+All six branches individually exercised in the local dry run, confirming the check order matches
+this list exactly (each fix-one-thing-retry step surfaced the next distinct error, not a generic
+one).
 
 ## Issue-transition redesign (this review round)
 
@@ -197,15 +209,15 @@ and q.organisation_id = internal.current_organisation_id())`.
 
 ## Deletion/archive behaviour
 
-**No `DELETE` grant on `quotes`** (ADR-010 soft-delete-only). **Gap found:** unlike
-`variation_notices` (`010`), which includes `'archived'` in its status enum, **`quotes.status`
-has no `'archived'` value at all.** There is currently no way — soft or hard — to remove or hide
-an abandoned/duplicate draft quote from view; it simply persists forever in any list query.
-`quote_line_items` DOES support real `DELETE` while the parent is `draft` (see the migration's own
-note on why this doesn't conflict with ADR-010 — it's a draft's working rows, not the document
-itself). **Flagging this as a genuine product gap**, not fixing it here: either add `'archived'`
-to the status enum (consistent with `010`'s precedent) or make an explicit decision that quotes
-are never archived. Worth resolving before real usage, not blocking for schema review.
+**No `DELETE` grant on `quotes`** (ADR-010 soft-delete-only). **RESOLVED (restructure round):**
+`'void'` and `'archived'` are now both in the status enum (7 values total — see
+`docs/PHASE_5A_DESIGN_PROPOSAL.md`). Note this closes the *schema* gap only — the enum values are
+now valid, but **no transition mechanism reaches them yet** (same as `accepted`/`declined`/
+`expired`, which have always been enum-valid with no RPC behind them). A future controlled RPC is
+still needed before a client can actually archive or void a quote; `status` remains fully
+excluded from the client `UPDATE` grant at every layer of this migration set. `quote_line_items`
+DOES support real `DELETE` while the parent is `draft` (unchanged — a draft's working rows, not
+the document itself).
 
 ## Audit fields
 
@@ -240,8 +252,8 @@ lookup index), `quote_line_items_quote_id_idx`.
 ## Ambiguity / unnecessary complexity — summary of findings
 
 1. **No `'archived'` status** — real gap, flagged above.
-2. **Issue requirements don't cover `quote_type`/`valid_until`** — flagged above, a product
-   decision, not fixed here.
+2. **Issue requirements now cover `quote_type`/`valid_until`/`client_email`** — resolved this
+   round, see above.
 3. **`issued_snapshot` is currently redundant** with the fully-immutable live row — kept
    deliberately for forward-compatibility, not unexamined complexity; reasoning is in the
    migration's own comments.
@@ -252,18 +264,19 @@ lookup index), `quote_line_items_quote_id_idx`.
 
 ## Independent deployability from Progress Claims
 
-**Confirmed.** `012` has no foreign key, trigger, RPC, or RLS policy that references
-`progress_claims` or `progress_claim_line_items` in any way. It depends only on objects already
-live (`organisations`, `projects`, `internal.current_organisation_id()`,
-`public.set_updated_at()`) and objects it defines itself. It can be applied, tested, and used in
-production with `013` never applied at all.
+**Confirmed**, and now more precisely layered: `012`/`013`/`014` have no foreign key, trigger,
+RPC, or RLS policy that references `progress_claims`/`progress_claim_line_items` in any way. Each
+of the three Quotes files can also be applied independently of each other (see
+`docs/PHASE_5A_DESIGN_PROPOSAL.md` §12) — `012` alone gives fully functional draft quotes with
+manual numbering; `012`+`013` adds auto-numbering; all three give the full issue workflow.
 
 ---
 
 ## Verdict: **READY WITH CHANGES**
 
-The changes are the two items flagged above that warrant a decision before (not necessarily
-blocking) real use: the missing `'archived'` status, and the unconfirmed issue-requirement scope
-for `quote_type`/`valid_until`. Everything else — calculation ownership, numbering, post-issue
-immutability, the issue-transition redesign, grants, RLS — is implemented as specified and
-verified in the local dry run, including the specific privilege-boundary re-test added this round.
+Remaining item: `'archived'`/`'void'` are now valid status values, but no transition RPC reaches
+them yet (reserved for future work, consistent with `accepted`/`declined`/`expired`). Everything
+else — calculation ownership, numbering, post-issue immutability, the RPC-only issue-transition
+design, the tightened issue requirements, grants, RLS, the `SECURITY DEFINER` audit — is
+implemented as specified and verified across two local dry-run rounds, including the layered
+(012-only / 012+013 / full-stack) re-test specific to this restructure.

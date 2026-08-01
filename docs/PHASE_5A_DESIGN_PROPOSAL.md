@@ -1,25 +1,45 @@
 # Sprint 5a Design Proposal — Quotes, Progress Claims & Project Hub
 
-**Status:** Final (v4) — migrations drafted (`012_create_quotes.sql`,
-`013_create_progress_claims.sql`), each independently reviewed in full
-(`docs/PHASE_5A_QUOTES_MIGRATION_REVIEW.md`, `docs/PHASE_5A_PROGRESS_CLAIMS_MIGRATION_REVIEW.md`),
-and locally dry-run tested twice against a disposable Postgres 16 instance (see §9) — once for
-general correctness, once specifically re-verifying the v4 privilege-boundary change below.
-**Not applied to `hpcqncghvdrlvufxfdnd`.** v1 proposed JSONB line items; v2 replaced that with
-typed child tables and added server-side calculation ownership and DB-enforced immutability; v3
-finalised GST/retention auditability, minimum-line-item enforcement, the Progress Claim UI's real
-scope, and post-issue immutability with no exceptions. **v4 (this revision) redesigns the
-issue-transition entry point**: `draft → issued` was reachable via either `issue_quote()`/
-`issue_progress_claim()` or a plain client `UPDATE` in v3; per explicit direction that a
-document's status transition should be a controlled RPC, not an ordinary table write, it is now
-reachable **only** via those two RPCs — enforced by a column-scoped `UPDATE` grant, not merely by
-trigger validation. v4 also adds `issued_by`/`issued_snapshot` columns to both tables, and
-implements a temporary, unconditional gate blocking Progress Claims from ever reaching `issued`
-until the GST/retention question is confirmed — see §5 and the Progress Claims review doc.
+**Status:** Final (v5) — migrations RESTRUCTURED, per explicit direction, from two combined
+files into six layered, ordered, independently appliable migrations:
+
+| Layer | Quotes | Progress Claims |
+|---|---|---|
+| Core (table, line items, calculations, RLS, grants, indexes) | `012_create_quotes.sql` | `015_create_progress_claims.sql` |
+| Numbering (counters, canonical format, manual normalisation, `create_*()`) | `013_create_quote_numbering.sql` | `016_create_progress_claim_numbering.sql` |
+| Issue workflow (`issue_*()`, validation, `issued_at`/`issued_by`/snapshot, immutability) | `014_create_quote_issue_workflow.sql` | `017_create_progress_claim_issue_workflow.sql` — **BLOCKED, see below** |
+
+All six locally dry-run tested together (17 migrations, `001`-`017`, applied in sequence) plus a
+dedicated functional re-test of every layer boundary and the new requirements below. **Not
+applied to `hpcqncghvdrlvufxfdnd`.**
+
+v1 proposed JSONB line items; v2 replaced that with typed child tables and added server-side
+calculation ownership and DB-enforced immutability; v3 finalised GST/retention auditability,
+minimum-line-item enforcement, and post-issue immutability with no exceptions; v4 made issuing
+RPC-only via a column-scoped grant. **v5 (this revision):**
+
+- **Restructured** into the six files above, mirroring how `010`/`011` were already kept apart in
+  this repo — see §12 (the recommendation from v4, now actioned).
+- **Quotes: `void` and `archived` added** to the status enum (7 values total). `issue_quote()`
+  now additionally requires `quote_type`, a `valid_until` date `>= quote_date`, and `client_email`
+  (not just `client_name`) before issuing.
+- **Progress Claims: `archived` added** to the status enum. A new interim constraint —
+  `remaining_value_cents >= 0` — is enforced at the core layer (`015`), not deferred to issuing:
+  no draft, ever, may represent an over-claimed state, regardless of whether real issuing is
+  possible. `issue_progress_claim()` remains guaranteed-rejecting (the temporary gate), now
+  packaged as its own clearly-`BLOCKED` migration (`017`) rather than folded into a combined file.
+- **`previously_claimed_cents` derivation moved** out of the numbering layer (where it was
+  bundled in v4) into the core layer, as its own non-`DEFINER` trigger — it doesn't need elevated
+  privilege, and bundling it with numbering was carrying unnecessary privilege for a calculation
+  that never required it. Corrected per the least-privilege review.
+- **Every `SECURITY DEFINER` function audited** against a fixed checklist (search_path, qualified
+  references, grants, independent ownership checks, no swallowed errors) — see §13.
+
 **Scope:** Final schema for `quotes`/`quote_line_items` and `progress_claims`/
 `progress_claim_line_items` (ADR-016), plus the Project Hub page, which is now built
 (`project-hub.html`) and pending manual browser testing — see
-`docs/PHASE_5A_PROJECT_HUB_MANUAL_TEST_STEPS.md`.
+`docs/PHASE_5A_PROJECT_HUB_MANUAL_TEST_STEPS.md`. The Hub is being separated into its own PR —
+see `docs/PHASE_5A_PROJECT_HUB_PR_NOTES.md`.
 **Precedent:** `010_create_variation_notices.sql` / `011_variation_notice_number_generator.sql`,
 both live and verified.
 
@@ -414,44 +434,69 @@ dashboard's "Open project" links. Must pass before merge.
 
 ---
 
-## 12. Migration size and responsibility — recommendation (not yet actioned)
+## 12. Migration size and responsibility — ACTIONED (v5)
 
-Reviewed on request: whether `012`/`013` bundle too many distinct responsibilities into one file
-each, for maintainability and safe-rollback reasons, not file count. Each currently combines: (a)
-table/RLS/grants, (b) calculation-ownership triggers, (c) numbering machinery, (d) the
-issue-workflow/immutability state machine. That is a genuine departure from this project's own
-established practice — `010` (table + RLS only) and `011` (numbering, as a deliberate, separately
-reviewed and separately applied follow-up migration) were kept apart specifically so each could be
-verified and rolled forward independently; `variation_notices` existed in production, fully
-functional for drafts, with **no numbering mechanism at all**, in the gap between those two.
+v4 recommended, but did not action, splitting `012`/`013` into three ordered migrations each,
+mirroring `010`/`011`'s own precedent (table first, numbering as a genuinely separate, later,
+independently-verified follow-up — `variation_notices` shipped in production, fully functional
+for drafts, with no numbering mechanism at all, in the real gap between those two migrations).
+**Per explicit direction, this is now done:**
 
-**Recommendation: split each into three ordered migrations**, mirroring that precedent:
+1. **Core** (`012_create_quotes.sql` / `015_create_progress_claims.sql`): table, line-item table,
+   cross-tenant trigger, calculation-ownership triggers, RLS, grants, indexes. Quotes/claims
+   creatable and fully priceable via plain authenticated `INSERT`, with no numbering (a
+   manually-supplied reference only) and no RPC layer — the same state `variation_notices` was
+   actually in, and shipped in, between `010` and `011`. `status` is excluded from the client
+   `UPDATE` grant from this first layer onward — see each file's own header comment for why this
+   is a deliberate hazard-prevention measure, not premature security theatre for a column whose
+   later meaning doesn't exist yet.
+2. **Numbering** (`013_create_quote_numbering.sql` / `016_create_progress_claim_numbering.sql`):
+   counters table, format/normalise functions, the assignment trigger, and
+   `create_quote()`/`create_progress_claim()`. `previously_claimed_cents` derivation, bundled here
+   in the pre-restructure draft, moved to the Progress Claims *core* layer instead (`015`) — it
+   never needed `SECURITY DEFINER`, and bundling it with numbering was carrying unnecessary
+   elevated privilege for a calculation that didn't require it.
+3. **Issue workflow** (`014_create_quote_issue_workflow.sql` /
+   `017_create_progress_claim_issue_workflow.sql`): `issued_at`/`issued_by`/`issued_snapshot`
+   columns (added by `ALTER TABLE`, not pre-declared in the core layer), the state-machine
+   trigger, `issue_quote()`/`issue_progress_claim()`. `017` is explicitly and prominently marked
+   **BLOCKED** — see §7.1 and the Progress Claims review doc.
 
-1. **Core** (`012`/`014`): table, line-item table, cross-tenant trigger, calculation-ownership
-   triggers, RLS, grants, indexes. Quotes/claims creatable and fully priceable via plain
-   authenticated `INSERT`, with no numbering (a manually-supplied reference only) and no RPC layer
-   yet — the same state `variation_notices` was actually in, and shipped in, between `010` and
-   `011`.
-2. **Numbering** (`013`/`015`): counters table, format/normalise functions, the assignment
-   trigger, and `create_quote()`/`create_progress_claim()` (bundled with numbering, since their
-   entire purpose is wrapping allocation in a validated round trip).
-3. **Issue workflow** (`016`/`017`): the state-machine trigger, `issued_by`/`issued_snapshot`,
-   the column-scoped grant restriction, `issue_quote()`/`issue_progress_claim()`, and — for
-   Progress Claims — the temporary issuing gate.
+All six applied cleanly in sequence in the local dry run, alongside a dedicated test confirming
+every layer boundary behaves as intended (manual numbering still works with only the core layer
+applied; the numbering layer doesn't touch anything issue-related; the issue layer's tightened
+requirements and permission boundary both hold) — see §9.
 
-**Why this is worth doing, concretely, not just for symmetry with `010`/`011`:** if a defect is
-ever found specifically in the issue-workflow layer after `012`/`013` are live, a single combined
-migration means either living with it until a follow-up correction migration ships, or rolling
-back the entire table (destroying any real draft data already created) — there is no forward-only
-path in this repo to "undo just the issue-workflow part." Three layered migrations mean the
-riskiest, newest, least-precedented layer (issue workflow — the one this exact review round found
-one real bug in, via `recalculate_*_totals()`'s grant interaction) is the one most cleanly
-isolated for review, rollback-by-not-yet-applying, and independent staged rollout (e.g.
-deliberately shipping Core + Numbering to production before Issue Workflow is even reviewed, if
-that sequencing is ever wanted).
+---
 
-**This has not been actioned.** It is a recommendation, consistent with the instruction to review
-and identify rather than restructure files pre-emptively. If accepted, the physical split is
-mechanical (each amended migration above already reads as three natural sections) but is its own
-piece of work, to be done and re-verified against the same local-dry-run discipline as everything
-else in this file, not assumed correct by virtue of being "just a reorganisation."
+## 13. `SECURITY DEFINER` audit
+
+Every `SECURITY DEFINER` function across `012`-`017`, checked against a fixed list: fixed
+`search_path`, fully qualified object references, `EXECUTE` revoked from `PUBLIC`/`anon`, granted
+only where required, independent organisation/project ownership validation (not reliance on the
+RLS check that initiated the trigger it runs inside), and no swallowed unrelated errors.
+
+| Function | File | Grant surface | Independent ownership check |
+|---|---|---|---|
+| `enforce_quote_project_same_organisation` | `012` | Trigger-only, 0 grants | **Is** the ownership check (its entire purpose) |
+| `recalculate_quote_totals` | `012` | Trigger-only, 0 grants | Explicit `internal.current_organisation_id()` check added — belt-and-braces; no client-suppliable parameter exists to misuse, but added anyway per this policy |
+| `assign_quote_number` | `013` | Trigger-only, 0 grants | Explicit project/organisation match check before touching the counters table |
+| `issue_quote` | `014` | `EXECUTE` to `authenticated` only | Explicit `organisation_id = internal.current_organisation_id()` in both the lookup and the `UPDATE`'s `WHERE` — load-bearing here, since this function takes a client-supplied id |
+| `enforce_progress_claim_project_same_organisation` | `015` | Trigger-only, 0 grants | Is the ownership check |
+| `recalculate_progress_claim_totals` | `015` | Trigger-only, 0 grants | Same belt-and-braces addition as `recalculate_quote_totals` |
+| `assign_progress_claim_number` | `016` | Trigger-only, 0 grants | Same as `assign_quote_number` |
+| `issue_progress_claim` | `017` | `EXECUTE` to `authenticated` only | Same as `issue_quote` |
+
+**Also reviewed, correctly NOT `SECURITY DEFINER`** (least-privilege — elevation would have been
+unnecessary): `compute_quote_line_item_amounts`, `enforce_quote_line_item_draft_only`,
+`enforce_quote_status_transition`, `compute_progress_claim_line_item_amounts`,
+`enforce_progress_claim_line_item_draft_only`, `enforce_progress_claim_status_transition`,
+`compute_progress_claim_derived_totals`, `derive_progress_claim_previously_claimed`,
+`create_quote`, `create_progress_claim` — each only ever reads/writes data the calling
+`authenticated` role's own RLS already permits it to touch.
+
+**Swallowed-error check**: `create_quote()`/`create_progress_claim()` each catch
+`unique_violation` in a retry loop; both re-raise immediately (`raise;` with no arguments) if
+`constraint_name` doesn't match the one expected numbering-uniqueness constraint — no other
+constraint violation, or any other exception type, is ever caught or suppressed anywhere in
+`012`-`017`.

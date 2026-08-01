@@ -1,6 +1,18 @@
 # Migration 013 Review — `public.progress_claims` / `public.progress_claim_line_items`
 
-**Migration file:** `supabase/migrations/013_create_progress_claims.sql` (draft, **not applied**)
+**UPDATE (restructure round):** the single `013` this review was written against has been split
+into three layered migrations — `015_create_progress_claims.sql` (core),
+`016_create_progress_claim_numbering.sql`, `017_create_progress_claim_issue_workflow.sql` (still
+**BLOCKED**) — see `docs/PHASE_5A_DESIGN_PROPOSAL.md` §12 for the layering and §13 for the
+`SECURITY DEFINER` audit. Several facts below are now **superseded**: the status enum gained
+`'archived'`; a new interim constraint (`remaining_value_cents >= 0`) now prevents overclaiming at
+the core layer, not just at issue time; `previously_claimed_cents` derivation moved out of the
+numbering layer into its own non-`DEFINER` trigger in the core layer. The rest of this document
+(GST/retention analysis, the five external questions, the temporary-gate reasoning) is unchanged
+in substance — see `docs/PHASE_5A_DESIGN_PROPOSAL.md` for the authoritative current file names
+and requirements.
+**Migration files:** `015_create_progress_claims.sql` / `016_create_progress_claim_numbering.sql`
+/ `017_create_progress_claim_issue_workflow.sql` — **`017` BLOCKED** (draft, **not applied**)
 **Status:** Reviewed in isolation from Quotes per request. Verdict at the end.
 **Companion:** `docs/PHASE_5A_DESIGN_PROPOSAL.md` (full design history), `docs/PHASE_5A_QUOTES_MIGRATION_REVIEW.md`.
 
@@ -88,16 +100,27 @@ accounting/legal questions" below.
 
 ## Prevention of overclaiming
 
-**Not currently prevented.** No constraint stops `claimed_to_date_cents` from exceeding
-`contract_value_cents`, and `remaining_value_cents` is deliberately **not** included in the
-`progress_claims_totals_non_negative_check` constraint (unlike every other total column, which
-must be `>= 0`) — confirmed directly in the local dry run: a claim with `previously_claimed_cents`
-manually set higher than its own `contract_value_cents` produces a negative `remaining_value_cents`
-with no error raised. This was a deliberate design choice, not an accident: real construction
-contracts do legitimately exceed original contract value once variations are added, and treating
-that as a hard error would block a real, valid scenario. **But this is exactly the kind of
-decision that needs contract-policy confirmation, not just an engineering default** — flagged
-below.
+**RESOLVED (restructure round) — now prevented, as an interim rule.** Per explicit direction
+pending external confirmation, `remaining_value_cents >= 0` was added to
+`progress_claims_totals_non_negative_check` in the core layer (`015`) — this applies to every
+draft, not only at issue time, since issuing itself is separately and unconditionally blocked
+regardless (`017`'s gate). Confirmed directly in the local dry run: attempting to set
+`previously_claimed_cents` high enough to push `remaining_value_cents` negative is now **rejected
+by the database** with a clear constraint-violation error, not silently accepted. Because
+`remaining_value_cents = contract_value_cents - claimed_to_date_cents`, this single constraint
+also enforces "a claim cannot exceed the recognised contract value" — mathematically the same
+rule, not two separate ones.
+
+This is explicitly an **interim** rule, not a final answer to the underlying question (whether
+overclaiming via legitimate variations should ever be permitted) — that question remains open,
+listed below, and the constraint may need loosening once it's answered. The original analysis
+below (why an unconstrained design was first considered) is kept for context.
+
+**Original analysis (superseded as a *default*, retained as context):** real construction
+contracts do legitimately exceed original contract value once variations are added, which is why
+this was not constrained in the pre-restructure draft. The interim tightening above prioritises
+"the database cannot represent an obviously wrong state" over that flexibility until the contract-
+policy question is actually answered — a deliberate, reversible choice, not a final position.
 
 ## Relationship to earlier claims
 
@@ -265,12 +288,14 @@ isolation.
 
 ---
 
-## Verdict: **BLOCKED** (for real/issued use) — **READY WITH CHANGES** (for draft-only deployment)
+## Verdict: **BLOCKED** (for real/issued use, i.e. `017`) — **READY WITH CHANGES** (for draft-only deployment, i.e. `015`+`016`)
 
-Split verdict, deliberately: the schema, triggers, RLS, grants, and issue-transition redesign are
-implemented correctly and verified. But real Progress Claims — any claim actually reaching
-`issued` — remain **BLOCKED** until the GST/retention question (and ideally the overclaiming and
-retention-cap questions) are confirmed; the migration itself enforces this, it isn't just a
-recommendation. If the goal is to deploy `013` now for **draft-only** testing (calculating,
-editing, no issuing), that narrower scope is **READY WITH CHANGES** — the same two structural
-gaps flagged for Quotes (`'archived'` status, no cancel path) apply here too.
+Split verdict, deliberately, now cleanly separable by file: `015` (core, with the new
+overclaiming constraint) and `016` (numbering) are **READY WITH CHANGES** for draft-only
+deployment — the schema, triggers, RLS, grants, and the least-privilege correction to
+`previously_claimed_cents` derivation are implemented correctly and verified. `017` (issue
+workflow) is **BLOCKED** by design and stays that way regardless of whether it's applied — its
+gate unconditionally rejects every issue attempt until GST, retention, and overclaiming treatment
+are confirmed by an accountant/contract-policy owner; this is enforced by the migration itself,
+not left as a recommendation or frontend convention. Remaining structural item: `'archived'` is
+now a valid status (resolved this round), but — same as Quotes — no transition RPC reaches it yet.
