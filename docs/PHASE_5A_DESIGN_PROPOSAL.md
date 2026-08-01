@@ -1,13 +1,17 @@
 # Sprint 5a Design Proposal — Quotes, Progress Claims & Project Hub
 
-**Status:** Revised draft (v2) — awaiting review. No migration SQL has been written against
-this proposal. v1 proposed JSONB line items; this revision replaces that with typed child
-tables per explicit direction, and adds server-side calculation ownership, DB-enforced
-issued-document immutability, and final numbering formats.
+**Status:** Final (v3) — migrations drafted (`012_create_quotes.sql`,
+`013_create_progress_claims.sql`) and locally dry-run tested against a disposable Postgres 16
+instance (see §9). **Not applied to `hpcqncghvdrlvufxfdnd`.** v1 proposed JSONB line items; v2
+replaced that with typed child tables and added server-side calculation ownership and
+DB-enforced immutability; this revision (v3) finalises five specific points raised in review —
+GST/retention auditability, minimum-line-item enforcement, the Progress Claim UI's real scope,
+the full calculation-ownership rule, and post-issue immutability with no exceptions — and
+records exactly how each is implemented in the two draft migrations.
 **Scope:** Final schema for `quotes`/`quote_line_items` and `progress_claims`/
-`progress_claim_line_items` (the ADR-016 dedicated-table pattern, per
-`docs/BACKEND_MIGRATION_CHECKLIST.md`), plus the Project Hub page (approved in principle,
-frontend work proceeding separately from this doc).
+`progress_claim_line_items` (ADR-016), plus the Project Hub page, which is now built
+(`project-hub.html`) and pending manual browser testing — see
+`docs/PHASE_5A_PROJECT_HUB_MANUAL_TEST_STEPS.md`.
 **Precedent:** `010_create_variation_notices.sql` / `011_variation_notice_number_generator.sql`,
 both live and verified.
 
@@ -15,12 +19,33 @@ both live and verified.
 
 ## 1. Calculation ownership rule (applies to both tables)
 
-**The client proposes, the database decides.** Every RPC (`create_quote`, `create_progress_claim`,
-and their `update_*` counterparts while a record is still `draft`) recomputes every derived
-figure server-side from the typed inputs it receives. A client-submitted total, subtotal, GST
-figure, or line total is never written to a column as-is — it is recalculated and the client's
-figure discarded. This is the same principle already applied to canonical numbering (client
-proposes a number, the database validates/assigns it) extended to money.
+**The client proposes editable inputs. The database-controlled RPC — or, where an RPC isn't the
+entry point, a trigger that no client role can bypass — computes and freezes all derived
+monetary values.** Never trusted from client input, regardless of entry path (RPC or a plain
+authenticated INSERT/UPDATE):
+
+- line totals (`quote_line_items.line_total_cents`, `.gst_cents`)
+- subtotal (`quotes.subtotal_cents`)
+- GST (`quotes.gst_cents`, `progress_claims.gst_cents`)
+- total (`quotes.total_cents`)
+- retention amount (`progress_claims.retention_amount_cents`)
+- previously-claimed aggregate (`progress_claims.previously_claimed_cents` — header level; see §6)
+- claimed-to-date aggregate (`progress_claims.claimed_to_date_cents`,
+  `progress_claim_line_items.claimed_to_date_cents`)
+- remaining amount (`progress_claims.remaining_value_cents`,
+  `progress_claim_line_items.remaining_value_cents`)
+
+Mechanism, concretely (see `012`/`013` for the actual trigger functions): a `BEFORE INSERT OR
+UPDATE` trigger on each line-item table always overwrites its own computed columns before the
+row is written, regardless of what the client supplied for them. An `AFTER` trigger on each
+line-item table then sums the current line items back into the parent header's raw totals
+(`subtotal_cents`/`gst_cents` for quotes; `contract_value_cents`/`this_claim_cents` for progress
+claims). A separate `BEFORE` trigger on each header table recomputes every further-derived figure
+(retention, GST, net payable, claimed-to-date, remaining) from those raw totals on **every**
+header write, not only ones triggered by a line-item change — this closes a real staleness gap: a
+direct edit to `previously_claimed_cents` or `retention_rate` while still draft recomputes
+everything dependent on it immediately, rather than waiting for the next unrelated line-item
+write. Verified in the local dry run, §9.
 
 ---
 
@@ -32,19 +57,18 @@ proposes a number, the database validates/assigns it) extended to money.
 |---|---|---|
 | `id` | `uuid pk default gen_random_uuid()` | |
 | `organisation_id` | `uuid not null references organisations(id) on delete restrict` | |
-| `project_id` | `uuid not null references projects(id) on delete restrict` | `NOT NULL` — a `draft`-status project can exist before a job is won, so this doesn't force a false choice. |
+| `project_id` | `uuid not null references projects(id) on delete restrict` | |
 | `quote_number` | `text not null` | Canonical `QT-0001`, unique **per organisation**. See §4. |
-| `client_name`, `client_email`, `client_phone`, `client_address` | `text` | Snapshotted at insert, frozen thereafter (see §5). |
+| `client_name`, `client_email`, `client_phone`, `client_address` | `text`, nullable | A draft may exist before a recipient is chosen — `issue_quote()` is what requires `client_name` non-blank. Frozen once issued (§5). |
 | `quote_date` | `date not null default current_date` | |
 | `valid_until` | `date` | |
-| `quote_type` | `text not null check (quote_type in ('fixed','estimate','cost-plus'))` | |
-| `scope_of_works`, `inclusions`, `exclusions`, `assumptions`, `optional_items`, `payment_terms`, `additional_terms` | `text` | |
+| `quote_type` | `text check (quote_type in ('fixed','estimate','cost-plus'))`, nullable | |
+| `scope_of_works`, `inclusions`, `exclusions`, `assumptions`, `optional_items`, `payment_terms`, `additional_terms`, `builder_approval_name` | `text` | |
 | `deposit_percent` | `smallint check (deposit_percent in (0,5,10,20,25,50))` | |
-| `builder_approval_name` | `text` | |
-| `subtotal_cents`, `gst_cents`, `total_cents` | `integer not null default 0` | **Server-computed** — sum of `quote_line_items.line_total_cents`, never client-supplied. |
+| `gst_rate` | `numeric(5,4) not null default 0.1000` | Stored explicitly per quote — see §7.1. |
+| `subtotal_cents`, `gst_cents`, `total_cents` | `bigint not null default 0` | **Server-computed** — see §1. |
 | `status` | `text not null default 'draft' check (status in ('draft','issued','accepted','declined','expired'))` | |
-| `issued_at` | `timestamptz` | Set once, by trigger, on the `draft → issued` transition. |
-| `status_changed_at`, `status_changed_by` | `timestamptz`, `uuid references auth.users(id) on delete set null` | |
+| `issued_at`, `status_changed_at`, `status_changed_by` | timestamps/uuid | Set once, by trigger, on `draft → issued`. See §5. |
 | `created_at`/`updated_at`/`created_by`/`updated_by` | standard audit columns | |
 
 ### `public.quote_line_items`
@@ -52,25 +76,20 @@ proposes a number, the database validates/assigns it) extended to money.
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid pk default gen_random_uuid()` | |
-| `quote_id` | `uuid not null references quotes(id) on delete cascade` | Cascade here is deliberate — see the deletion note below, it does not conflict with ADR-010. |
-| `position` | `smallint not null` | Display order; `unique (quote_id, position)`. |
+| `quote_id` | `uuid not null references quotes(id) on delete cascade` | Cascade is deliberate — see the note below. |
+| `position` | `smallint not null` | `unique (quote_id, position)`. |
 | `description` | `text not null` | |
 | `quantity` | `numeric(12,2) not null default 1` | |
 | `unit` | `text` | e.g. `m2`, `item`, `hr`, `ls`. |
-| `unit_price_cents` | `integer not null` | Client-supplied input. |
-| `gst_applicable` | `boolean not null default true` | |
-| `line_total_cents` | `integer not null` | **Server-computed** = `round(quantity * unit_price_cents)`. |
+| `unit_price_cents` | `bigint not null` | Client-supplied input. |
+| `gst_applicable` | `boolean not null default true` | The only tax treatment modelled — no mixed/partial supply per line. |
+| `line_total_cents`, `gst_cents` | `bigint not null default 0` | **Server-computed** — `round(quantity * unit_price_cents)`, and GST on that at the header's `gst_rate` when `gst_applicable`. |
 | `created_at`/`updated_at` | standard | |
 
-No `organisation_id` on the child table — RLS scopes it through a join to `quotes`, avoiding a
-duplicated, independently-driftable tenant column on every line.
-
-**On the cascade delete:** ADR-010's soft-delete-only rule is about the top-level document
-(`status = 'archived'` in place of `DELETE`). It was never a rule about a draft's own working
-rows. While a quote is `draft`, line items are freely added, edited and deleted as the builder
-prices the job — real `DELETE` on `quote_line_items` is normal editing, not document loss. Once
-`status` moves past `draft`, the immutability trigger (§5) blocks all further changes to line
-items, same as it blocks changes to the parent row.
+**On the cascade delete:** ADR-010's soft-delete-only rule is about the top-level document. While
+a quote is `draft`, line items are freely added/edited/deleted as the builder prices the job —
+real `DELETE` here is normal editing. Once `status` leaves `draft`, the immutability trigger (§5)
+blocks all further changes to line items, same as the header.
 
 ---
 
@@ -84,35 +103,31 @@ items, same as it blocks changes to the parent row.
 | `organisation_id` | `uuid not null references organisations(id) on delete restrict` | |
 | `project_id` | `uuid not null references projects(id) on delete restrict` | |
 | `claim_number` | `text not null` | Canonical `PC-001`, unique **per project**. See §4. |
-| `client_name`, `client_email` | `text` | Snapshot. |
+| `client_name`, `client_email` | `text`, nullable | Same draft-may-be-empty reasoning as Quotes. |
 | `contract_ref` | `text` | |
-| `claim_date` | `date not null default current_date` | |
-| `claim_period_from`, `claim_period_to` | `date` | |
-| `contract_value_cents` | `integer not null` | **Server-computed** = sum of `progress_claim_line_items.contract_value_cents`. |
-| `previously_claimed_cents` | `integer not null default 0` | **Server-computed and frozen at insert** — see §6. |
-| `this_claim_cents` | `integer not null` | **Server-computed** = sum of line items' `this_claim_cents`. |
-| `claimed_to_date_cents` | `integer not null` | **Server-computed** = `previously_claimed_cents + this_claim_cents`. |
-| `remaining_value_cents` | `integer not null` | **Server-computed** = `contract_value_cents - claimed_to_date_cents`. |
-| `gst_applicable` | `boolean not null default true` | |
-| `gst_cents` | `integer not null` | **Server-computed** — see the GST-timing flag in §7. |
-| `retention_rate` | `numeric(5,2) not null default 0` | Percentage, e.g. `5.00`. Held **only at header level** — see §7. |
-| `retention_amount_cents` | `integer not null` | **Server-computed** = `round(this_claim_cents * retention_rate / 100)`, frozen. |
-| `net_payable_cents` | `integer not null` | **Server-computed** = `this_claim_cents + gst_cents - retention_amount_cents`. |
-| `percent_complete` | `numeric(5,2)` | Overall job percentage, informational. |
-| `description_of_work`, `special_conditions` | `text` | |
-| `builder_approval_name`, `client_approval_name` | `text` | |
+| `claim_date`, `claim_period_from`, `claim_period_to` | `date` | |
+| `contract_value_cents`, `this_claim_cents` | `bigint not null default 0` | **Server-computed** — sum of the corresponding line-item columns. |
+| `previously_claimed_cents` | `bigint not null default 0` | **Database-derived at INSERT**, then an ordinary editable column while draft — see §6. |
+| `claimed_to_date_cents`, `remaining_value_cents` | `bigint not null default 0` | **Server-computed** on every header write — see §1. |
+| `gst_rate` | `numeric(5,4) not null default 0.1000` | Stored explicitly — see §7.1. |
+| `gst_calculation_method` | `text not null default 'gst_on_claim_before_retention' check (... in ('gst_on_claim_before_retention'))` | Records which method was actually applied. See §7.1 — this is the specific unconfirmed assumption. |
+| `gst_cents` | `bigint not null default 0` | **Server-computed.** |
+| `retention_rate` | `numeric(5,4) not null default 0` | Fraction (`0.0500` = 5%). Header-level only — see the line-item table note below. |
+| `retention_calculation_method` | `text not null default 'flat_percentage_of_claim' check (... in ('flat_percentage_of_claim'))` | Same auditability pattern as `gst_calculation_method`. No retention-cap logic implemented — see §11 in `013`'s "NOT built". |
+| `retention_amount_cents`, `net_payable_cents` | `bigint not null default 0` | **Server-computed.** |
+| `percent_complete` | `numeric(5,2)` | Informational. |
+| `description_of_work`, `special_conditions`, `builder_approval_name`, `client_approval_name` | `text` | |
 | `status` | `text not null default 'draft' check (status in ('draft','issued','approved','disputed','paid'))` | |
 | `issued_at`, `status_changed_at`, `status_changed_by` | as Quotes | |
 | `created_at`/`updated_at`/`created_by`/`updated_by` | standard | |
 
-`schedule_of_values` (the old freeform textarea) is **dropped**, not ported — it's superseded by
-`progress_claim_line_items` below, which is the structured version of the same information. No
-live data exists yet for this tool, so there's nothing to migrate.
+`schedule_of_values` (the old freeform textarea) is **dropped**, not ported — superseded by
+`progress_claim_line_items` below. No live data exists yet for this tool.
 
 ### `public.progress_claim_line_items`
 
-The structured schedule of values — the industry-standard breakdown (earthworks, concrete,
-framing, etc.), replacing the freeform textarea with typed, claimable rows.
+The structured schedule of values — a genuine purpose-built UI target, not a generic form
+payload. See §7.3.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -120,162 +135,225 @@ framing, etc.), replacing the freeform textarea with typed, claimable rows.
 | `progress_claim_id` | `uuid not null references progress_claims(id) on delete cascade` | Same cascade reasoning as quote line items. |
 | `position` | `smallint not null` | `unique (progress_claim_id, position)`. |
 | `description` | `text not null` | The schedule item, e.g. "Concrete slab and footings". |
-| `contract_value_cents` | `integer not null` | This item's share of the contract. |
-| `previously_claimed_cents` | `integer not null default 0` | **User-editable, not derived** — see §6 for why. |
-| `this_claim_percent` | `numeric(5,2)` | Optional — if given, `this_claim_cents` is server-computed from it. |
-| `this_claim_cents` | `integer not null` | Server-computed from `this_claim_percent` if provided, otherwise the client-entered figure is accepted as this line's direct input (not further derived). |
-| `claimed_to_date_cents` | `integer not null` | **Server-computed** = `previously_claimed_cents + this_claim_cents`. |
-| `remaining_value_cents` | `integer not null` | **Server-computed** = `contract_value_cents - claimed_to_date_cents`. |
+| `contract_value_cents` | `bigint not null` | This item's share of the contract. |
+| `previously_claimed_cents` | `bigint not null default 0` | **User-editable, not derived** — see §6 for why this is a deliberate exception from §1's rule. |
+| `this_claim_percent` | `numeric(5,2)`, nullable | If supplied, drives `this_claim_cents`. |
+| `this_claim_cents` | `bigint not null default 0` | **Server-computed from `this_claim_percent`** when supplied; otherwise the client's direct input for this line, accepted as-is (not itself an aggregate). |
+| `claimed_to_date_cents`, `remaining_value_cents` | `bigint not null default 0` | **Server-computed**, always. |
 | `created_at`/`updated_at` | standard | |
 
-No per-line retention — retention is a payment-terms concept applied to the whole claim, not to
-individual schedule items, and the original tool only ever had one `retentionRate` field. Adding
-per-line retention would be complexity with no product justification; header-level retention
-satisfies "where applicable" from the brief.
+No per-line GST or retention — both are payment-claim-level concepts in Australian practice
+(shown once at the bottom of the claim, not itemised per schedule line), and the original tool
+only ever had one `retentionRate` field.
 
 ---
 
 ## 4. Numbering
 
-Both use the `011` pattern exactly: a dedicated `internal.*_counters` table (RLS enabled, zero
-policies, zero grants), a canonical-format helper, a manual-entry normaliser, a `BEFORE INSERT`
-assignment trigger with the proactive collision-avoidance loop, and a `create_*()`
-`SECURITY INVOKER` RPC wrapping validation + insert + bounded retry on the unique-violation
-constraint.
+Both use the `011` pattern: a dedicated `internal.*_counters` table (RLS enabled, zero policies,
+zero grants, only reachable via a `SECURITY DEFINER` trigger), a canonical-format helper, a
+manual-entry normaliser, a `BEFORE INSERT` assignment trigger with a proactive collision-avoidance
+loop, and a `create_*()` RPC with a bounded retry on the unique-violation constraint.
 
 - **Quotes — `QT-0001`, unique per organisation.** `internal.quote_counters` keyed by
-  `organisation_id`. A builder thinks in terms of their own quote sequence, and quotes commonly
-  precede a project being fully set up, so organisation scope (not project scope) is correct.
-- **Progress Claims — `PC-001`, unique per project.** `internal.progress_claim_counters` keyed
-  by `project_id`. Claims are inherently sequential within one contract ("Claim 3 of the Smith
-  job"), matching Variation Notice's `VAR-NNN` project-scoped precedent.
+  `organisation_id` — a builder thinks in terms of their own quote sequence, and quotes commonly
+  precede a project being fully set up.
+- **Progress Claims — `PC-001`, unique per project.** `internal.progress_claim_counters` keyed by
+  `project_id` — claims are inherently sequential within one contract, matching Variation
+  Notice's `VAR-NNN`.
 
-**Manual override and normalisation (both tables, same as `011`):** a user may type a number
-instead of accepting the auto-assigned one. The normaliser uppercases the prefix, validates it
-matches the canonical pattern for that table (`^QT-\d{4}$` / `^PC-\d{3}$`), and rejects anything
-that doesn't fit the format outright rather than attempting to reshape it. The assignment trigger
-then checks the normalised number isn't already used in that scope (`organisation_id` for
-quotes, `project_id` for claims); on collision it raises the same friendly conflict error
-Variation Notice already surfaces, and the counter is never decremented on a failed manual entry
-— only ever advanced, matching the existing `prevent_*_counter_decrease()` guard pattern.
+**Manual override and normalisation:** a bare number or a case/spacing variant of the prefix
+(`"qt 50"`, `"PC-3"`) normalises to canonical form (`QT-0050`, `PC-003`); a genuinely custom
+reference is stored unchanged; a normalised duplicate raises a plain-language conflict error, not
+a raw constraint violation. All confirmed in the local dry run (§9).
 
 ---
 
-## 5. Snapshot and immutability approach
+## 5. Post-issue immutability — no exceptions
 
-Client fields are frozen at insert (already agreed). This revision adds the piece the executive
-review flagged as missing: **database-enforced** immutability, not just an app-level convention.
+Resolved per review: **no broad exceptions for status, approval names, or anything else.** Each
+header table has exactly one `BEFORE INSERT OR UPDATE` trigger
+(`enforce_<table>_status_transition()`) that is the entire lifecycle state machine:
 
-- A `BEFORE UPDATE` trigger on `quotes` and `progress_claims` — `enforce_<table>_issued_immutability()`
-  — rejects any change to a financial or content column once `status` has moved past `draft`.
-  The only columns it allows to keep changing post-draft are `status`, `status_changed_at`,
-  `status_changed_by`, `builder_approval_name`/`client_approval_name` (the approval workflow),
-  and `updated_at`/`updated_by`.
-- A matching `BEFORE INSERT OR UPDATE OR DELETE` trigger on both line-item tables rejects any
-  change once the parent record's `status` is not `draft`.
-- `issued_at` is set exactly once, by trigger, on the specific `draft → issued` transition — not
-  writable directly, and not overwritable on a later status change.
+- On **every INSERT**, `status` is forced to `'draft'` regardless of what the client supplies —
+  `issued_at`/`status_changed_at`/`status_changed_by` are forced `null`. There is no insert path
+  that can create an already-issued row.
+- On **UPDATE, while `status = 'draft'`**: if `NEW.status` is still `'draft'`, this is an
+  ordinary draft edit, allowed. If `NEW.status = 'issued'`, this is the one legal transition —
+  validated (recipient present, at least one line item, totals internally consistent — see §7.2)
+  and stamped entirely inside the trigger. Any other target status is rejected.
+- On **UPDATE, once `status <> 'draft'`**: the entire update is rejected outright, unconditionally
+  — full stop. Not status, not approval names, not line items (a matching trigger on each
+  line-item table enforces the same rule for its rows).
 
-This closes the gap between "the frontend won't let you edit an issued document" and "the
-document is actually provably fixed" — material for Progress Claims specifically, since an
-issued claim is a legal payment claim under state Security of Payment legislation with statutory
-response deadlines, and the stored record may need to match exactly what was served if a dispute
-reaches adjudication.
+This is enforced at the trigger level, reachable by any insert/update path (the RPC or a plain
+authenticated statement) — same "the RPC is a convenience, the trigger is the actual guarantee"
+relationship `011` established for `create_variation_notice()`.
+
+**What this deliberately does not build yet:** accepted/declined/expired/approved/disputed/paid
+transitions, and any void or correction workflow. Only `draft → issued` exists in `012`/`013`. A
+future controlled RPC for each of those transitions is real, necessary future work — and, per
+review, **a correction to an issued record should produce a new revision/replacement/void row,
+not a mutation of the original.** This migration does not build that mechanism, but its
+uncompromising trigger (no exceptions at all once issued) is what keeps that door open cleanly:
+there is no partial-mutability precedent to work around later, only a single, well-understood
+point (`old.status <> 'draft'`) where a future migration will need its own explicit, reviewed
+path around this trigger — not a blanket carve-out added defensively now.
 
 ---
 
 ## 6. Where "previously claimed" is genuinely derived, and where it isn't
 
-Two different things share a similar name and need to be kept separate:
-
-- **Header-level `previously_claimed_cents`** (on `progress_claims` itself) **is fully derived
-  and database-computed.** The `create_progress_claim` RPC sums `this_claim_cents` from prior
-  claims on the same project with `status in ('issued','approved','paid')`, writes the result,
-  and freezes it. This is safe because it only requires knowing the project, not matching
-  individual schedule items across claims.
+- **Header-level `previously_claimed_cents`** (on `progress_claims`) **is fully database-derived**
+  — computed at INSERT (regardless of entry path: the RPC or a plain INSERT) as the sum of
+  `this_claim_cents` from prior claims on the same project with `status in ('issued', 'approved',
+  'paid')`. It is never a parameter the client can supply, on any path. It is then frozen against
+  line-item recalculation but remains an ordinary, directly editable column while the claim is
+  still `draft` — a deliberate, documented exception, for a manual correction of a claim made
+  outside the system before this tool existed on a given contract.
 - **Line-level `previously_claimed_cents`** (on `progress_claim_line_items`) **is user-entered,
-  not derived**, in this revision. Deriving it correctly would require matching a schedule item
-  in this claim to "the same" schedule item in a prior claim — reliable only if claims share a
-  stable, identity-bearing schedule of values, which they don't yet (each claim's line items are
-  typed fresh). Building that (e.g. a shared `project_schedule_items` template that every claim
-  on a project references) is a real improvement but a bigger feature than Sprint 5a's scope.
-  Flagging this explicitly rather than quietly under-delivering on "claimed to date" accuracy at
-  the line level — the header-level figure is the one the platform can actually stand behind.
+  not derived.** Correctly deriving it would require matching a schedule item in this claim to
+  "the same" item in a prior claim — reliable only with a stable, identity-bearing schedule
+  template shared across a project's claims, which doesn't exist yet. Flagged explicitly rather
+  than quietly presenting a manually-typed figure as more accurate than it is.
 
 ---
 
-## 7. Open questions / trade-offs carried forward — need explicit sign-off
+## 7. Final decisions on the five review points
 
-1. **GST relative to retention, for Progress Claims.** This design computes `gst_cents` on the
-   full `this_claim_cents` (before retention is withheld) and deducts retention afterward in
-   `net_payable_cents`. This matches common Australian construction practice (retention is a
-   withholding against payment, not a reduction of the taxable supply) but GST attribution timing
-   has real ATO nuance that depends on the entity's accounting basis and contract terms. This is
-   flagged for confirmation from an accountant or the eventual Invoices-tool compliance review,
-   not asserted as correct — recommend not treating this column as final until that check happens.
-2. **Minimum one line item.** Recommend requiring at least one row in both line-item tables
-   before a document can move out of `draft` (enforced in the RPC, not a bare-metal `CHECK`, so
-   the error message can be specific). A quote or claim with zero priced items isn't a real
-   document.
-3. **Progress Claims' structured schedule is a bigger UI change than a straight port.** Moving
-   from one freeform textarea to a repeating line-item editor is the same UI component Quote
-   Builder now also needs — genuine reuse opportunity, but it means Progress Claims' frontend
-   work in Sprint 5a is not just "wire up the existing form," the schedule-of-values section
-   needs to be rebuilt. Flagging so this isn't underestimated when the frontend work is scoped.
+### 7.1 GST and retention — explicit, auditable, not asserted as one universal order
+
+No universal calculation order is asserted. `gst_rate` and `retention_rate` are stored explicitly
+per claim (not hard-coded), and `gst_calculation_method`/`retention_calculation_method` record,
+per claim, exactly which method was actually applied — plain `text` columns with a `check`
+constraint, not buried in a generated-column expression (`012`/`013` use ordinary stored columns
+written by trigger logic throughout, never `GENERATED ALWAYS AS`, specifically so this logic
+stays reviewable and revisable). Only one value of each is implemented today; the derivation
+trigger (`compute_progress_claim_derived_totals()`) raises rather than silently guessing if it
+ever sees an unrecognised method.
+
+**The specific question this leaves open, for an accountant or the contract-policy owner, before
+Progress Claims are used to issue a real document to a real client:** is GST correctly calculated
+on the full claimed amount before retention is withheld (this migration's default,
+`gst_on_claim_before_retention`), or only on the net amount actually paid after retention
+deduction — and does the applicable contract's retention terms affect the timing of GST
+attribution on the withheld portion? A second, related question flagged but not modelled: some
+contracts apply a **retention cap** (e.g. withholding stops once cumulative retention reaches
+half the contract's total retention target) rather than a flat percentage of every claim — not
+built here (`013`'s "NOT built"), same reasoning.
+
+Because the method is recorded per row rather than assumed platform-wide, a future correction
+changes data/config, not schema, and no already-issued claim's record needs reinterpreting.
+
+### 7.2 Minimum line items — enforced in the database, not only the frontend
+
+A draft may exist with zero line items — confirmed in the local dry run (`create_quote()`/
+`create_progress_claim()` both succeed with none). The `draft → issued` transition is where this
+is actually gated, inside `enforce_<table>_status_transition()` (§5) — not a `CHECK` constraint
+on the table (a `CHECK` can't count related rows) and not left to frontend validation alone:
+
+- recipient present (`client_name` non-blank)
+- at least one line item / schedule item exists
+- calculated totals are internally consistent (a defensive re-check — `total_cents =
+  subtotal_cents + gst_cents` for Quotes; the equivalent net-payable/claimed-to-date identities
+  for Progress Claims — that should already hold by construction via §1's triggers, re-verified
+  at the one irreversible moment rather than only trusted)
+
+All four branches (blank recipient, zero line items, successful issue, and the totals-consistency
+assert) were exercised directly in the local dry run, §9.
+
+### 7.3 Progress Claim UI — a genuine purpose-built schedule, not a generic form payload
+
+Confirmed as scope, not assumed away: `progress_claim_line_items` is a real structured editor —
+per-line description, contract value, previously claimed, current claim (amount or percentage),
+claimed to date, remaining value, clear totals — replacing the old tool's single freeform
+textarea, not a straight port. This is real frontend work (a repeating line-item editor,
+consistent totals display, mobile-usable), sharing the underlying Supabase modules
+(`supabase-project-context.js`, `supabase-record-panel.js`) and design-system components with
+Quotes' own line-item editor, but not sharing a reduced-to-generic-payload component with it —
+each keeps its own field set and validation. Not built in this pass (schema/migrations only, per
+the "do not begin either frontend build" instruction); tracked as the next piece of work once
+these migrations are reviewed and applied.
+
+### 7.4 Calculation ownership — see §1 above (the full untrusted-fields list).
+
+### 7.5 Post-issue immutability — see §5 above (no exceptions, single state-machine trigger).
 
 ---
 
-## 8. RLS and privileges (both new table pairs)
+## 8. RLS and privileges (both new table pairs) — implemented as designed
 
-Same pattern as `010`/`011`, applied to four tables now instead of one:
-
-- [ ] `enforce_<table>_project_same_organisation()` trigger on `quotes` and `progress_claims`
-      (not needed on the line-item children — they inherit tenancy through their parent).
-- [ ] `enforce_<table>_issued_immutability()` trigger on all four tables, per §5.
-- [ ] `set_updated_at()` reused, not reimplemented.
-- [ ] RLS enabled on all four tables. `quotes`/`progress_claims`: 3 policies each
-      (`select`/`insert`/`update`, no `delete`, scoped `organisation_id = internal.current_organisation_id()`).
-      Line-item tables: same 3 operations plus `delete` (per §2's cascade note), each scoped via
-      `exists (select 1 from quotes/progress_claims parent where parent.id = quote_id/progress_claim_id
-      and parent.organisation_id = internal.current_organisation_id())`.
-- [ ] Explicit grants on all four: `revoke all ... from public, anon; grant select, insert,
-      update on quotes, progress_claims to authenticated; grant select, insert, update, delete on
-      quote_line_items, progress_claim_line_items to authenticated`. Nothing inherited by default.
-- [ ] Counter tables (`internal.quote_counters`, `internal.progress_claim_counters`): RLS enabled,
-      zero policies, zero grants — identical to `internal.variation_number_counters`.
-- [ ] Local Postgres dry run as the `authenticated` role before anything touches live Supabase,
-      same test matrix `011` used (auto-assign, manual-entry normalisation, duplicate rejection,
-      cross-organisation rejection, counter non-decrease, concurrency).
+- [x] `enforce_<table>_project_same_organisation()` trigger on `quotes` and `progress_claims`.
+- [x] `enforce_<table>_status_transition()` on both header tables — supersedes the earlier
+      "issued immutability" trigger concept; see §5.
+- [x] `enforce_<table>_line_item_draft_only()` on both line-item tables.
+- [x] `set_updated_at()` reused, not reimplemented, on all four tables.
+- [x] RLS enabled on all four tables. Header tables: `select`/`insert`/`update`, no `delete`
+      (ADR-010), scoped `organisation_id = internal.current_organisation_id()`. Line-item tables:
+      same three plus `delete` (per §2's cascade note), each scoped via `exists (select 1 from
+      quotes/progress_claims parent where parent.id = ... and parent.organisation_id =
+      internal.current_organisation_id())`.
+- [x] Explicit grants on all four — nothing inherited.
+- [x] Counter tables: RLS enabled, zero policies, zero grants.
+- [x] Local Postgres dry run completed — see §9.
 
 ---
 
-## 9. What this document still does not do
+## 9. Local dry run — completed against a disposable Postgres 16 instance
 
-No migration SQL, no RPC bodies, no trigger function bodies are written here. Migrations `012`
-(`quotes`/`quote_line_items`) and `013` (`progress_claims`/`progress_claim_line_items`) get
-drafted only after this revision is reviewed, then go through the same local-dry-run → review →
-apply → verify sequence as `010` and `011`.
+Both migrations were applied in full, in sequence after `001`-`011`, to a disposable local
+database (not `hpcqncghvdrlvufxfdnd`), with a minimal `auth.users`/`auth.uid()` stub standing in
+for the parts of the platform Supabase itself provides. All statements applied cleanly with no
+syntax or dependency errors. Functional tests then ran as the `authenticated` role (not the
+migrating superuser), simulating two separate organisations:
+
+- Draft creation with zero line items for both tables; sequential auto-numbering (`QT-0001` →
+  `QT-0002`; `PC-001` → `PC-002` deriving `previously_claimed_cents` correctly from the first,
+  now-issued claim).
+- Line-item insert with a deliberately tampered `line_total_cents`/`gst_cents` payload — confirmed
+  silently overwritten with the server-computed correct values, not merely rejected.
+- Parent totals confirmed correct after insert/update/delete of line items, and confirmed to
+  update immediately after a direct header edit to `retention_rate` with no line-item change
+  involved (the §1 staleness-gap fix).
+- `issue_quote()`/`issue_progress_claim()`: confirmed rejection with blank recipient, confirmed
+  rejection with zero line items (both branches individually, not just the first one reached),
+  confirmed success stamps `issued_at`/`status_changed_at`/`status_changed_by` correctly.
+- Post-issue immutability: confirmed a header `UPDATE`, a line-item `INSERT`, and a second
+  `issue_*()` call are all rejected once a record is `issued`.
+- Manual numbering normalisation (`"qt 50"` → `QT-0050`) and duplicate-manual-entry rejection,
+  with the friendly error text, not a raw constraint name.
+- Cross-tenant project/organisation mismatch rejected on insert.
+- Cross-organisation isolation: a second organisation confirmed to see zero rows across `quotes`,
+  `progress_claims`, and `quote_line_items` belonging to the first.
+
+Not covered by this local dry run (real Supabase-specific behaviour that can't be stubbed
+locally): actual JWT-based session handling, the real `pg_net`/Auth email flows, and the specific
+Postgres version/extension set of the live project. The full checklists embedded at the end of
+`012`/`013` remain the record of what to re-verify against `hpcqncghvdrlvufxfdnd` itself before
+and after live application, same as `010`/`011`.
 
 ---
 
-## 10. Project Hub — status note
+## 10. What these migrations still do not do
 
-Approved in principle (separate from the schema questions above). Frontend build proceeding
-against `project-hub.html?project=<id>` on the existing `supabase-project-context.js` /
-`supabase-record-panel.js` modules, per the plan in the prior revision of this document (§4,
-retained below for reference). `project.html` (legacy, localStorage-backed) is untouched.
+No transitions beyond `draft → issued` (§5). No revision/void/correction workflow. No retention
+caps. No per-line GST/retention. No multi-currency. Full lists are in each migration's own "NOT
+built" section (`012`, `013`).
 
-### Project Hub design (unchanged from v1)
+---
 
-- `app-dashboard.html`'s project cards drop their inline "New Variation Notice" link in favour of
-  a single `Open project` link to the hub.
-- Header: project name, site address, status pill.
-- Tool launch row: "New Variation Notice", "New Quote", "New Progress Claim" (and future tools),
-  each linking to `<tool>.html?project=<id>`.
-- Document summary: three lists (variation notices / quotes / progress claims for this project)
-  via `supabase-record-panel.js`'s `refreshRecordList()`, filtered by `project_id`.
-- Totals strip: deferred/optional, not the hard commitment.
+## 11. Project Hub — built, pending manual testing
 
-This section will be merged into the schema sections above once Quotes and Progress Claims have
-real tables to list — for now the hub's record lists only have Variation Notice data to show,
-which is expected and not a blocker to building the page now.
+`project-hub.html` is built on the existing `supabase-project-context.js`/
+`supabase-record-panel.js` modules: project header (name, site address, status pill), a tool
+launch row ("New Variation Notice" live; "New Quote"/"New Progress Claim" shown disabled —
+"Coming soon" — until `012`/`013` are applied and their frontends built), and the project's
+variation notices list. `app-dashboard.html`'s project cards now show a single "Open project"
+link to the hub in place of the old direct "New Variation Notice" link. `project.html` (legacy,
+localStorage-backed) is untouched.
+
+**Not merged.** Manual browser test checklist:
+`docs/PHASE_5A_PROJECT_HUB_MANUAL_TEST_STEPS.md` — covering authenticated access, invalid/missing
+project id, cross-organisation access, header details, the Variation Notice launch link,
+project-scoped list rendering, the empty state, mobile layout, return navigation, and the
+dashboard's "Open project" links. Must pass before merge.
