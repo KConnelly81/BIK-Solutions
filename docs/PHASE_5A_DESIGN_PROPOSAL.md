@@ -1,13 +1,21 @@
 # Sprint 5a Design Proposal — Quotes, Progress Claims & Project Hub
 
-**Status:** Final (v3) — migrations drafted (`012_create_quotes.sql`,
-`013_create_progress_claims.sql`) and locally dry-run tested against a disposable Postgres 16
-instance (see §9). **Not applied to `hpcqncghvdrlvufxfdnd`.** v1 proposed JSONB line items; v2
-replaced that with typed child tables and added server-side calculation ownership and
-DB-enforced immutability; this revision (v3) finalises five specific points raised in review —
-GST/retention auditability, minimum-line-item enforcement, the Progress Claim UI's real scope,
-the full calculation-ownership rule, and post-issue immutability with no exceptions — and
-records exactly how each is implemented in the two draft migrations.
+**Status:** Final (v4) — migrations drafted (`012_create_quotes.sql`,
+`013_create_progress_claims.sql`), each independently reviewed in full
+(`docs/PHASE_5A_QUOTES_MIGRATION_REVIEW.md`, `docs/PHASE_5A_PROGRESS_CLAIMS_MIGRATION_REVIEW.md`),
+and locally dry-run tested twice against a disposable Postgres 16 instance (see §9) — once for
+general correctness, once specifically re-verifying the v4 privilege-boundary change below.
+**Not applied to `hpcqncghvdrlvufxfdnd`.** v1 proposed JSONB line items; v2 replaced that with
+typed child tables and added server-side calculation ownership and DB-enforced immutability; v3
+finalised GST/retention auditability, minimum-line-item enforcement, the Progress Claim UI's real
+scope, and post-issue immutability with no exceptions. **v4 (this revision) redesigns the
+issue-transition entry point**: `draft → issued` was reachable via either `issue_quote()`/
+`issue_progress_claim()` or a plain client `UPDATE` in v3; per explicit direction that a
+document's status transition should be a controlled RPC, not an ordinary table write, it is now
+reachable **only** via those two RPCs — enforced by a column-scoped `UPDATE` grant, not merely by
+trigger validation. v4 also adds `issued_by`/`issued_snapshot` columns to both tables, and
+implements a temporary, unconditional gate blocking Progress Claims from ever reaching `issued`
+until the GST/retention question is confirmed — see §5 and the Progress Claims review doc.
 **Scope:** Final schema for `quotes`/`quote_line_items` and `progress_claims`/
 `progress_claim_line_items` (ADR-016), plus the Project Hub page, which is now built
 (`project-hub.html`) and pending manual browser testing — see
@@ -169,26 +177,43 @@ a raw constraint violation. All confirmed in the local dry run (§9).
 
 ---
 
-## 5. Post-issue immutability — no exceptions
+## 5. Post-issue immutability — no exceptions, and issuing is RPC-only (v4)
 
 Resolved per review: **no broad exceptions for status, approval names, or anything else.** Each
 header table has exactly one `BEFORE INSERT OR UPDATE` trigger
 (`enforce_<table>_status_transition()`) that is the entire lifecycle state machine:
 
 - On **every INSERT**, `status` is forced to `'draft'` regardless of what the client supplies —
-  `issued_at`/`status_changed_at`/`status_changed_by` are forced `null`. There is no insert path
-  that can create an already-issued row.
+  `issued_at`/`issued_by`/`issued_snapshot`/`status_changed_at`/`status_changed_by` are forced
+  `null`. There is no insert path that can create an already-issued row.
 - On **UPDATE, while `status = 'draft'`**: if `NEW.status` is still `'draft'`, this is an
   ordinary draft edit, allowed. If `NEW.status = 'issued'`, this is the one legal transition —
   validated (recipient present, at least one line item, totals internally consistent — see §7.2)
-  and stamped entirely inside the trigger. Any other target status is rejected.
+  and stamped entirely inside the trigger, including a fresh `issued_snapshot` (a frozen copy of
+  the row and its line items — see the migrations' own column comments for why this is kept even
+  though the row is separately made fully immutable below). Any other target status is rejected.
 - On **UPDATE, once `status <> 'draft'`**: the entire update is rejected outright, unconditionally
   — full stop. Not status, not approval names, not line items (a matching trigger on each
   line-item table enforces the same rule for its rows).
 
-This is enforced at the trigger level, reachable by any insert/update path (the RPC or a plain
-authenticated statement) — same "the RPC is a convenience, the trigger is the actual guarantee"
-relationship `011` established for `create_variation_notice()`.
+**v4 change — issuing is now reachable only through `issue_quote()`/`issue_progress_claim()`, not
+through a plain client `UPDATE`.** v3 relied on the trigger alone (any insert/update path,
+including a bare authenticated `UPDATE`, was equally validated by it — the same "the RPC is a
+convenience, the trigger is the actual guarantee" relationship `011` established for
+`create_variation_notice()`). On review, that equivalence was correctly flagged as inconsistent
+with treating a status transition as a controlled action rather than an ordinary write — issuing
+is a one-way, legally/commercially significant act in a way creating or editing a draft is not.
+Now: authenticated's `UPDATE` grant on both header tables is **column-scoped** and excludes the
+entire lifecycle surface (`status`, `issued_at`, `issued_by`, `issued_snapshot`,
+`status_changed_at`, `status_changed_by`) and every server-computed total — a plain client
+`UPDATE` touching any of them fails with a Postgres permission error before the row or the
+trigger's business logic is ever reached, confirmed directly in the local dry run. `issue_quote()`/
+`issue_progress_claim()` are `SECURITY DEFINER` specifically so they can still write those
+columns, and each independently re-checks organisation ownership itself (the same pattern `011`'s
+`assign_variation_notice_number()` established for calling a `DEFINER` function safely), since a
+`DEFINER` function does not run under RLS. The validation logic itself stays written once, inside
+the trigger, not duplicated into the RPCs — see the two migration review docs for the full
+reasoning.
 
 **What this deliberately does not build yet:** accepted/declined/expired/approved/disputed/paid
 transitions, and any void or correction workflow. Only `draft → issued` exists in `012`/`013`. A
@@ -326,6 +351,35 @@ migrating superuser), simulating two separate organisations:
 - Cross-organisation isolation: a second organisation confirmed to see zero rows across `quotes`,
   `progress_claims`, and `quote_line_items` belonging to the first.
 
+**Second dry-run round (v4), re-verifying the issue-transition redesign specifically**, against a
+fresh disposable database with the amended migrations:
+
+- A direct client `UPDATE` attempting `status = 'issued'` on a fully valid draft quote: confirmed
+  rejected with a Postgres **permission error** (`permission denied for table quotes`), not the
+  trigger's business-rule error — proving the column-scoped grant is the actual boundary. Same
+  result attempting to set `issued_at` directly.
+- `issue_quote()` on the same quote: confirmed success, `issued_by` set to the calling user,
+  `issued_snapshot` populated with correct field values and a correctly-ordered `line_items` array.
+- A subsequent ordinary-column `UPDATE` (e.g. `scope_of_works`) on the now-issued quote: confirmed
+  rejected by the trigger (the row is frozen, not merely the lifecycle columns). A second
+  `issue_quote()` call: confirmed rejected the same way.
+- Cross-organisation: a second organisation's `issue_quote()` call against the first
+  organisation's quote id: confirmed "not found" rather than success or a data leak.
+- Progress Claims: `issue_progress_claim()` on a fully valid draft claim (real recipient, real
+  line item): confirmed rejected by the **temporary issuing gate**'s specific message, not a
+  generic error — proving the gate fires before, not instead of, the rest of the validation chain.
+  A direct client `UPDATE` attempting `status = 'issued'`: confirmed the same permission error as
+  Quotes. The documented exception (`previously_claimed_cents` directly editable while draft)
+  confirmed still working, with dependent totals recomputing correctly.
+- One real bug found and fixed during this round, before being presented: `recalculate_quote_totals()`/
+  `recalculate_progress_claim_totals()` (the `AFTER` triggers that sum line items into the header)
+  issue their own separate `UPDATE` against the now-column-restricted header columns — that
+  statement runs under the invoking role's own privileges, not the original client statement's, so
+  it initially failed with the same permission error once the grant was tightened. Fixed by making
+  both functions `SECURITY DEFINER` (safe without an extra ownership check: the line-item write
+  they fire from was already RLS-permitted to the caller). Caught by the second dry run, not
+  shipped broken.
+
 Not covered by this local dry run (real Supabase-specific behaviour that can't be stubbed
 locally): actual JWT-based session handling, the real `pg_net`/Auth email flows, and the specific
 Postgres version/extension set of the live project. The full checklists embedded at the end of
@@ -357,3 +411,47 @@ localStorage-backed) is untouched.
 project id, cross-organisation access, header details, the Variation Notice launch link,
 project-scoped list rendering, the empty state, mobile layout, return navigation, and the
 dashboard's "Open project" links. Must pass before merge.
+
+---
+
+## 12. Migration size and responsibility — recommendation (not yet actioned)
+
+Reviewed on request: whether `012`/`013` bundle too many distinct responsibilities into one file
+each, for maintainability and safe-rollback reasons, not file count. Each currently combines: (a)
+table/RLS/grants, (b) calculation-ownership triggers, (c) numbering machinery, (d) the
+issue-workflow/immutability state machine. That is a genuine departure from this project's own
+established practice — `010` (table + RLS only) and `011` (numbering, as a deliberate, separately
+reviewed and separately applied follow-up migration) were kept apart specifically so each could be
+verified and rolled forward independently; `variation_notices` existed in production, fully
+functional for drafts, with **no numbering mechanism at all**, in the gap between those two.
+
+**Recommendation: split each into three ordered migrations**, mirroring that precedent:
+
+1. **Core** (`012`/`014`): table, line-item table, cross-tenant trigger, calculation-ownership
+   triggers, RLS, grants, indexes. Quotes/claims creatable and fully priceable via plain
+   authenticated `INSERT`, with no numbering (a manually-supplied reference only) and no RPC layer
+   yet — the same state `variation_notices` was actually in, and shipped in, between `010` and
+   `011`.
+2. **Numbering** (`013`/`015`): counters table, format/normalise functions, the assignment
+   trigger, and `create_quote()`/`create_progress_claim()` (bundled with numbering, since their
+   entire purpose is wrapping allocation in a validated round trip).
+3. **Issue workflow** (`016`/`017`): the state-machine trigger, `issued_by`/`issued_snapshot`,
+   the column-scoped grant restriction, `issue_quote()`/`issue_progress_claim()`, and — for
+   Progress Claims — the temporary issuing gate.
+
+**Why this is worth doing, concretely, not just for symmetry with `010`/`011`:** if a defect is
+ever found specifically in the issue-workflow layer after `012`/`013` are live, a single combined
+migration means either living with it until a follow-up correction migration ships, or rolling
+back the entire table (destroying any real draft data already created) — there is no forward-only
+path in this repo to "undo just the issue-workflow part." Three layered migrations mean the
+riskiest, newest, least-precedented layer (issue workflow — the one this exact review round found
+one real bug in, via `recalculate_*_totals()`'s grant interaction) is the one most cleanly
+isolated for review, rollback-by-not-yet-applying, and independent staged rollout (e.g.
+deliberately shipping Core + Numbering to production before Issue Workflow is even reviewed, if
+that sequencing is ever wanted).
+
+**This has not been actioned.** It is a recommendation, consistent with the instruction to review
+and identify rather than restructure files pre-emptively. If accepted, the physical split is
+mechanical (each amended migration above already reads as three natural sections) but is its own
+piece of work, to be done and re-verified against the same local-dry-run discipline as everything
+else in this file, not assumed correct by virtue of being "just a reorganisation."

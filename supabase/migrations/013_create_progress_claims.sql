@@ -76,6 +76,32 @@
 --                 (decision 2 above) or to gst_rate/retention_rate
 --                 recomputes every dependent figure immediately, rather than
 --                 waiting for the next unrelated line-item write.
+--              4. Issue-transition entry point — same redesign as
+--                 012_create_quotes.sql's decision 6, applied identically
+--                 here: authenticated's UPDATE grant on progress_claims is
+--                 column-scoped and excludes the entire lifecycle surface
+--                 (status, issued_at, issued_by, issued_snapshot,
+--                 status_changed_at, status_changed_by); issue_progress_
+--                 claim() is SECURITY DEFINER and is now the only path
+--                 capable of reaching draft -> issued. See 012's decision 6
+--                 for the full reasoning — unchanged here beyond the table
+--                 name.
+--              5. TEMPORARY ISSUING GATE — because decision 1's GST/
+--                 retention question is genuinely unconfirmed, and Progress
+--                 Claims are legal payment claims under state Security of
+--                 Payment legislation, this migration does not merely
+--                 document that risk, it enforces it: the draft -> issued
+--                 branch of enforce_progress_claim_status_transition()
+--                 unconditionally refuses to issue ANY progress claim,
+--                 before any other validation runs, citing
+--                 docs/PHASE_5A_PROGRESS_CLAIMS_MIGRATION_REVIEW.md. Drafts
+--                 remain fully creatable, editable, and calculable for
+--                 testing — only the draft -> issued transition is blocked.
+--                 Lifting this gate once GST/retention is confirmed is a
+--                 tiny, obviously-scoped follow-up migration (removing one
+--                 `raise exception` statement) — not a schema change, and
+--                 not something this migration tries to make configurable
+--                 or toggleable ahead of that actually being needed.
 -- Phase:     5a (Tool migration — Progress Claims)
 -- Depends on: 001_create_organisations.sql (set_updated_at()),
 --             004_create_projects.sql (projects table),
@@ -148,7 +174,14 @@ create table if not exists public.progress_claims (
 
   -- ── Lifecycle ───────────────────────────────────────────────────────────
   status                        text not null default 'draft',
+
+  -- Set exactly once, by issue_progress_claim() only — see "Issue-
+  -- transition redesign" in the migration header comment (mirrors
+  -- 012_create_quotes.sql's decision 6 exactly).
   issued_at                     timestamptz,
+  issued_by                     uuid references auth.users(id) on delete set null,
+  issued_snapshot                jsonb,
+
   status_changed_at             timestamptz,
   status_changed_by             uuid references auth.users(id) on delete set null,
 
@@ -195,6 +228,10 @@ comment on column public.progress_claims.gst_calculation_method is
   'Records which GST calculation order was actually applied to this claim. Only one value is implemented today (see the check constraint) — this column exists so the assumption is explicit and auditable, not a silent default, and so a future correction changes data, not schema. See the migration header comment for the specific accountant question this leaves open.';
 comment on column public.progress_claims.previously_claimed_cents is
   'Database-derived at creation (sum of prior issued/approved/paid claims'' this_claim_cents on the same project) — see assign_progress_claim_number(). Frozen against line-item recalculation thereafter, but remains a directly editable column while the claim is draft, for a documented manual-correction case. See the migration header comment, decision 2.';
+comment on column public.progress_claims.issued_by is
+  'Who issued this claim — set once, by issue_progress_claim() only, at the same moment as issued_at. Never writable via a plain client UPDATE (see the grants section). Currently unreachable for any real claim — see the temporary issuing gate, decision 5.';
+comment on column public.progress_claims.issued_snapshot is
+  'A frozen copy of this claim and its schedule items exactly as they stood at the moment of issue — see quotes.issued_snapshot (012) for the identical reasoning. Currently unreachable for any real claim — see the temporary issuing gate, decision 5.';
 
 -- ----------------------------------------------------------------------------
 -- Table: progress_claim_line_items
@@ -346,6 +383,8 @@ begin
   if tg_op = 'INSERT' then
     new.status := 'draft';
     new.issued_at := null;
+    new.issued_by := null;
+    new.issued_snapshot := null;
     new.status_changed_at := null;
     new.status_changed_by := null;
     return new;
@@ -365,6 +404,18 @@ begin
       using errcode = '55000';
   end if;
 
+  -- TEMPORARY ISSUING GATE — see the migration header comment, decision 5.
+  -- Checked first, ahead of every other validation below: the GST-versus-
+  -- retention calculation order this migration applies
+  -- (gst_calculation_method's only implemented value) has not been
+  -- confirmed by an accountant or against the applicable contract/
+  -- jurisdiction. Drafts remain fully usable; only this transition is
+  -- blocked. Remove this one check (and only this check) once that
+  -- confirmation is recorded — see
+  -- docs/PHASE_5A_PROGRESS_CLAIMS_MIGRATION_REVIEW.md.
+  raise exception 'Progress Claims cannot be issued yet — the GST/retention calculation method requires accountant confirmation before this goes live. Drafts remain fully usable for testing. See docs/PHASE_5A_PROGRESS_CLAIMS_MIGRATION_REVIEW.md.'
+    using errcode = '55000';
+
   if btrim(coalesce(new.client_name, '')) = '' then
     raise exception 'Client name is required before a progress claim can be issued.' using errcode = '22023';
   end if;
@@ -382,14 +433,57 @@ begin
   end if;
 
   new.issued_at := now();
+  new.issued_by := auth.uid();
   new.status_changed_at := now();
   new.status_changed_by := auth.uid();
+
+  new.issued_snapshot := jsonb_build_object(
+    'claim_number',              new.claim_number,
+    'client_name',                new.client_name,
+    'client_email',                new.client_email,
+    'contract_ref',                new.contract_ref,
+    'claim_date',                  new.claim_date,
+    'claim_period_from',           new.claim_period_from,
+    'claim_period_to',             new.claim_period_to,
+    'contract_value_cents',        new.contract_value_cents,
+    'previously_claimed_cents',    new.previously_claimed_cents,
+    'this_claim_cents',            new.this_claim_cents,
+    'claimed_to_date_cents',       new.claimed_to_date_cents,
+    'remaining_value_cents',       new.remaining_value_cents,
+    'gst_rate',                    new.gst_rate,
+    'gst_calculation_method',      new.gst_calculation_method,
+    'gst_cents',                   new.gst_cents,
+    'retention_rate',              new.retention_rate,
+    'retention_calculation_method',new.retention_calculation_method,
+    'retention_amount_cents',      new.retention_amount_cents,
+    'net_payable_cents',           new.net_payable_cents,
+    'percent_complete',            new.percent_complete,
+    'description_of_work',         new.description_of_work,
+    'special_conditions',          new.special_conditions,
+    'builder_approval_name',       new.builder_approval_name,
+    'client_approval_name',        new.client_approval_name,
+    'line_items', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+               'position',                 li.position,
+               'description',              li.description,
+               'contract_value_cents',     li.contract_value_cents,
+               'previously_claimed_cents', li.previously_claimed_cents,
+               'this_claim_percent',       li.this_claim_percent,
+               'this_claim_cents',         li.this_claim_cents,
+               'claimed_to_date_cents',    li.claimed_to_date_cents,
+               'remaining_value_cents',    li.remaining_value_cents
+             ) order by li.position), '[]'::jsonb)
+      from public.progress_claim_line_items li
+      where li.progress_claim_id = new.id
+    )
+  );
+
   return new;
 end;
 $$;
 
 comment on function public.enforce_progress_claim_status_transition() is
-  'The full lifecycle state machine for progress claims. See enforce_quote_status_transition() (012) — identical shape. Post-issue: no exceptions, see docs/PHASE_5A_DESIGN_PROPOSAL.md.';
+  'The full lifecycle state machine for progress claims. See enforce_quote_status_transition() (012) — identical shape, plus a temporary hard gate blocking the draft -> issued transition entirely until GST/retention treatment is confirmed (decision 5, migration header comment). Post-issue: no exceptions, see docs/PHASE_5A_DESIGN_PROPOSAL.md.';
 
 create or replace trigger progress_claims_enforce_status_transition
   before insert or update on public.progress_claims
@@ -459,10 +553,18 @@ create or replace trigger progress_claim_line_items_enforce_draft_only
 -- header's own compute_progress_claim_derived_totals() (above) then
 -- recomputes everything else from those sums on the same UPDATE — see the
 -- migration header comment, decision 3.
+--
+-- SECURITY DEFINER — same requirement and same reasoning as
+-- recalculate_quote_totals() (012): authenticated's column-scoped UPDATE
+-- grant on progress_claims does not cover contract_value_cents/
+-- this_claim_cents, and this function issues its own separate UPDATE
+-- statement against the header, not a same-statement NEW reassignment. Safe
+-- without an additional organisation check for the same reason given there.
 -- ----------------------------------------------------------------------------
 create or replace function public.recalculate_progress_claim_totals()
 returns trigger
 language plpgsql
+security definer
 set search_path = ''
 as $$
 declare
@@ -753,22 +855,43 @@ grant execute on function public.create_progress_claim(uuid, text, text, text, t
 
 -- ----------------------------------------------------------------------------
 -- Function: issue_progress_claim
--- Same shape and reasoning as issue_quote() (012).
+-- Same shape and reasoning as issue_quote() (012) — SECURITY DEFINER, the
+-- only path capable of reaching draft -> issued (authenticated's UPDATE
+-- grant on progress_claims, below, excludes the whole lifecycle surface),
+-- independently re-checks organisation ownership since it does not run
+-- under RLS. Currently unreachable in practice for any real claim: the
+-- temporary issuing gate in enforce_progress_claim_status_transition()
+-- (migration header comment, decision 5) unconditionally blocks the
+-- transition until GST/retention treatment is confirmed. This function is
+-- still built now, not deferred, so the frontend has a stable integration
+-- point to call and a real error message to surface while that
+-- confirmation is pending.
 -- ----------------------------------------------------------------------------
 create or replace function public.issue_progress_claim(p_progress_claim_id uuid)
 returns public.progress_claims
 language plpgsql
+security definer
 set search_path = ''
 as $$
 declare
-  v_row public.progress_claims;
+  v_org_id uuid;
+  v_row    public.progress_claims;
 begin
-  select * into v_row from public.progress_claims where id = p_progress_claim_id;
+  v_org_id := internal.current_organisation_id();
+  if v_org_id is null then
+    raise exception 'Authentication required, or your account has no active organisation.'
+      using errcode = '28000';
+  end if;
+
+  select * into v_row from public.progress_claims
+  where id = p_progress_claim_id and organisation_id = v_org_id;
+
   if v_row is null then
     raise exception 'Progress claim not found in your organisation.' using errcode = '42501';
   end if;
 
-  update public.progress_claims set status = 'issued' where id = p_progress_claim_id
+  update public.progress_claims set status = 'issued'
+  where id = p_progress_claim_id and organisation_id = v_org_id
   returning * into v_row;
 
   return v_row;
@@ -776,7 +899,7 @@ end;
 $$;
 
 comment on function public.issue_progress_claim(uuid) is
-  'Transitions a draft progress claim to issued. Validation and stamping live in enforce_progress_claim_status_transition() — see that function''s comment.';
+  'The only path capable of transitioning a progress claim from draft to issued — currently blocked unconditionally by the temporary issuing gate (see enforce_progress_claim_status_transition()) pending GST/retention confirmation. SECURITY DEFINER; independently re-checks organisation ownership since it does not run under RLS.';
 
 revoke all on function public.issue_progress_claim(uuid) from public, anon;
 grant execute on function public.issue_progress_claim(uuid) to authenticated;
@@ -860,9 +983,28 @@ create policy progress_claim_line_items_delete_same_org
 
 -- ----------------------------------------------------------------------------
 -- Grants — nothing inherited, explicit here, same rationale as 010/012.
+--
+-- progress_claims' UPDATE grant is column-scoped, same mechanism and same
+-- reasoning as quotes' (012's grants section) — the actual enforcement
+-- behind decision 4 above. Excluded: status, issued_at, issued_by,
+-- issued_snapshot, status_changed_at, status_changed_by, every
+-- server-computed total (contract_value_cents, this_claim_cents,
+-- claimed_to_date_cents, remaining_value_cents, gst_cents,
+-- retention_amount_cents, net_payable_cents), gst_calculation_method/
+-- retention_calculation_method (platform policy, not a user input), and
+-- organisation_id/project_id/created_at/created_by. previously_claimed_
+-- cents IS included — see decision 2, the deliberate documented exception.
 -- ----------------------------------------------------------------------------
 revoke all on public.progress_claims from anon, authenticated;
-grant select, insert, update on public.progress_claims to authenticated;
+grant select, insert on public.progress_claims to authenticated;
+grant update (
+  client_name, client_email, contract_ref,
+  claim_date, claim_period_from, claim_period_to,
+  previously_claimed_cents, gst_rate, retention_rate, percent_complete,
+  description_of_work, special_conditions,
+  builder_approval_name, client_approval_name,
+  claim_number, updated_by
+) on public.progress_claims to authenticated;
 
 revoke all on public.progress_claim_line_items from anon, authenticated;
 grant select, insert, update, delete on public.progress_claim_line_items to authenticated;
@@ -898,9 +1040,21 @@ grant select, insert, update, delete on public.progress_claim_line_items to auth
 --      this_claim_cents/claimed_to_date_cents/remaining_value_cents/
 --      retention_amount_cents/gst_cents/net_payable_cents all update
 --      correctly after each insert/update/delete.
---   3. Issue that claim (issue_progress_claim()). Confirm status='issued',
---      timestamps set, and a direct UPDATE or line-item change afterward is
---      rejected.
+--   3. Attempt issue_progress_claim() on that claim, even though it's fully
+--      valid (client_name set, line items present). Confirm it is
+--      unconditionally rejected by the temporary issuing gate (decision 5)
+--      — this is the PRIMARY test for this migration as drafted: no
+--      progress claim can be issued at all right now, regardless of
+--      validity. The recipient/line-item/totals-consistency checks below
+--      the gate are unreachable until it is removed — re-run tests 3a/6
+--      against a build with the gate commented out, as a one-off local
+--      check, to confirm that logic independently (do not ship that
+--      change; it is purely to verify the code the gate is currently
+--      hiding).
+--   3a. Attempt a plain client UPDATE setting status = 'issued' directly.
+--       Confirm a Postgres permission error (not the trigger's gate
+--       message) — proving the column-scoped grant, not just the gate, is
+--       what stops this.
 --   4. Create a SECOND claim on the same project. Confirm
 --      previously_claimed_cents equals the first claim's this_claim_cents
 --      exactly, with no client involvement in that figure.
@@ -909,8 +1063,12 @@ grant select, insert, update, delete on public.progress_claim_line_items to auth
 --      cents/remaining_value_cents/retention_amount_cents/gst_cents/
 --      net_payable_cents all immediately reflect the new figure, without
 --      touching any line item.
---   6. Attempt issue_progress_claim() with zero line items, and separately
---      with client_name blank. Confirm the two distinct, clear errors.
+--   6. (Gate-disabled build only, per test 3's note.) Attempt
+--      issue_progress_claim() with zero line items, and separately with
+--      client_name blank. Confirm the two distinct, clear errors, and that
+--      a fully valid claim then issues successfully with issued_at/
+--      issued_by/status_changed_at/status_changed_by set and
+--      issued_snapshot populated correctly, including its line_items array.
 --   7. gst_calculation_method / retention_calculation_method: confirm the
 --      check constraints reject any value outside the single implemented
 --      option for each.

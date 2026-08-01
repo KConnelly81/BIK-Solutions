@@ -53,17 +53,46 @@
 --                 'draft' regardless of client input; the one legal
 --                 transition this migration implements is draft -> issued,
 --                 validated (recipient present, at least one line item,
---                 totals internally consistent) and stamped
---                 (issued_at/status_changed_at/status_changed_by) entirely
---                 inside the trigger; any UPDATE attempted once a row is no
---                 longer 'draft' is rejected outright, full stop. This is
---                 enforced at the trigger level, not only inside issue_quote()
---                 below, so a plain client UPDATE cannot bypass it — same
---                 "the RPC is a convenience, the trigger is the actual
---                 guarantee" relationship 011 established for
---                 create_variation_notice(). Accept/decline/void/correction
---                 operations are deliberately NOT built in this migration —
---                 see "NOT built" at the end.
+--                 totals internally consistent) and stamped entirely inside
+--                 the trigger; any UPDATE attempted once a row is no longer
+--                 'draft' is rejected outright, full stop. Accept/decline/
+--                 void/correction operations are deliberately NOT built in
+--                 this migration — see "NOT built" at the end.
+--              6. Issue-transition entry point — REVISED from the first
+--                 draft of this migration, which allowed the draft ->
+--                 issued transition via either issue_quote() or a plain
+--                 client UPDATE (mirroring how 011's
+--                 create_variation_notice() and a plain INSERT are equally
+--                 valid paths to *create* a row). On review that equivalence
+--                 was correctly flagged as inconsistent with this project's
+--                 own stated preference that a document's status transition
+--                 be a controlled RPC, not an ordinary table write — issuing
+--                 is a one-way, legally/commercially significant act in a
+--                 way that creating a draft is not, and deserves a narrower
+--                 door. Now: ordinary authenticated INSERT/UPDATE may create
+--                 and edit a draft freely (unchanged), but authenticated's
+--                 UPDATE grant on quotes is column-scoped and does NOT
+--                 include status, issued_at, issued_by, issued_snapshot,
+--                 status_changed_at, or status_changed_by (see the grants
+--                 section below) — a plain client UPDATE that touches any of
+--                 those columns is rejected by Postgres itself with a
+--                 permission error, before the row is ever examined.
+--                 issue_quote() is SECURITY DEFINER specifically so it can
+--                 still write those columns (it independently re-checks
+--                 organisation ownership itself, the same pattern
+--                 assign_variation_notice_number() (011) already established
+--                 for calling a DEFINER function safely) — it is now the
+--                 only path capable of reaching the draft -> issued
+--                 transition at all. The validation logic itself
+--                 (recipient present, >=1 line item, totals consistent)
+--                 stays written once, inside enforce_quote_status_transition
+--                 — not duplicated into issue_quote()'s own body — because
+--                 that trigger's issue-transition branch is now reachable
+--                 exclusively through this RPC; writing the same checks
+--                 twice would create two sources of truth that could drift.
+--                 issued_by and issued_snapshot (new columns, not present in
+--                 the first draft) are both set only inside that same
+--                 trigger branch, at the same moment as issued_at.
 -- Phase:     5a (Tool migration — Quotes)
 -- Depends on: 001_create_organisations.sql (set_updated_at()),
 --             004_create_projects.sql (projects table),
@@ -138,7 +167,21 @@ create table if not exists public.quotes (
 
   -- ── Lifecycle ───────────────────────────────────────────────────────────
   status                  text not null default 'draft',
+
+  -- Set exactly once, by issue_quote() only — see "Issue-transition
+  -- redesign" in the migration header comment. issued_by is distinct from
+  -- status_changed_by below: issued_by never changes again once set,
+  -- while status_changed_at/by will track the *most recent* transition
+  -- once future accept/decline/void transitions exist.
   issued_at               timestamptz,
+  issued_by               uuid references auth.users(id) on delete set null,
+
+  -- A frozen copy of this quote (and its line items) exactly as it stood
+  -- at the moment of issue — see capture_quote_issued_snapshot() below for
+  -- why this exists even though the whole row is already immutable
+  -- post-issue.
+  issued_snapshot         jsonb,
+
   status_changed_at       timestamptz,
   status_changed_by       uuid references auth.users(id) on delete set null,
 
@@ -176,6 +219,10 @@ comment on column public.quotes.subtotal_cents is
   'Server-computed sum of quote_line_items.line_total_cents for this quote. Never independently writable — see recalculate_quote_totals().';
 comment on column public.quotes.total_cents is
   'Server-computed subtotal_cents + gst_cents. Never independently writable — see recalculate_quote_totals().';
+comment on column public.quotes.issued_by is
+  'Who issued this quote — set once, by issue_quote() only, at the same moment as issued_at. Never writable via a plain client UPDATE (see the grants section) and never changed again after that one write.';
+comment on column public.quotes.issued_snapshot is
+  'A frozen copy of this quote and its line items exactly as they stood at the moment of issue, captured by enforce_quote_status_transition(). Redundant with the fact that the whole row is independently made immutable on issue (this migration has no exceptions to that), but deliberately kept anyway: it gives a stable, self-contained "what was actually issued" record that survives unaffected if a future migration ever adds a legitimate post-issue correction/revision path around the immutability trigger.';
 
 -- ----------------------------------------------------------------------------
 -- Table: quote_line_items
@@ -267,7 +314,12 @@ revoke all on function public.enforce_quote_project_same_organisation() from pub
 -- SECURITY INVOKER (default): every read/write here is something the caller
 -- already has direct RLS-permitted access to (their own organisation's
 -- quotes and quote_line_items) — no elevation needed, same reasoning as
--- create_variation_notice() (011).
+-- create_variation_notice() (011). Remains INVOKER even though the
+-- draft -> issued branch is now, in practice, only ever reached via the
+-- SECURITY DEFINER issue_quote() below: the trigger itself still touches
+-- nothing this table's own caller doesn't already have RLS-permitted
+-- access to (its own organisation's quotes and quote_line_items), so
+-- there is still nothing here for INVOKER to fail to reach.
 -- ----------------------------------------------------------------------------
 create or replace function public.enforce_quote_status_transition()
 returns trigger
@@ -280,9 +332,14 @@ begin
   if tg_op = 'INSERT' then
     -- A new row always starts as draft, regardless of what the client
     -- supplies. The only legal way to reach 'issued' is the branch below,
-    -- on a subsequent UPDATE.
+    -- on a subsequent UPDATE — and, per decision 6 above, only via
+    -- issue_quote() in practice, since authenticated's column-scoped
+    -- UPDATE grant (see the grants section below) cannot write any of
+    -- these columns directly.
     new.status := 'draft';
     new.issued_at := null;
+    new.issued_by := null;
+    new.issued_snapshot := null;
     new.status_changed_at := null;
     new.status_changed_by := null;
     return new;
@@ -330,14 +387,62 @@ begin
   end if;
 
   new.issued_at := now();
+  new.issued_by := auth.uid();
   new.status_changed_at := now();
   new.status_changed_by := auth.uid();
+
+  -- Frozen copy of this quote and its line items exactly as issued — see
+  -- the table-level comment on quotes.issued_snapshot for why this exists
+  -- even though the whole row is independently made immutable by the
+  -- branch above. new.id is available here (either supplied or already
+  -- defaulted by gen_random_uuid() before any BEFORE trigger runs), and
+  -- quote_line_items rows for it already exist at this point — issuing is
+  -- always a subsequent UPDATE, never the same statement as the row's own
+  -- INSERT.
+  new.issued_snapshot := jsonb_build_object(
+    'quote_number',          new.quote_number,
+    'client_name',           new.client_name,
+    'client_email',          new.client_email,
+    'client_phone',          new.client_phone,
+    'client_address',        new.client_address,
+    'quote_date',            new.quote_date,
+    'valid_until',           new.valid_until,
+    'quote_type',            new.quote_type,
+    'scope_of_works',        new.scope_of_works,
+    'inclusions',            new.inclusions,
+    'exclusions',            new.exclusions,
+    'assumptions',           new.assumptions,
+    'optional_items',        new.optional_items,
+    'deposit_percent',       new.deposit_percent,
+    'payment_terms',         new.payment_terms,
+    'additional_terms',      new.additional_terms,
+    'builder_approval_name', new.builder_approval_name,
+    'gst_rate',              new.gst_rate,
+    'subtotal_cents',        new.subtotal_cents,
+    'gst_cents',             new.gst_cents,
+    'total_cents',           new.total_cents,
+    'line_items', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+               'position',         li.position,
+               'description',      li.description,
+               'quantity',         li.quantity,
+               'unit',             li.unit,
+               'unit_price_cents', li.unit_price_cents,
+               'gst_applicable',   li.gst_applicable,
+               'line_total_cents', li.line_total_cents,
+               'gst_cents',        li.gst_cents
+             ) order by li.position), '[]'::jsonb)
+      from public.quote_line_items li
+      where li.quote_id = new.id
+    )
+  );
+
   return new;
 end;
 $$;
 
 comment on function public.enforce_quote_status_transition() is
-  'The full lifecycle state machine for quotes. Forces every INSERT to start as draft; validates and stamps the one legal draft -> issued transition; rejects any UPDATE once a row is no longer draft, with no exceptions. See docs/PHASE_5A_DESIGN_PROPOSAL.md, "Post-issue immutability".';
+  'The full lifecycle state machine for quotes. Forces every INSERT to start as draft; validates, stamps (issued_at/issued_by/status_changed_at/status_changed_by), and snapshots the one legal draft -> issued transition; rejects any UPDATE once a row is no longer draft, with no exceptions. In practice only reachable via issue_quote() — see the migration header comment, decision 6, and docs/PHASE_5A_DESIGN_PROPOSAL.md, "Post-issue immutability".';
 
 create or replace trigger quotes_enforce_status_transition
   before insert or update on public.quotes
@@ -423,10 +528,25 @@ create or replace trigger quote_line_items_enforce_draft_only
 -- writes are blocked otherwise, by the trigger above), so it always passes
 -- enforce_quote_status_transition()'s "ordinary draft edit" branch cleanly —
 -- no special-case bypass needed for this internal write.
+--
+-- SECURITY DEFINER — required, not optional, once authenticated's UPDATE
+-- grant on quotes became column-scoped (see the grants section) and no
+-- longer covers subtotal_cents/gst_cents/total_cents: this function issues
+-- its own separate UPDATE statement against quotes (distinct from a BEFORE
+-- trigger merely reassigning NEW within the client's original statement,
+-- which is never separately privilege-checked), so it runs under whatever
+-- role executes it — DEFINER here, same as assign_quote_number(). Safe
+-- without an additional organisation re-check (unlike issue_quote()/
+-- assign_quote_number(), which take a client-supplied id/organisation_id
+-- and so must re-verify ownership themselves): v_qid here is always
+-- read from a quote_line_items row the caller already had RLS-permitted
+-- access to write, in the very same statement that fired this trigger —
+-- there is no separate, client-suppliable input to misuse.
 -- ----------------------------------------------------------------------------
 create or replace function public.recalculate_quote_totals()
 returns trigger
 language plpgsql
+security definer
 set search_path = ''
 as $$
 declare
@@ -724,29 +844,57 @@ grant execute on function public.create_quote(uuid, text, text, text, text, text
 
 -- ----------------------------------------------------------------------------
 -- Function: issue_quote
--- Transitions a draft quote to issued. All actual validation (recipient
--- present, at least one line item, totals internally consistent) and the
--- issued_at/status_changed_at/status_changed_by stamping live in
--- enforce_quote_status_transition() above — this function is a thin,
--- RLS-scoped wrapper giving a clean "not found" error ahead of that
--- trigger's own validation errors. Not itself a security boundary: a plain
--- RLS-scoped UPDATE (`update quotes set status = 'issued' where id = ...`)
--- is equally correct and equally validated by the trigger.
+-- Transitions a draft quote to issued. Per the migration header comment,
+-- decision 6: this is now THE ONLY path capable of reaching that
+-- transition — authenticated's UPDATE grant on quotes (below) is
+-- column-scoped and does not include status/issued_at/issued_by/
+-- issued_snapshot/status_changed_at/status_changed_by, so a plain client
+-- UPDATE touching any of them fails with a Postgres permission error
+-- before this function, or the row, is ever involved.
+--
+-- SECURITY DEFINER, unlike create_quote()/every other INVOKER function in
+-- this migration — deliberately: it must be able to write the columns
+-- authenticated's own grant deliberately excludes. Because DEFINER means
+-- this function does NOT run under RLS, it re-establishes the exact same
+-- access boundary RLS would have given it explicitly, in code: the initial
+-- SELECT (and the UPDATE's WHERE clause) both require organisation_id to
+-- match the caller's own internal.current_organisation_id() — the same
+-- pattern already established by assign_variation_notice_number() (011)
+-- for calling a DEFINER function safely from an authenticated context.
+--
+-- All actual validation (recipient present, at least one line item, totals
+-- internally consistent) and the issued_at/issued_by/status_changed_at/
+-- status_changed_by/issued_snapshot stamping still live entirely inside
+-- enforce_quote_status_transition() — not duplicated here. See that
+-- function's comment and the migration header comment, decision 6, for why
+-- keeping the validation in exactly one place is deliberate now that this
+-- RPC is the only caller that can ever reach it.
 -- ----------------------------------------------------------------------------
 create or replace function public.issue_quote(p_quote_id uuid)
 returns public.quotes
 language plpgsql
+security definer
 set search_path = ''
 as $$
 declare
-  v_row public.quotes;
+  v_org_id uuid;
+  v_row    public.quotes;
 begin
-  select * into v_row from public.quotes where id = p_quote_id;
+  v_org_id := internal.current_organisation_id();
+  if v_org_id is null then
+    raise exception 'Authentication required, or your account has no active organisation.'
+      using errcode = '28000';
+  end if;
+
+  select * into v_row from public.quotes
+  where id = p_quote_id and organisation_id = v_org_id;
+
   if v_row is null then
     raise exception 'Quote not found in your organisation.' using errcode = '42501';
   end if;
 
-  update public.quotes set status = 'issued' where id = p_quote_id
+  update public.quotes set status = 'issued'
+  where id = p_quote_id and organisation_id = v_org_id
   returning * into v_row;
 
   return v_row;
@@ -754,7 +902,7 @@ end;
 $$;
 
 comment on function public.issue_quote(uuid) is
-  'Transitions a draft quote to issued. Validation and stamping live in enforce_quote_status_transition() — see that function''s comment.';
+  'The only path capable of transitioning a quote from draft to issued — authenticated''s column-scoped UPDATE grant on quotes excludes every lifecycle column, so a plain client UPDATE cannot reach this transition. SECURITY DEFINER; independently re-checks organisation ownership since it does not run under RLS. Validation and stamping live in enforce_quote_status_transition() — see that function''s comment.';
 
 revoke all on function public.issue_quote(uuid) from public, anon;
 grant execute on function public.issue_quote(uuid) to authenticated;
@@ -845,9 +993,35 @@ create policy quote_line_items_delete_same_org
 
 -- ----------------------------------------------------------------------------
 -- Grants — nothing inherited, explicit here, same rationale as 010.
+--
+-- quotes' UPDATE grant is column-scoped, not table-scoped — this is the
+-- actual enforcement mechanism behind decision 6 above (issue_quote() is
+-- the only path to draft -> issued), not merely documentation of it. Every
+-- column NOT listed below (status, issued_at, issued_by, issued_snapshot,
+-- status_changed_at, status_changed_by — the whole lifecycle surface — and
+-- also organisation_id/project_id/created_at/created_by/updated_at, none
+-- of which a client legitimately rewrites post-creation either) is
+-- unreachable to authenticated via any plain UPDATE statement; Postgres
+-- rejects the statement outright with a permission error before this
+-- table's own RLS or triggers are even consulted. SELECT and INSERT stay
+-- table-scoped: INSERT is already fully governed by
+-- enforce_quote_status_transition()'s "every INSERT forced to draft"
+-- branch, so a column-level restriction there would be redundant, not
+-- additionally protective. subtotal_cents/gst_cents/total_cents are also
+-- excluded from the UPDATE grant, even though they are separately already
+-- always overwritten by recalculate_quote_totals() regardless of client
+-- input (§1 of docs/PHASE_5A_DESIGN_PROPOSAL.md) — belt-and-braces, not
+-- required for correctness on its own.
 -- ----------------------------------------------------------------------------
 revoke all on public.quotes from anon, authenticated;
-grant select, insert, update on public.quotes to authenticated;
+grant select, insert on public.quotes to authenticated;
+grant update (
+  client_name, client_email, client_phone, client_address,
+  quote_number, quote_date, valid_until, quote_type,
+  scope_of_works, inclusions, exclusions, assumptions, optional_items,
+  deposit_percent, payment_terms, additional_terms, builder_approval_name,
+  gst_rate, updated_by
+) on public.quotes to authenticated;
 
 revoke all on public.quote_line_items from anon, authenticated;
 grant select, insert, update, delete on public.quote_line_items to authenticated;
@@ -886,8 +1060,16 @@ grant select, insert, update, delete on public.quote_line_items to authenticated
 --   4. Set client_name, delete all line items, attempt issue_quote() again.
 --      Confirm "At least one line item is required", no status change.
 --   5. Restore a line item, call issue_quote() successfully. Confirm
---      status='issued', issued_at/status_changed_at/status_changed_by all
---      set, quote_number unchanged.
+--      status='issued', issued_at/issued_by/status_changed_at/status_changed_by
+--      all set, quote_number unchanged, and issued_snapshot contains the
+--      correct frozen field values plus the correct line items array.
+--   5a. Before calling issue_quote(): attempt a plain client UPDATE that
+--       sets status = 'issued' directly (e.g. `update quotes set status =
+--       'issued' where id = ...`). Confirm this fails with a Postgres
+--       permission error (42501, "permission denied for table quotes" or
+--       column-specific equivalent) — NOT the trigger's business-rule
+--       error — proving the column-scoped grant is what's actually
+--       stopping it, not merely the trigger.
 --   6. Attempt a plain UPDATE against the now-issued quote (e.g. changing
 --      scope_of_works) — confirm it is rejected with the "has been issued"
 --      error. Attempt inserting/updating/deleting one of its line items —
