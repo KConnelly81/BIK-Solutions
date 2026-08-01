@@ -1,8 +1,17 @@
 /**
- * Variation Notice — Supabase Integration (Sprint 3)
+ * Variation Notice — Supabase Integration
  *
- * DOM/network orchestration for variation-generator.html. Wires the page
- * to the approved backend (supabase/migrations/010_create_variation_notices.sql,
+ * Tool-specific wiring only, as of Sprint 4 — the generic session/project
+ * gating, save-panel dispatch, and list rendering all now live in
+ * js/toolkit/supabase-project-context.js and
+ * js/toolkit/supabase-record-panel.js, proven here first before Sprint 5
+ * builds Quotes/Progress Claims on top of them. This file supplies the
+ * one thing those modules can't know on their own: what a variation
+ * notice actually looks like (table name, RPC name, field mapping,
+ * validation, display copy).
+ *
+ * Wires variation-generator.html to the approved backend
+ * (supabase/migrations/010_create_variation_notices.sql,
  * 011_variation_notice_number_generator.sql) via public.create_variation_notice()
  * only — never a direct call to internal.variation_number_counters or any
  * other internal.* helper; only the grants already approved for the
@@ -15,19 +24,18 @@
  * and a live Supabase project; see docs/PHASE_3_SPRINT_3_MANUAL_TEST_STEPS.md.
  */
 
-import { supabase } from '../../supabase/client.js';
-import { requireSession, friendlyAuthError } from '../../supabase/session.js';
-import { formatAUD } from '../../toolkit/calculator.js';
+import { gateOnSupabaseProject, applySnapshotOnce } from '../../toolkit/supabase-project-context.js';
+import { wireSaveButton, refreshRecordList, escapeHtml } from '../../toolkit/supabase-record-panel.js';
+import { formatAUD, centsToDollars } from '../../toolkit/calculator.js';
 import {
   buildRpcParams,
   buildUpdatePayload,
   validateForSave,
   friendlyVariationError,
-  deriveClientSnapshot,
-  centsToDollars
+  deriveClientSnapshot
 } from './variation-save-logic.js';
 
-const VARIATION_TABLE = 'variation_notices';
+const TABLE = 'variation_notices';
 const RPC_CREATE = 'create_variation_notice';
 
 /**
@@ -38,177 +46,54 @@ const RPC_CREATE = 'create_variation_notice';
  * variations list. No part of the tool is shown before the gate resolves.
  */
 export async function initVariationSupabaseIntegration(mountTool) {
-  const $ = (id) => document.getElementById(id);
-  const loadingEl = $('vn-loading');
-  const errorEl = $('vn-project-error');
-  const errorTextEl = $('vn-project-error-text');
-  const shellEl = $('vn-app-shell');
+  await gateOnSupabaseProject({
+    mountTool,
+    customerFields: 'business_name, first_name, last_name, email',
+    onGated(project, mount) {
+      mount(({ engine }) => {
+        applySnapshotOnce(engine, deriveClientSnapshot(project));
 
-  const projectId = new URLSearchParams(location.search).get('project');
-  if (!projectId) {
-    loadingEl.hidden = true;
-    errorTextEl.textContent = 'No project was specified. Open this tool from a project on your dashboard.';
-    errorEl.hidden = false;
-    return;
-  }
+        wireSaveButton({
+          engine,
+          project,
+          table: TABLE,
+          rpcName: RPC_CREATE,
+          buildInsertPayload: (state, proj) => buildRpcParams(state, proj.id),
+          buildUpdatePayload,
+          validate: validateForSave,
+          getRecordRef: (row) => row.variation_number,
+          recordLabel: 'Variation',
+          friendlyError: friendlyVariationError,
+          // The database is the sole source of the canonical number —
+          // write back exactly what it returned, never anything computed
+          // client-side. See variation-save-logic.js's header comment.
+          applyResultToEngine: (row, eng) => eng.setState('variationNumber', row.variation_number),
+          onSaved: () => refreshVariationsList(project.id)
+        });
+      });
 
-  const session = await requireSession('signin.html');
-  if (!session) return; // requireSession already redirected
-
-  const { data: project, error: projectError } = await supabase
-    .from('projects')
-    .select('id, name, site_address, organisation_id, organisations ( name ), customers ( business_name, first_name, last_name, email )')
-    .eq('id', projectId)
-    .maybeSingle();
-
-  if (projectError || !project) {
-    loadingEl.hidden = true;
-    errorTextEl.textContent = projectError
-      ? friendlyAuthError(projectError)
-      : 'This project could not be found in your organisation.';
-    errorEl.hidden = false;
-    return;
-  }
-
-  // ── Reveal the tool ────────────────────────────────────────────
-  loadingEl.hidden = true;
-  shellEl.hidden = false;
-  $('vn-context-org').textContent = project.organisations?.name || 'Your organisation';
-  $('vn-context-project').textContent = project.name;
-
-  mountTool(({ engine }) => {
-    // ── One-time client/project snapshot ──────────────────────────
-    // Only fills a field that is still blank, so it never overwrites a
-    // restored local draft or a document loaded from history — both of
-    // those run synchronously inside mountTool() itself, before this
-    // callback fires, so they always win if they set a value first.
-    const snapshot = deriveClientSnapshot(project);
-    const current = engine.getState();
-    for (const [field, value] of Object.entries(snapshot)) {
-      if (value && !String(current[field] || '').trim()) {
-        engine.setState(field, value);
-      }
-    }
-
-    wireSavePanel({ engine, project });
-  });
-
-  await refreshVariationsList(project.id);
-}
-
-/** Wires the "Save to project" button: first click INSERTs via the RPC, later clicks UPDATE the same row. */
-function wireSavePanel({ engine, project }) {
-  const $ = (id) => document.getElementById(id);
-  const saveBtn = $('vn-save-btn');
-  const hintEl = $('vn-save-hint');
-  const errorEl = $('vn-save-error');
-  const successEl = $('vn-save-success');
-
-  let savedRowId = null;
-  let saving = false;
-
-  saveBtn.addEventListener('click', async () => {
-    if (saving) return; // duplicate-submit guard
-
-    const validationError = validateForSave(engine.getState());
-    if (validationError) {
-      errorEl.textContent = validationError;
-      errorEl.hidden = false;
-      successEl.hidden = true;
-      return;
-    }
-
-    saving = true;
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving…';
-    errorEl.hidden = true;
-    successEl.hidden = true;
-
-    try {
-      const state = engine.getState();
-
-      if (!savedRowId) {
-        const { data, error } = await supabase.rpc(RPC_CREATE, buildRpcParams(state, project.id));
-        if (error) throw error;
-        savedRowId = data.id; // RPC returns the full created row
-        engine.setState('variationNumber', data.variation_number);
-        successEl.textContent = `Variation ${data.variation_number} saved.`;
-      } else {
-        const { error } = await supabase
-          .from(VARIATION_TABLE)
-          .update(buildUpdatePayload(state))
-          .eq('id', savedRowId);
-        if (error) throw error;
-        successEl.textContent = `Variation ${state.variationNumber} updated.`;
-      }
-
-      successEl.hidden = false;
-      hintEl.textContent = `Last saved ${new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })}.`;
-      await refreshVariationsList(project.id);
-    } catch (err) {
-      console.error('[BIK] Variation save error:', err);
-      errorEl.textContent = friendlyVariationError(err);
-      errorEl.hidden = false;
-    } finally {
-      saving = false;
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Save to project';
+      refreshVariationsList(project.id);
     }
   });
 }
 
-/** Loads and renders the project's existing variation notices, with a running total. */
-async function refreshVariationsList(projectId) {
-  const $ = (id) => document.getElementById(id);
-  const loadingEl = $('vn-list-loading');
-  const emptyEl = $('vn-list-empty');
-  const listEl = $('vn-list');
-  const totalEl = $('vn-list-total');
-
-  loadingEl.hidden = false;
-  emptyEl.hidden = true;
-  listEl.hidden = true;
-
-  const { data, error } = await supabase
-    .from(VARIATION_TABLE)
-    .select('id, variation_number, client_name, status, total_cents')
-    .eq('project_id', projectId)
-    .order('created_at', { ascending: false });
-
-  loadingEl.hidden = true;
-
-  if (error) {
-    // Non-fatal for the page as a whole — the save panel above is the
-    // primary flow. Keep this quiet rather than stacking a second error
-    // banner on top of whatever the save panel already shows.
-    console.error('[BIK] Failed to load project variations:', error);
-    emptyEl.textContent = 'Could not load the variations list.';
-    emptyEl.hidden = false;
-    return;
-  }
-
-  if (!data.length) {
-    emptyEl.hidden = false;
-    totalEl.textContent = '';
-    return;
-  }
-
-  const totalCents = data.reduce((sum, row) => sum + (row.total_cents || 0), 0);
-  totalEl.textContent = `Total ${formatAUD(centsToDollars(totalCents))}`;
-
-  listEl.innerHTML = data.map((row) => `
-    <li class="vn-list-item">
-      <span class="vn-list-item-number">${escapeHtml(row.variation_number)}</span>
-      <span class="vn-list-item-client">${escapeHtml(row.client_name)}</span>
-      <span class="status-pill status-pill--${escapeHtml(row.status)}">${escapeHtml(row.status)}</span>
-      <span class="vn-list-item-amount">${formatAUD(centsToDollars(row.total_cents))}</span>
-    </li>
-  `).join('');
-  listEl.hidden = false;
-}
-
-function escapeHtml(value) {
-  const div = document.createElement('div');
-  div.textContent = value ?? '';
-  return div.innerHTML;
+function refreshVariationsList(projectId) {
+  return refreshRecordList({
+    table: TABLE,
+    projectId,
+    selectColumns: 'id, variation_number, client_name, status, total_cents',
+    emptyMessage: 'No variations saved to this project yet.',
+    renderTotal: (rows) => {
+      const totalCents = rows.reduce((sum, row) => sum + (row.total_cents || 0), 0);
+      return `Total ${formatAUD(centsToDollars(totalCents))}`;
+    },
+    renderRow: (row) => `
+      <li class="sb-list-item">
+        <span class="sb-list-item-number">${escapeHtml(row.variation_number)}</span>
+        <span class="sb-list-item-client">${escapeHtml(row.client_name)}</span>
+        <span class="status-pill status-pill--${escapeHtml(row.status)}">${escapeHtml(row.status)}</span>
+        <span class="sb-list-item-amount">${formatAUD(centsToDollars(row.total_cents))}</span>
+      </li>
+    `
+  });
 }

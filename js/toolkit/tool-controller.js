@@ -44,6 +44,7 @@ export class ToolController {
    *   @param {Function}   [config.getEmailData]   — (state, extra) => { subject, body, to }
    *   @param {string}     [config.printSelector]  — CSS selector for print (.doc-page default)
    *   @param {string}     [config.printTitle]     — title for print dialog
+   *   @param {string}     [config.projectMode]    — 'supabase' opts out of the legacy localStorage ProjectUI in favour of js/toolkit/supabase-project-context.js; omit for the default (legacy) behaviour
    */
   constructor(schema, generateDoc, config) {
     this._schema      = schema;
@@ -107,15 +108,19 @@ export class ToolController {
     this._engine.mount(formContainer);
 
     // ── Project context ───────────────────────────────────────
-    // Opt-out for tools wired to the authenticated Supabase project model
-    // (e.g. variation-notice, Sprint 3): that flow owns its own project
-    // context — a real, org-scoped Supabase project selected on
-    // app-dashboard.html — and reads the same `?project=` URL param this
-    // legacy, localStorage-backed bar also reads, for an unrelated,
-    // local-only project concept (js/toolkit/project-store.js). Mounting
-    // both would be a confusing duplicate UI and a URL-param collision.
-    // Every other tool leaves this unset and is unaffected.
-    if (!cfg.disableLegacyProjectUI) {
+    // cfg.projectMode selects which project system a tool uses:
+    //   - unset / 'legacy' (default): the localStorage ProjectUI below —
+    //     every tool not yet migrated to the authenticated model.
+    //   - 'supabase': the tool owns its own project context instead — a
+    //     real, org-scoped Supabase project selected on app-dashboard.html
+    //     (see js/toolkit/supabase-project-context.js). ProjectUI is not
+    //     mounted in this mode: it reads the same `?project=` URL param
+    //     for an unrelated, local-only project concept
+    //     (js/toolkit/project-store.js), and mounting both would be a
+    //     confusing duplicate UI and a URL-param collision.
+    // See docs/technical-architecture.md ("Two project systems") for the
+    // deprecation boundary between the two.
+    if (cfg.projectMode !== 'supabase') {
       this._projectUI = new ProjectUI({
         engine:  this._engine,
         toastFn: msg => this._toast(msg)

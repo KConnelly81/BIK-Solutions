@@ -265,6 +265,19 @@ At Phase 2, evaluate whether to introduce a lightweight framework (e.g., Alpine.
 
 ---
 
+## Two project systems (added 2026-07-31, Sprint 4)
+
+Most of this document predates the actual Supabase build (Phase 2/3) and describes it as planned rather than live — a documentation-currency gap tracked in the maintenance backlog, not fixed here. This section is the one accurate, current exception, because the boundary it describes needs to be followed by every future tool migration.
+
+There are two, deliberately separate "project" concepts on the platform right now, and they must not be conflated:
+
+- **Legacy (`js/toolkit/project-store.js` / `js/toolkit/project-ui.js`)** — localStorage-only, anonymous, no accounts. Every tool that has not yet moved to the authenticated model uses this. `ToolController` mounts it by default (`cfg.projectMode` unset or `'legacy'`).
+- **Supabase (`public.projects`, `js/toolkit/supabase-project-context.js`, `js/toolkit/supabase-record-panel.js`)** — real, authenticated, org-scoped. A tool opts in via `cfg.projectMode: 'supabase'` in its `DOC_CONFIG`, which tells `ToolController` **not** to mount the legacy `ProjectUI` (both read the same `?project=` URL param for unrelated things — mounting both is a bug, not a feature).
+
+**Migration boundary going forward:** a tool moving onto the authenticated model uses the Supabase system exclusively, via the two shared modules above — not a bespoke, per-tool integration file (that was Sprint 3's one-off approach for Variation Notice, generalised in Sprint 4 once it was proven). The legacy system is not being deleted; it keeps serving every tool that stays anonymous/free-tier, and is retired tool-by-tool as each one migrates, not in a single cutover. See `docs/PHASE_3_VARIATION_NOTICES_SCHEMA.md` and the Sprint 4 changelog entry for the worked example.
+
+---
+
 ## Security Considerations
 
 - No user data stored Phase 1 (all forms go to Formspree)

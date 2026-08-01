@@ -20,20 +20,7 @@
  *     an internal schema, function, or constraint.
  */
 
-// ── Money ────────────────────────────────────────────────────────
-
-/** Dollars (string/number, as typed in the form) -> integer cents. Never negative, never NaN. */
-export function dollarsToCents(value) {
-  const n = parseFloat(value);
-  if (!Number.isFinite(n) || n < 0) return 0;
-  return Math.round(n * 100);
-}
-
-/** Integer cents -> dollars (number), the inverse of dollarsToCents, for display. */
-export function centsToDollars(cents) {
-  const n = Number(cents);
-  return Number.isFinite(n) ? n / 100 : 0;
-}
+import { dollarsToCents } from '../../toolkit/calculator.js';
 
 // ── RPC / table payloads ─────────────────────────────────────────
 

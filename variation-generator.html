@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/toolkit-app.css" />
   <link rel="stylesheet" href="css/supabase-app.css" />
-  <link rel="stylesheet" href="css/variation-supabase.css" />
+  <link rel="stylesheet" href="css/supabase-tool-panel.css" />
 </head>
 <body>
 
@@ -18,24 +18,24 @@
      project context checks resolve, so nothing that depends on them ever
      paints before it's confirmed the visitor is allowed to see it — same
      no-flash pattern as app-dashboard.html. -->
-<div class="app-loading" id="vn-loading">Loading…</div>
+<div class="app-loading" id="sb-loading">Loading…</div>
 
 <!-- No/invalid ?project= param, or the project isn't visible to this
      organisation (RLS-filtered) — a dead end, not a silent redirect, so
      the user understands why and can get back on track. -->
-<div class="empty-state" id="vn-project-error" hidden>
-  <p id="vn-project-error-text">This project could not be found.</p>
+<div class="empty-state" id="sb-project-error" hidden>
+  <p id="sb-project-error-text">This project could not be found.</p>
   <a class="btn btn--coral" href="app-dashboard.html">Back to dashboard</a>
 </div>
 
-<div class="app-shell" id="vn-app-shell" hidden>
+<div class="app-shell" id="sb-app-shell" hidden>
 
   <!-- Project context — read-only: this tool's project comes from
        app-dashboard.html's project picker, not a freeform field here. -->
-  <div class="project-context-bar" id="vn-project-context">
-    <span class="project-context-org" id="vn-context-org"></span>
+  <div class="project-context-bar" id="sb-project-context">
+    <span class="project-context-org" id="sb-context-org"></span>
     <span class="project-context-sep" aria-hidden="true">·</span>
-    <span class="project-context-project" id="vn-context-project"></span>
+    <span class="project-context-project" id="sb-context-project"></span>
     <a class="project-context-change" href="app-dashboard.html">Change project</a>
   </div>
 
@@ -149,29 +149,29 @@
         </div>
 
         <!-- ====== SAVE TO PROJECT ====== -->
-        <div class="vn-save-panel" id="vn-save-panel">
-          <div class="vn-save-panel-row">
+        <div class="sb-save-panel" id="sb-save-panel">
+          <div class="sb-save-panel-row">
             <div>
-              <div class="vn-save-panel-title">Save to project</div>
-              <div class="vn-save-panel-hint" id="vn-save-hint">Not yet saved to this project.</div>
+              <div class="sb-save-panel-title">Save to project</div>
+              <div class="sb-save-panel-hint" id="sb-save-hint">Not yet saved to this project.</div>
             </div>
-            <button class="bik-btn bik-btn--primary bik-btn--sm" id="vn-save-btn" type="button">
+            <button class="bik-btn bik-btn--primary bik-btn--sm" id="sb-save-btn" type="button">
               Save to project
             </button>
           </div>
-          <div class="banner banner--error" id="vn-save-error" hidden role="alert"></div>
-          <div class="banner banner--success" id="vn-save-success" hidden role="status" aria-live="polite"></div>
+          <div class="banner banner--error" id="sb-save-error" hidden role="alert"></div>
+          <div class="banner banner--success" id="sb-save-success" hidden role="status" aria-live="polite"></div>
         </div>
 
         <!-- ====== VARIATIONS FOR THIS PROJECT ====== -->
-        <div class="vn-list-panel" id="vn-list-panel">
-          <div class="vn-list-panel-header">
+        <div class="sb-list-panel" id="sb-list-panel">
+          <div class="sb-list-panel-header">
             <span>Variations for this project</span>
-            <span class="vn-list-total" id="vn-list-total"></span>
+            <span class="sb-list-total" id="sb-list-total"></span>
           </div>
-          <p class="text-muted" id="vn-list-loading">Loading…</p>
-          <p class="text-muted" id="vn-list-empty" hidden>No variations saved to this project yet.</p>
-          <ul class="vn-list" id="vn-list" hidden></ul>
+          <p class="text-muted" id="sb-list-loading">Loading…</p>
+          <p class="text-muted" id="sb-list-empty" hidden>No variations saved to this project yet.</p>
+          <ul class="sb-list" id="sb-list" hidden></ul>
         </div>
 
         <!-- FormEngine renders sections here -->

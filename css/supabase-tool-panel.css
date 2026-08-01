@@ -1,9 +1,13 @@
 /* ============================================
-   variation-supabase.css
-   Sprint 3 — styles for the Supabase-backed project context, save panel,
-   and variations list on variation-generator.html. Builds on tokens from
+   supabase-tool-panel.css
+   Sprint 4 — shared styles for any Supabase-backed tool page: the
+   read-only project context bar, the "Save to project" panel, and the
+   "records for this project" list (js/toolkit/supabase-project-context.js
+   and js/toolkit/supabase-record-panel.js). Builds on tokens from
    css/bik-design-system.css and shared classes from css/supabase-app.css
-   (.banner, .empty-state, .btn, .status-pill) — link both before this file.
+   (.banner, .empty-state, .btn, .status-pill) — link both before this
+   file. Was variation-supabase.css through Sprint 3; generalised here
+   as the first tool (Variation Notice) proved the pattern.
    ============================================ */
 
 /* ── Project context bar (read-only, top of page) ────────────── */
@@ -40,42 +44,42 @@
 
 /* ── Save to project panel ────────────────────────────────────── */
 
-.vn-save-panel {
+.sb-save-panel {
   border: 1px solid var(--bik-border, #e0dbd2);
   background: var(--bik-surface-raised, #fafaf8);
   border-radius: 8px;
   padding: 14px 16px;
   margin-bottom: 20px;
 }
-.vn-save-panel-row {
+.sb-save-panel-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }
-.vn-save-panel-title {
+.sb-save-panel-title {
   font-weight: 700;
   font-size: 0.88rem;
 }
-.vn-save-panel-hint {
+.sb-save-panel-hint {
   font-size: 0.78rem;
   color: var(--stone, #888);
   margin-top: 2px;
 }
-.vn-save-panel .banner {
+.sb-save-panel .banner {
   margin: 12px 0 0;
 }
 
-/* ── Variations-for-this-project list ─────────────────────────── */
+/* ── Records-for-this-project list ────────────────────────────── */
 
-.vn-list-panel {
+.sb-list-panel {
   border: 1px solid var(--bik-border, #e0dbd2);
   border-radius: 8px;
   padding: 14px 16px;
   margin-bottom: 24px;
 }
-.vn-list-panel-header {
+.sb-list-panel-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -83,12 +87,12 @@
   font-size: 0.85rem;
   margin-bottom: 8px;
 }
-.vn-list-total {
+.sb-list-total {
   font-weight: 600;
   font-size: 0.8rem;
   color: var(--stone, #888);
 }
-.vn-list {
+.sb-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -96,7 +100,7 @@
   flex-direction: column;
   gap: 6px;
 }
-.vn-list-item {
+.sb-list-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -105,11 +109,11 @@
   background: var(--bik-surface-sunken, #eeece8);
   font-size: 0.82rem;
 }
-.vn-list-item-number {
+.sb-list-item-number {
   font-weight: 700;
   min-width: 84px;
 }
-.vn-list-item-client {
+.sb-list-item-client {
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -117,15 +121,17 @@
   white-space: nowrap;
   color: var(--stone, #888);
 }
-.vn-list-item-amount {
+.sb-list-item-amount {
   font-weight: 600;
   white-space: nowrap;
 }
 
-/* variation_notices.status values not already covered by
-   css/supabase-app.css's .status-pill--* (those are project statuses:
-   draft/active/on-hold/completed/archived — draft and archived happen to
-   already match and are reused as-is). */
+/* Common document-workflow status colours, generic enough to cover most
+   future tools' status vocabularies (approve/reject/issue are common
+   verbs across quotes, variations, progress claims, invoices). A tool
+   with a genuinely different status word can add its own .status-pill--*
+   rule alongside this file, same as css/supabase-app.css's project
+   statuses (draft/active/on-hold/completed/archived) already do. */
 .status-pill--issued   { background: #dbe9fa; color: #2c7dd4; }
 .status-pill--approved { background: #e3f2e5; color: #2b9e3f; }
 .status-pill--rejected { background: #fbeae7; color: #9a2f1f; }

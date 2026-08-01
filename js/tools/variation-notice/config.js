@@ -360,10 +360,11 @@ export const DOC_CONFIG = {
   aiFields:        ['descriptionOfWork', 'reasonForVariation', 'exclusionsAssumptions'],
   printTitle:      'Variation Notice',
   approvalEnabled: true,
-  // Sprint 3: project context comes from the authenticated Supabase
-  // project (js/tools/variation-notice/supabase-integration.js), not the
-  // legacy localStorage project bar — see tool-controller.js.
-  disableLegacyProjectUI: true,
+  // Project context comes from the authenticated Supabase project
+  // (js/tools/variation-notice/supabase-integration.js, built on the
+  // shared js/toolkit/supabase-project-context.js / supabase-record-panel.js
+  // as of Sprint 4), not the legacy localStorage project bar.
+  projectMode: 'supabase',
 
   // variationNumber, once saved, already carries its own canonical prefix
   // ("VAR-001") or is whatever custom reference the user entered — unlike
