@@ -41,34 +41,6 @@ import { withTimeout } from './with-timeout.js';
 // PR #7 defect fix (the try/catch) only covers a query that rejects.
 const LIST_QUERY_TIMEOUT_MS = 15000;
 
-// Temporary diagnostic instrumentation (hotfix/sprint4-variation-list-
-// diagnostics) — PR #8's mount()-exception fix deployed live with no
-// [BIK] mount-failure error and no other uncaught exception, yet the list
-// still reportedly never leaves "Loading…". These checkpoints exist to
-// find exactly which statement the live page actually stops at, since
-// this environment has no way to run the page in a real browser to see
-// for itself. Remove once the live cause is confirmed and fixed.
-function diag(n, label, extra) {
-  if (extra !== undefined) {
-    console.log(`[BIK-DIAG ${n}] ${label}`, extra);
-  } else {
-    console.log(`[BIK-DIAG ${n}] ${label}`);
-  }
-}
-
-function describeEl(el) {
-  if (!el) return 'NOT FOUND (getElementById returned null)';
-  const style = getComputedStyle(el);
-  return {
-    element: el,
-    id: el.id,
-    className: el.className,
-    hiddenProperty: el.hidden,
-    computedDisplay: style.display,
-    computedVisibility: style.visibility
-  };
-}
-
 /**
  * Wires the "Save to project" button. First click creates the record
  * (via `rpcName` if given, otherwise a plain authenticated INSERT);
@@ -192,23 +164,13 @@ export function wireSaveButton(cfg) {
  *   permanently with no error surfaced at all)
  */
 export async function refreshRecordList(cfg) {
-  diag(8, 'refreshRecordList() entered', { table: cfg.table, projectId: cfg.projectId });
-
-  // Deliberately not assumed correct — logging what getElementById()
-  // actually finds live, rather than trusting these ids match the
-  // deployed HTML, per the diagnostic request that prompted this.
+  // Defensive rather than assumed correct: a wrong/missing id degrades
+  // safely (the relevant UI update is just skipped) instead of throwing.
   const $ = (id) => document.getElementById(id);
   const loadingEl = $('sb-list-loading');
   const emptyEl = $('sb-list-empty');
   const listEl = $('sb-list');
   const totalEl = $('sb-list-total');
-
-  diag(9, 'DOM elements resolved', {
-    loadingEl: describeEl(loadingEl),
-    emptyEl: describeEl(emptyEl),
-    listEl: describeEl(listEl),
-    totalEl: describeEl(totalEl)
-  });
 
   if (loadingEl) loadingEl.hidden = false;
   if (emptyEl) emptyEl.hidden = true;
@@ -224,7 +186,6 @@ export async function refreshRecordList(cfg) {
   //     doesn't anticipate. withTimeout() (with-timeout.js) additionally
   //     guarantees the query itself can never hang indefinitely.
   let data, error, thrown;
-  diag(10, 'Supabase query starting');
   try {
     ({ data, error } = await withTimeout(
       supabase
@@ -235,17 +196,13 @@ export async function refreshRecordList(cfg) {
       LIST_QUERY_TIMEOUT_MS,
       'Loading this list is taking longer than expected.'
     ));
-    diag(11, 'Supabase query settled', { outcome: error ? 'resolved-with-error' : 'resolved-with-data', error, rowCount: data?.length });
   } catch (err) {
     thrown = err;
-    diag(11, 'Supabase query settled', { outcome: 'thrown-or-timed-out', err });
   } finally {
     if (loadingEl) loadingEl.hidden = true;
-    diag(12, 'loading cleared in finally', describeEl(loadingEl));
   }
 
   const outcome = determineListOutcome({ data, error, thrown });
-  diag(13, 'final outcome', { state: outcome.state, rowCount: outcome.rows.length });
 
   if (outcome.state === 'error') {
     // Non-fatal for the page as a whole — the save panel above is the
