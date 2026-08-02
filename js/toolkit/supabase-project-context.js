@@ -37,6 +37,12 @@
 import { supabase } from '../supabase/client.js';
 import { requireSession, friendlyAuthError } from '../supabase/session.js';
 import { determineGateOutcome } from './project-gate-logic.js';
+import { withTimeout } from './with-timeout.js';
+
+// See with-timeout.js's header and supabase-record-panel.js's identical
+// guard: a query that never settles at all leaves the try/catch below
+// waiting forever, since neither the try nor the catch path ever runs.
+const PROJECT_QUERY_TIMEOUT_MS = 15000;
 
 /**
  * @param {Object} opts
@@ -83,11 +89,15 @@ export async function gateOnSupabaseProject({ mountTool, customerFields, onGated
   let project, projectError, thrown;
   if (projectId) {
     try {
-      ({ data: project, error: projectError } = await supabase
-        .from('projects')
-        .select(`id, name, site_address, organisation_id, organisations ( name )${customerEmbed}`)
-        .eq('id', projectId)
-        .maybeSingle());
+      ({ data: project, error: projectError } = await withTimeout(
+        supabase
+          .from('projects')
+          .select(`id, name, site_address, organisation_id, organisations ( name )${customerEmbed}`)
+          .eq('id', projectId)
+          .maybeSingle(),
+        PROJECT_QUERY_TIMEOUT_MS,
+        'Loading this project is taking longer than expected.'
+      ));
     } catch (err) {
       thrown = err;
     }

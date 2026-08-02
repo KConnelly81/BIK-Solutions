@@ -33,6 +33,13 @@
 
 import { supabase } from '../supabase/client.js';
 import { determineListOutcome } from './record-list-logic.js';
+import { withTimeout } from './with-timeout.js';
+
+// A query that never settles at all — not even with a rejection — leaves
+// the try/catch below waiting forever, since neither the try nor the catch
+// path ever runs. See with-timeout.js's header for why this exists: the
+// PR #7 defect fix (the try/catch) only covers a query that rejects.
+const LIST_QUERY_TIMEOUT_MS = 15000;
 
 /**
  * Wires the "Save to project" button. First click creates the record
@@ -175,11 +182,15 @@ export async function refreshRecordList(cfg) {
   // the exact defect PR #7's live testing found.
   let data, error, thrown;
   try {
-    ({ data, error } = await supabase
-      .from(cfg.table)
-      .select(cfg.selectColumns)
-      .eq('project_id', cfg.projectId)
-      .order('created_at', { ascending: false }));
+    ({ data, error } = await withTimeout(
+      supabase
+        .from(cfg.table)
+        .select(cfg.selectColumns)
+        .eq('project_id', cfg.projectId)
+        .order('created_at', { ascending: false }),
+      LIST_QUERY_TIMEOUT_MS,
+      'Loading this list is taking longer than expected.'
+    ));
   } catch (err) {
     thrown = err;
   }
