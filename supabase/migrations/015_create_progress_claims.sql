@@ -510,10 +510,13 @@ create policy progress_claim_line_items_delete_same_org
 -- ----------------------------------------------------------------------------
 revoke all on public.progress_claims from anon, authenticated;
 grant select, insert on public.progress_claims to authenticated;
+-- claim_number is deliberately NOT in this list — same reasoning as
+-- quotes.quote_number's exclusion (012): normalize_progress_claim_number()
+-- (016) only runs on INSERT, so a direct client UPDATE would bypass it.
 grant update (
   client_name, client_email, contract_ref,
   claim_date, claim_period_from, claim_period_to,
-  claim_number, previously_claimed_cents, gst_rate, retention_rate,
+  previously_claimed_cents, gst_rate, retention_rate,
   percent_complete, description_of_work, special_conditions,
   builder_approval_name, client_approval_name, updated_by
 ) on public.progress_claims to authenticated;

@@ -461,9 +461,17 @@ create policy quote_line_items_delete_same_org
 -- ----------------------------------------------------------------------------
 revoke all on public.quotes from anon, authenticated;
 grant select, insert on public.quotes to authenticated;
+-- quote_number is deliberately NOT in this list — normalize_quote_number()
+-- (013) only runs on INSERT (assign_quote_number()'s trigger timing), so a
+-- direct client UPDATE to quote_number would bypass normalisation entirely
+-- and could produce a non-canonical string that doesn't collide with the
+-- canonical form in quotes_org_number_unique_idx (e.g. "qt-5" alongside
+-- "QT-0005"). There is no legitimate reason to change it after creation —
+-- same "no reassignment-on-UPDATE path, and this does not add one"
+-- decision already shipped for variation_notices.variation_number (010/011).
 grant update (
   client_name, client_email, client_phone, client_address,
-  quote_number, quote_date, valid_until, quote_type,
+  quote_date, valid_until, quote_type,
   scope_of_works, inclusions, exclusions, assumptions, optional_items,
   deposit_percent, payment_terms, additional_terms, builder_approval_name,
   gst_rate, updated_by
