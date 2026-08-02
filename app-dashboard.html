@@ -187,7 +187,7 @@
             ${project.site_address ? `<div class="project-card-address">${escapeHtml(project.site_address)}</div>` : ''}
             <span class="status-pill status-pill--${project.status}">${escapeHtml(statusLabel)}</span>
             <div class="project-card-actions">
-              <a class="btn btn--ghost" href="variation-generator.html?project=${encodeURIComponent(project.id)}">New Variation Notice</a>
+              <a class="btn btn--ghost" href="project-hub.html?project=${encodeURIComponent(project.id)}">Open project</a>
             </div>
           </div>
         `;
