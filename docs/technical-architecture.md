@@ -1,7 +1,7 @@
 # Technical Architecture
 
 **Purpose:** Describe the system design, technology stack, and infrastructure decisions for BIK Solutions.
-**Last Updated:** 2026-07-31
+**Last Updated:** 2026-08-02
 **Status:** Active
 **Owner:** BIK Solutions Pty Ltd
 
@@ -36,21 +36,33 @@ Security. Hosting, framework choice, and every other Phase 2 item below
 remain as-planned, not yet built.
 
 - **Backend:** Supabase project `hpcqncghvdrlvufxfdnd` — `organisations`,
-  `profiles`, `customers`, `projects` tables, RLS on all four, a single
-  `bootstrap_organisation()` RPC as the only path that creates an
-  organisation. See `supabase/migrations/`, `docs/PHASE_1_DATABASE_REVIEW.md`,
-  and `docs/PHASE_1_DEPLOYMENT_RUNBOOK.md`.
+  `profiles`, `customers`, `projects` tables (Phase 1), plus, as of Sprint 3/5b,
+  `variation_notices`, `quotes`/`quote_line_items`, and `progress_claims`/
+  `progress_claim_line_items`, each with RLS, organisation/project-scoped
+  concurrency-safe numbering, and an RPC-only issue workflow (`create_*()`/
+  `issue_*()`) — no client role has a plain `UPDATE` grant reaching any
+  lifecycle or server-computed-total column on any of them. `Progress Claims`
+  issuing (`issue_progress_claim()`) remains unconditionally `BLOCKED` at the
+  database level pending accountant/contract confirmation of GST/retention
+  treatment — drafts are fully usable. See `supabase/migrations/`,
+  `docs/PHASE_1_DATABASE_REVIEW.md`, `docs/PHASE_1_DEPLOYMENT_RUNBOOK.md`, and
+  `docs/RELEASE_v0.5.0_SPRINT5.md` for the current production state.
 - **Frontend:** still static HTML + native ES modules, no framework/bundler
   — `js/supabase/client.js` (one shared client, publishable key only),
   `js/supabase/session.js` (auth/session helpers), `signup.html`,
-  `signin.html`, `app-dashboard.html`. The Supabase JS SDK is vendored at
-  `js/vendor/supabase-js.min.js` (official npm build, loaded via a plain
-  `<script>` tag) rather than pulled from a CDN at runtime.
+  `signin.html`, `app-dashboard.html`, `project-hub.html`. The Supabase JS SDK
+  is vendored at `js/vendor/supabase-js.min.js` (official npm build, loaded
+  via a plain `<script>` tag) rather than pulled from a CDN at runtime.
+- **Live on the authenticated Supabase model** (as of Sprint 5, 2026-08-02):
+  Variation Notice, Quote Builder, Progress Claim — each reached from
+  `project-hub.html`, gated on session + a valid organisation-scoped project,
+  with its own "records for this project" list. See "Two project systems"
+  below for the shared integration pattern all three use.
 - **Not yet connected:** `dashboard.html`, `project.html`, and
   `js/toolkit/project-store.js` are unchanged and still run entirely on
-  localStorage. No public nav link points at the new pages yet — migrating
-  the existing toolkit to Supabase-backed projects is a separate,
-  not-yet-scheduled piece of work.
+  localStorage, as does every tool other than the three above. No public nav
+  link points at the new pages yet — migrating the rest of the toolkit to
+  Supabase-backed projects is ongoing, tool-by-tool, not a single cutover.
 
 ### Branch reconciliation (2026-07-31)
 

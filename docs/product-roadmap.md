@@ -1,9 +1,29 @@
 # Product Roadmap
 
 **Purpose:** Phase-by-phase delivery plan for the BIK Business Toolkit platform.
-**Last Updated:** 2026-07-15
+**Last Updated:** 2026-08-02
 **Status:** Active
 **Owner:** BIK Solutions Pty Ltd
+
+---
+
+## Production status (added 2026-08-02, Sprint 5 close-out)
+
+The phase/tool table below predates the authenticated Supabase build and still describes the
+original static-website plan. The actual delivery has run as a separate, sprint-numbered track
+since — see `docs/RELEASE_v0.3.0_SPRINT3.md`, `RELEASE_v0.4.0_SPRINT4.md`, and
+`RELEASE_v0.5.0_SPRINT5.md` for the authoritative current state. As of Sprint 5 (2026-08-02):
+
+- **Live on the authenticated Supabase model, in production:** Variation Notice, Quote Builder,
+  Progress Claim — each with a dedicated table, RLS, organisation/project-scoped concurrency-safe
+  numbering, and an RPC-only issue workflow. Progress Claim issuing remains database-blocked
+  pending an accountant/contract decision (drafts fully usable).
+- **Still legacy localStorage, not yet migrated:** every other tool in the table below (Scope of
+  Works, Site Diary, Defect Report, Toolbox Talk, SWMS, Payment Reminder, Site Inspection, and the
+  full Phase 2/3 list).
+- **Next proposed sprint:** a secure server-side AI proxy (Supabase Edge Function) to remove the
+  direct-from-browser Anthropic API key model the AI Professional Writer currently uses — see the
+  Sprint 6 proposal referenced from `docs/RELEASE_v0.5.0_SPRINT5.md`.
 
 ---
 
@@ -136,13 +156,16 @@ See [ai-tool-catalogue.md](ai-tool-catalogue.md) for full specs.
 
 ## Current Sprint
 
-See [feature-backlog.md](feature-backlog.md) for task-level detail.
+**Sprint 5 closed 2026-08-02** — Quote Builder and Progress Claim moved to the authenticated
+Supabase model, Project Hub extended to all three live tools, live production acceptance testing
+passed in full. See `docs/RELEASE_v0.5.0_SPRINT5.md` for the full release record.
 
-**Focus:** Phase 1 website build
-- Creating 6 new pages (toolkit, ai-documents, templates, construction-resources, productivity, coming-soon)
-- Adding Business Toolkit dropdown to all existing pages
-- Adding SaaS component CSS to styles.css
-- Testing and deploying to biksolutions.com.au
+**Sprint 6 (proposed, not started):** secure Supabase AI Edge Function — see the proposal
+referenced from `docs/RELEASE_v0.5.0_SPRINT5.md`. Not begun automatically; awaiting explicit
+go-ahead.
+
+See [feature-backlog.md](feature-backlog.md) for the older, pre-Supabase task-level website
+backlog (largely superseded by the sprint track above, not actively maintained).
 
 ---
 

@@ -4,10 +4,19 @@
 `project-hub.html`'s three-list view — the parts an automated unit test cannot cover (a real
 browser, a real session, real network calls, real viewport). Same rationale as
 `docs/PHASE_3_SPRINT_3_MANUAL_TEST_STEPS.md` and `docs/PHASE_5A_PROJECT_HUB_MANUAL_TEST_STEPS.md`.
-**Status:** Not yet run. Backend (migrations `012`-`017`) is live on `hpcqncghvdrlvufxfdnd` and
-independently verified with disposable data — see `docs/changelog.md`'s Sprint 5b entry. This
-checklist is the remaining gap: a real authenticated browser session was not available in the
-environment that built this frontend work.
+**Status:** **PASSED** — live acceptance testing run by the user against production (`main` @
+`ad39254`, PR #12) after merge, 2026-08-02. Full scope reported passed: Project Hub (status pill no
+longer shows `undefined`, all three list sections render with correct empty/populated states),
+Quote Builder (draft create/edit/save/refresh/reopen, logout-login persistence, line item add/
+edit/remove with server-authoritative totals, issue workflow, post-issue immutability, issued
+snapshot retained, appears correctly in Project Hub), Progress Claim (draft create/edit/save/
+refresh/reopen, logout-login persistence, Schedule of Values rows with correct derived totals/
+retention/remaining value, Issue button reaching the real server and correctly rejected with the
+approved BLOCKED message, appears correctly in Project Hub), and general checks (no permanent
+loading states, correct empty/error states, desktop + mobile layouts, no console errors, cross-
+organisation isolation confirmed). See `docs/RELEASE_v0.5.0_SPRINT5.md` for the full release
+record. Backend (migrations `012`-`017`) has been live on `hpcqncghvdrlvufxfdnd` since before this
+checklist ran — see `docs/changelog.md`'s Sprint 5b entry.
 **Owner:** BIK Solutions Pty Ltd
 
 ---
@@ -137,5 +146,10 @@ environment that built this frontend work.
 
 ## Sign-off
 
-Record results (pass/fail per section, screenshots of any failure) once run against the live
-site. Do not merge this branch's PR until this checklist has passed.
+**PASSED — 2026-08-02, run by the user against production** (`main` @ `ad39254`, PR #12, merged).
+All sections (1-9) reported passing: Quote Builder create/edit/save/refresh/reopen/logout-login/
+issue/post-issue-immutability, Progress Claim create/edit/save/refresh/reopen/logout-login/the
+Issue action correctly blocked by the live RPC, Project Hub's three list sections (including the
+`project.status` "undefined" pill fix), cross-organisation isolation, desktop and mobile layouts,
+no permanent loading states, no console errors. No material failures reported. Sprint 5 closed —
+see `docs/RELEASE_v0.5.0_SPRINT5.md`.
