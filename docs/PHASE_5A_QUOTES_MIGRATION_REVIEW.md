@@ -10,8 +10,19 @@ date, and `client_email` — see `docs/PHASE_5A_DESIGN_PROPOSAL.md` for the auth
 requirements. The rest of this document (calculation ownership, RLS, grants shape, concurrency
 analysis) is unchanged in substance by the restructure — content moved files, the design didn't.
 **Migration files:** `012_create_quotes.sql` / `013_create_quote_numbering.sql` /
-`014_create_quote_issue_workflow.sql` (draft, **not applied**)
+`014_create_quote_issue_workflow.sql` — **APPLIED and live-verified** against `hpcqncghvdrlvufxfdnd`
+(2026-08-02) — see `docs/changelog.md`'s Sprint 5b entry for the live verification report.
 **Status:** Reviewed in isolation from Progress Claims per request. Verdict at the end.
+
+**Post-review fix (Sprint 5b, before deployment):** `quote_number` was removed from
+`authenticated`'s `UPDATE` grant. `normalize_quote_number()` only runs on `INSERT`
+(`assign_quote_number()`'s trigger timing), so a direct client `UPDATE` to `quote_number` could
+have bypassed normalisation entirely and produced a non-canonical string that doesn't collide with
+the canonical form in `quotes_org_number_unique_idx`. No legitimate reason to change the number
+after creation — matches the "no reassignment-on-`UPDATE` path" decision already shipped for
+`variation_notices.variation_number` (`010`/`011`). The grant statement below (Grants section)
+reflects the original draft this review was written against; the deployed migration excludes
+`quote_number`.
 **Companion:** `docs/PHASE_5A_DESIGN_PROPOSAL.md` (full design history), `docs/PHASE_5A_PROGRESS_CLAIMS_MIGRATION_REVIEW.md`.
 
 ---

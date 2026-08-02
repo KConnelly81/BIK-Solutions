@@ -4,13 +4,16 @@
 
 import { calcGST, calcTotal, formatAUD, formatDateLong, todayISO, addDays } from '../../toolkit/calculator.js';
 
-// ── Counter ──────────────────────────────────────────────────
-const COUNTER_KEY = 'bik-quote-counter';
-function nextQuoteNumber() {
-  const n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
-  localStorage.setItem(COUNTER_KEY, String(n));
-  return String(n).padStart(3, '0');
-}
+// quoteNumber is deliberately NOT auto-filled client-side (Sprint 5a,
+// matching Sprint 3's variation-notice precedent): the database is the
+// sole source of the canonical "QT-0001" number
+// (supabase/migrations/013_create_quote_numbering.sql). Leaving this field
+// blank asks the backend to auto-assign on save; the form is updated with
+// the authoritative value returned by public.create_quote() once the save
+// succeeds — see js/tools/quote-builder/supabase-integration.js. A value
+// typed here is sent to the database as a manual reference exactly as
+// entered; the database decides whether it's a standard reference to
+// normalise or a genuinely custom one to keep as-is.
 
 // ── Schema ───────────────────────────────────────────────────
 export const SCHEMA = [
@@ -77,8 +80,9 @@ export const SCHEMA = [
   {
     id: 'quoteNumber',   label: 'Quote number',
     section: 'Quote Details', type: 'text', width: 'half',
-    required: true, defaultValue: nextQuoteNumber,
-    hint: 'Auto-incremented. Edit if needed.', errorMsg: 'Quote number is required'
+    required: false,
+    placeholder: 'Leave blank to auto-number',
+    hint: 'Leave blank for automatic numbering (QT-0001, QT-0002, ...) when saved. Or enter your own reference — numeric or "QT-" style entries (e.g. "50", "qt-50") are normalised to that same format; other references (e.g. "CLIENT-Q-9") are kept exactly as entered.'
   },
   {
     id: 'projectName',   label: 'Project name',
@@ -194,12 +198,23 @@ export const DOC_CONFIG = {
   docPrefix:   'Q',
   aiFields:    ['scopeOfWorks', 'inclusions', 'exclusions', 'assumptions'],
   printTitle:  'Quote',
+  // Project context comes from the authenticated Supabase project
+  // (js/tools/quote-builder/supabase-integration.js, Sprint 5a), not the
+  // legacy localStorage project bar — see js/toolkit/tool-controller.js's
+  // own doc comment and docs/technical-architecture.md ("Two project
+  // systems").
+  projectMode: 'supabase',
 
+  // quoteNumber, once saved, already carries its own canonical prefix
+  // ("QT-0001") or is whatever custom reference the user entered — unlike
+  // the old client-side counter, it is never a bare number needing a "Q-"
+  // prefix added here.
   getDocTitle(state) {
-    return `Quote Q-${state.quoteNumber || '??'} — ${state.projectName || state.clientName || 'Untitled'}`;
+    const ref = state.quoteNumber || 'Unsaved quote';
+    return `Quote — ${ref} — ${state.projectName || state.clientName || 'Untitled'}`;
   },
   getDocRef(state) {
-    return `Q-${state.quoteNumber || '??'}`;
+    return state.quoteNumber || 'Unsaved';
   }
 };
 
@@ -251,7 +266,7 @@ export function generateDocument(data) {
     </div>
     <div class="doc-title-block">
       <h1 class="doc-title">Quote</h1>
-      <div class="doc-subtitle">Q&ndash;${esc(data.quoteNumber || '???')}</div>
+      <div class="doc-subtitle">${esc(data.quoteNumber || 'Not yet saved to project')}</div>
     </div>
   </div>
   <div class="doc-accent-bar"></div>

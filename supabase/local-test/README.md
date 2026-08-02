@@ -9,6 +9,7 @@ creates and drops a local, disposable database only.
 ```sh
 supabase/local-test/run-local-dry-run.sh                                   # apply-only, no functional tests
 supabase/local-test/run-local-dry-run.sh supabase/local-test/functional-tests.sql  # apply + run the suite
+supabase/local-test/concurrency-test.sh                                    # genuine concurrent-transaction numbering test (own disposable DB)
 ```
 
 Requires a local `psql` client and a reachable Postgres server (verified against Postgres 16) with
@@ -29,12 +30,23 @@ a role that can `CREATE DATABASE`/`CREATE ROLE`. Override `PG_SUPERUSER`, `PG_DB
   and manual-override normalisation, and cross-organisation isolation.
 - **`run-local-dry-run.sh`** — applies every migration in `supabase/migrations/` in order to a
   disposable database, then optionally runs a functional test file against the result.
+- **`concurrency-test.sh`** — genuine concurrent-transaction test for the Quotes/Progress Claims
+  numbering counters (`internal.quote_counters`, org-scoped; `internal.progress_claim_counters`,
+  project-scoped): one transaction holds its counter row open via `pg_sleep(3)` while a second,
+  concurrently-started transaction attempts the same `create_quote()`/`create_progress_claim()`
+  call, and the test asserts the second genuinely blocked (measured wall-clock ≥3s, not a
+  coincidental sequential run) before receiving the next, non-colliding number. Same technique
+  already proven for `variation_number` (`011`) at Sprint 3. Builds its own fresh disposable
+  database via `run-local-dry-run.sh` first, so it can be run standalone.
 
 ## When to run this
 
 Before presenting any new or amended migration for review — the standing practice this repo has
 followed since `010`/`011`, now scripted instead of reconstructed by hand each round. Extend
-`functional-tests.sql` alongside any new migration rather than writing a fresh one-off script.
+`functional-tests.sql` alongside any new migration rather than writing a fresh one-off script. Run
+`concurrency-test.sh` too whenever a migration adds or changes a counter-based numbering scheme —
+sequential-call coverage in `functional-tests.sql` does not exercise the actual row-lock contention
+a real concurrent save can hit.
 
 ## Known local-only limitation
 

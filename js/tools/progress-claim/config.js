@@ -7,13 +7,14 @@
 
 import { calcGST, calcTotal, formatAUD, formatDateLong, todayISO } from '../../toolkit/calculator.js';
 
-const COUNTER_KEY = 'bik-progress-claim-counter';
-
-function nextClaimNumber() {
-  const n = parseInt(localStorage.getItem(COUNTER_KEY) || '0', 10) + 1;
-  localStorage.setItem(COUNTER_KEY, String(n));
-  return `PC-${String(n).padStart(3, '0')}`;
-}
+// claimNumber is deliberately NOT auto-filled client-side (Sprint 5a,
+// matching Sprint 3's variation-notice precedent and Sprint 5a's own
+// quote-builder): the database is the sole source of the canonical
+// "PC-001" number (supabase/migrations/016_create_progress_claim_
+// numbering.sql). Leaving this field blank asks the backend to
+// auto-assign on save; the form is updated with the authoritative value
+// returned by public.create_progress_claim() once the save succeeds — see
+// js/tools/progress-claim/supabase-integration.js.
 
 export const SCHEMA = [
 
@@ -135,10 +136,9 @@ export const SCHEMA = [
     section: 'Claim Details',
     type: 'text',
     width: 'half',
-    required: true,
-    defaultValue: nextClaimNumber,
-    hint: 'Auto-incremented. Edit if needed.',
-    errorMsg: 'Claim number is required'
+    required: false,
+    placeholder: 'Leave blank to auto-number',
+    hint: 'Leave blank for automatic numbering (PC-001, PC-002, ...) when saved. Or enter your own reference — numeric or "PC-" style entries (e.g. "3", "pc-3") are normalised to that same format; other references are kept exactly as entered.'
   },
   {
     id: 'claimDate',
@@ -330,6 +330,10 @@ export const DOC_CONFIG = {
   aiFields:        ['descriptionOfWork', 'scheduleOfValues'],
   printTitle:      'Progress Claim',
   approvalEnabled: false,
+  // Project context comes from the authenticated Supabase project
+  // (js/tools/progress-claim/supabase-integration.js, Sprint 5a) — see
+  // js/tools/quote-builder/config.js's identical comment.
+  projectMode: 'supabase',
 
   getDocTitle(state) {
     return `Progress Claim ${state.claimNumber || '??'} — ${state.projectName || state.clientName || 'Untitled'}`;

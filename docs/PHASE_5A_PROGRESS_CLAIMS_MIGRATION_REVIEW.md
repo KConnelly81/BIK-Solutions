@@ -12,8 +12,14 @@ numbering layer into its own non-`DEFINER` trigger in the core layer. The rest o
 in substance — see `docs/PHASE_5A_DESIGN_PROPOSAL.md` for the authoritative current file names
 and requirements.
 **Migration files:** `015_create_progress_claims.sql` / `016_create_progress_claim_numbering.sql`
-/ `017_create_progress_claim_issue_workflow.sql` — **`017` BLOCKED** (draft, **not applied**)
+/ `017_create_progress_claim_issue_workflow.sql` — **APPLIED and live-verified** against
+`hpcqncghvdrlvufxfdnd` (2026-08-02), **`017`'s `BLOCKED` gate confirmed still firing live** — see
+`docs/changelog.md`'s Sprint 5b entry.
 **Status:** Reviewed in isolation from Quotes per request. Verdict at the end.
+
+**Post-review fix (Sprint 5b, before deployment):** `claim_number` was removed from
+`authenticated`'s `UPDATE` grant — same reasoning and same fix as `quotes.quote_number`'s
+identical exclusion, see `docs/PHASE_5A_QUOTES_MIGRATION_REVIEW.md`'s equivalent note.
 **Companion:** `docs/PHASE_5A_DESIGN_PROPOSAL.md` (full design history), `docs/PHASE_5A_QUOTES_MIGRATION_REVIEW.md`.
 
 ---

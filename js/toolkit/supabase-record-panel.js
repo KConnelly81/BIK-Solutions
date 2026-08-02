@@ -68,6 +68,17 @@ const LIST_QUERY_TIMEOUT_MS = 15000;
  *   authoritative database value back onto the form (e.g.
  *   `engine.setState('variationNumber', row.variation_number)`), so the
  *   field never shows anything the database didn't actually return.
+ * @param {(state: Object) => Object} [cfg.buildCreateFollowUpPayload] —
+ *   for a create RPC that only accepts a minimal "header" subset on
+ *   creation (013/016's create_quote()/create_progress_claim(), by design
+ *   narrower than 011's create_variation_notice(), which accepts every
+ *   field at once) — when set, an immediate plain UPDATE with this payload
+ *   follows a successful create, in the same click, before
+ *   applyResultToEngine/onSaved run, so the rest of the form's fields
+ *   aren't silently dropped on first save. Omit entirely (the default) for
+ *   any tool whose create path already captures everything — zero
+ *   behaviour change for those. Typically the same function passed as
+ *   cfg.buildUpdatePayload, reused rather than duplicated.
  * @param {() => Promise<void>} [cfg.onSaved] — called after every successful save (create or update), e.g. to refresh a records list
  */
 export function wireSaveButton(cfg) {
@@ -115,6 +126,17 @@ export function wireSaveButton(cfg) {
           row = data;
         }
         savedRowId = row.id;
+
+        if (cfg.buildCreateFollowUpPayload) {
+          const { data, error } = await supabase
+            .from(cfg.table)
+            .update(cfg.buildCreateFollowUpPayload(state))
+            .eq('id', savedRowId)
+            .select()
+            .single();
+          if (error) throw error;
+          row = data;
+        }
       } else {
         const { data, error } = await supabase
           .from(cfg.table)
@@ -162,15 +184,23 @@ export function wireSaveButton(cfg) {
  *   added after PR #7's live testing found that a rejected query left this function exiting
  *   before `loadingEl.hidden = true` was ever reached, so the panel stayed on "Loading…"
  *   permanently with no error surfaced at all)
+ * @param {string} [cfg.idPrefix] — distinguishes multiple lists on one page (Project Hub,
+ *   Sprint 5a: Variation Notices + Quotes + Progress Claims side by side). Omitted (the
+ *   default, and every single-list tool page's usage), the ids are exactly `sb-list-loading`/
+ *   `sb-list-empty`/`sb-list`/`sb-list-total` — unchanged from before this parameter existed.
+ *   Given e.g. `idPrefix: 'quotes'`, the ids become `sb-list-quotes-loading`/
+ *   `sb-list-quotes-empty`/`sb-list-quotes`/`sb-list-quotes-total`, so a host page provides a
+ *   matching element per list without any two lists' ids colliding.
  */
 export async function refreshRecordList(cfg) {
   // Defensive rather than assumed correct: a wrong/missing id degrades
   // safely (the relevant UI update is just skipped) instead of throwing.
   const $ = (id) => document.getElementById(id);
-  const loadingEl = $('sb-list-loading');
-  const emptyEl = $('sb-list-empty');
-  const listEl = $('sb-list');
-  const totalEl = $('sb-list-total');
+  const suffix = cfg.idPrefix ? `-${cfg.idPrefix}` : '';
+  const loadingEl = $(`sb-list${suffix}-loading`);
+  const emptyEl = $(`sb-list${suffix}-empty`);
+  const listEl = $(`sb-list${suffix}`);
+  const totalEl = $(`sb-list${suffix}-total`);
 
   if (loadingEl) loadingEl.hidden = false;
   if (emptyEl) emptyEl.hidden = true;

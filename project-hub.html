@@ -64,22 +64,43 @@
     </section>
 
     <!-- ====== VARIATION NOTICES FOR THIS PROJECT ======
-         Only tool with a real Supabase table so far. Quotes and Progress
-         Claims get their own list panels here once migrations 012/013
-         land — at that point supabase-record-panel.js's fixed #sb-list-*
-         ids will need parameterising so more than one list can live on
-         this page at once; not built ahead of that need. -->
-    <section class="sb-list-panel" id="sb-list-panel">
+         Three list panels now share this page (Sprint 5a) —
+         supabase-record-panel.js's refreshRecordList() takes an idPrefix
+         so each list's #sb-list-* ids don't collide; omitted entirely on
+         every single-list tool page (variation-generator.html,
+         quote-builder.html, progress-claim.html), which keep the original
+         unprefixed ids unchanged. -->
+    <section class="sb-list-panel" id="sb-list-variations-panel">
       <div class="sb-list-panel-header">
         <span>Variation notices for this project</span>
-        <span class="sb-list-total" id="sb-list-total"></span>
+        <span class="sb-list-total" id="sb-list-variations-total"></span>
       </div>
-      <p class="text-muted" id="sb-list-loading">Loading…</p>
-      <p class="text-muted" id="sb-list-empty" hidden>No variation notices saved to this project yet.</p>
-      <ul class="sb-list" id="sb-list" hidden></ul>
+      <p class="text-muted" id="sb-list-variations-loading">Loading…</p>
+      <p class="text-muted" id="sb-list-variations-empty" hidden>No variation notices saved to this project yet.</p>
+      <ul class="sb-list" id="sb-list-variations" hidden></ul>
     </section>
 
-    <p class="hub-more-note">Quotes and Progress Claims will appear here once those tools are connected to projects.</p>
+    <!-- ====== QUOTES FOR THIS PROJECT ====== -->
+    <section class="sb-list-panel" id="sb-list-quotes-panel">
+      <div class="sb-list-panel-header">
+        <span>Quotes for this project</span>
+        <span class="sb-list-total" id="sb-list-quotes-total"></span>
+      </div>
+      <p class="text-muted" id="sb-list-quotes-loading">Loading…</p>
+      <p class="text-muted" id="sb-list-quotes-empty" hidden>No quotes saved to this project yet.</p>
+      <ul class="sb-list" id="sb-list-quotes" hidden></ul>
+    </section>
+
+    <!-- ====== PROGRESS CLAIMS FOR THIS PROJECT ====== -->
+    <section class="sb-list-panel" id="sb-list-claims-panel">
+      <div class="sb-list-panel-header">
+        <span>Progress claims for this project</span>
+        <span class="sb-list-total" id="sb-list-claims-total"></span>
+      </div>
+      <p class="text-muted" id="sb-list-claims-loading">Loading…</p>
+      <p class="text-muted" id="sb-list-claims-empty" hidden>No progress claims saved to this project yet.</p>
+      <ul class="sb-list" id="sb-list-claims" hidden></ul>
+    </section>
 
   </main>
 
@@ -117,16 +138,14 @@
         <span class="hub-tool-icon" aria-hidden="true">📝</span>
         <span>New Variation Notice</span>
       </a>
-      <span class="hub-tool-btn" aria-disabled="true">
+      <a class="hub-tool-btn" href="quote-builder.html?project=${projectParam}">
         <span class="hub-tool-icon" aria-hidden="true">💷</span>
         <span>New Quote</span>
-        <span class="hub-tool-btn-soon">Coming soon</span>
-      </span>
-      <span class="hub-tool-btn" aria-disabled="true">
+      </a>
+      <a class="hub-tool-btn" href="progress-claim.html?project=${projectParam}">
         <span class="hub-tool-icon" aria-hidden="true">📈</span>
         <span>New Progress Claim</span>
-        <span class="hub-tool-btn-soon">Coming soon</span>
-      </span>
+      </a>
     `;
   }
 
@@ -141,6 +160,28 @@
     `;
   }
 
+  function renderQuoteRow(row) {
+    return `
+      <li class="sb-list-item">
+        <span class="sb-list-item-number">${escapeHtml(row.quote_number || 'Draft')}</span>
+        <span class="sb-list-item-client">${escapeHtml(row.client_name || '')}</span>
+        <span class="status-pill status-pill--${escapeHtml(row.status)}">${escapeHtml(row.status)}</span>
+        <span class="sb-list-item-amount">${formatAUD(centsToDollars(row.total_cents || 0))}</span>
+      </li>
+    `;
+  }
+
+  function renderClaimRow(row) {
+    return `
+      <li class="sb-list-item">
+        <span class="sb-list-item-number">${escapeHtml(row.claim_number || 'Draft')}</span>
+        <span class="sb-list-item-client">${escapeHtml(row.client_name || '')}</span>
+        <span class="status-pill status-pill--${escapeHtml(row.status)}">${escapeHtml(row.status)}</span>
+        <span class="sb-list-item-amount">${formatAUD(centsToDollars(row.net_payable_cents || 0))}</span>
+      </li>
+    `;
+  }
+
   gateOnSupabaseProject({
     mountTool: () => {}, // the hub isn't a FormEngine tool — nothing to mount
     onGated(project) {
@@ -148,12 +189,33 @@
       renderToolLaunchRow(project);
 
       refreshRecordList({
+        idPrefix: 'variations',
         table: 'variation_notices',
         projectId: project.id,
         selectColumns: 'id, variation_number, client_name, status, total_cents',
         renderRow: renderVariationRow,
         renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.total_cents || 0), 0)))}`,
         emptyMessage: 'No variation notices saved to this project yet.'
+      });
+
+      refreshRecordList({
+        idPrefix: 'quotes',
+        table: 'quotes',
+        projectId: project.id,
+        selectColumns: 'id, quote_number, client_name, status, total_cents',
+        renderRow: renderQuoteRow,
+        renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.total_cents || 0), 0)))}`,
+        emptyMessage: 'No quotes saved to this project yet.'
+      });
+
+      refreshRecordList({
+        idPrefix: 'claims',
+        table: 'progress_claims',
+        projectId: project.id,
+        selectColumns: 'id, claim_number, client_name, status, net_payable_cents',
+        renderRow: renderClaimRow,
+        renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.net_payable_cents || 0), 0)))}`,
+        emptyMessage: 'No progress claims saved to this project yet.'
       });
     }
   });

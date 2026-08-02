@@ -135,3 +135,16 @@
 .status-pill--issued   { background: #dbe9fa; color: #2c7dd4; }
 .status-pill--approved { background: #e3f2e5; color: #2b9e3f; }
 .status-pill--rejected { background: #fbeae7; color: #9a2f1f; }
+
+/* Quotes (012) and Progress Claims (015) declare a fuller lifecycle
+   vocabulary up front than is reachable today (see each migration's
+   header comment) — only draft/issued are reachable via any RPC right
+   now, but styling the full CHECK-constraint enum here means the list
+   panel never shows an unstyled pill if a future workflow RPC reaches
+   one of these. */
+.status-pill--accepted { background: #e3f2e5; color: #2b9e3f; }
+.status-pill--declined { background: #fbeae7; color: #9a2f1f; }
+.status-pill--expired   { background: #ece7de; color: var(--dark-stone, #57534e); }
+.status-pill--void      { background: #ece7de; color: var(--stone, #888); }
+.status-pill--disputed  { background: #fbeae7; color: #9a2f1f; }
+.status-pill--paid      { background: #e3f2e5; color: #2b9e3f; }

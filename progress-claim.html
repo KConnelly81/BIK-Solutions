@@ -9,19 +9,42 @@
   <link rel="stylesheet" href="css/bik-design-system.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/toolkit-app.css" />
+  <link rel="stylesheet" href="css/supabase-app.css" />
+  <link rel="stylesheet" href="css/supabase-tool-panel.css" />
 </head>
 <body>
 
-<div class="app-shell">
+<!-- Shown immediately; the tool itself stays hidden until the session and
+     project context checks resolve — same no-flash pattern as
+     variation-generator.html and app-dashboard.html. -->
+<div class="app-loading" id="sb-loading">Loading…</div>
+
+<!-- No/invalid ?project= param, or the project isn't visible to this
+     organisation (RLS-filtered). -->
+<div class="empty-state" id="sb-project-error" hidden>
+  <p id="sb-project-error-text">This project could not be found.</p>
+  <a class="btn btn--coral" href="app-dashboard.html">Back to dashboard</a>
+</div>
+
+<div class="app-shell" id="sb-app-shell" hidden>
+
+  <!-- Project context — read-only: this tool's project comes from
+       app-dashboard.html's project picker, not a freeform field here. -->
+  <div class="project-context-bar" id="sb-project-context">
+    <span class="project-context-org" id="sb-context-org"></span>
+    <span class="project-context-sep" aria-hidden="true">·</span>
+    <span class="project-context-project" id="sb-context-project"></span>
+    <a class="project-context-change" href="app-dashboard.html">Change project</a>
+  </div>
 
   <!-- ====== APP HEADER ====== -->
   <header class="bik-app-header" role="banner">
 
-    <a href="dashboard.html" class="bik-app-header-logo" aria-label="BIK Solutions — dashboard">
+    <a href="app-dashboard.html" class="bik-app-header-logo" aria-label="BIK Solutions — dashboard">
       <div class="bik-logo-mark" aria-hidden="true">B</div>
       <div class="bik-logo-text">
         <span class="bik-logo-name">Progress Claim</span>
-        <a href="dashboard.html" class="bik-logo-tag" style="text-decoration:none">← Dashboard</a>
+        <a href="app-dashboard.html" class="bik-logo-tag" style="text-decoration:none">← Dashboard</a>
       </div>
     </a>
 
@@ -113,7 +136,7 @@
         <div class="privacy-notice" role="note">
           <span class="privacy-notice-icon" aria-hidden="true">🔒</span>
           <div>
-            <p>Your information stays on this device. Nothing you enter here is sent to a server. Drafts are saved in your browser's local storage only.</p>
+            <p>A draft of this form is kept in your browser's local storage as you type. Nothing is saved to this project until you click <strong>Save to project</strong> below — at that point the progress claim is stored against your organisation's project, visible to your team, not just this device.</p>
             <div class="draft-delete-wrap">
               <button id="btn-delete-draft" type="button" style="display:none"
                 aria-label="Delete saved draft from this device">
@@ -121,6 +144,55 @@
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- ====== SAVE TO PROJECT ====== -->
+        <div class="sb-save-panel" id="sb-save-panel">
+          <div class="sb-save-panel-row">
+            <div>
+              <div class="sb-save-panel-title">Save to project</div>
+              <div class="sb-save-panel-hint" id="sb-save-hint">Not yet saved to this project.</div>
+            </div>
+            <button class="bik-btn bik-btn--primary bik-btn--sm" id="sb-save-btn" type="button">
+              Save to project
+            </button>
+          </div>
+          <div class="banner banner--error" id="sb-save-error" hidden role="alert"></div>
+          <div class="banner banner--success" id="sb-save-success" hidden role="status" aria-live="polite"></div>
+        </div>
+
+        <!-- ====== ISSUE PROGRESS CLAIM ======
+             Issuing is currently BLOCKED for every progress claim,
+             database-enforced (017), pending accountant/contract
+             confirmation of GST, retention, and overclaiming treatment —
+             see docs/PHASE_5A_PROGRESS_CLAIMS_MIGRATION_REVIEW.md. This
+             button calls the real issue_progress_claim() RPC and shows
+             exactly the rejection message the database returns; it is not
+             disabled or hidden to simulate a working feature that isn't
+             ready — drafts remain fully usable regardless. -->
+        <div class="sb-save-panel" id="sb-issue-panel">
+          <div class="sb-save-panel-row">
+            <div>
+              <div class="sb-save-panel-title">Issue progress claim</div>
+              <div class="sb-save-panel-hint">Issuing is not yet available for Progress Claims — see the message below if you try.</div>
+            </div>
+            <button class="bik-btn bik-btn--danger bik-btn--sm" id="sb-issue-btn" type="button">
+              Issue progress claim
+            </button>
+          </div>
+          <div class="banner banner--error" id="sb-issue-error" hidden role="alert"></div>
+          <div class="banner banner--success" id="sb-issue-success" hidden role="status" aria-live="polite"></div>
+        </div>
+
+        <!-- ====== PROGRESS CLAIMS FOR THIS PROJECT ====== -->
+        <div class="sb-list-panel" id="sb-list-panel">
+          <div class="sb-list-panel-header">
+            <span>Progress claims for this project</span>
+            <span class="sb-list-total" id="sb-list-total"></span>
+          </div>
+          <p class="text-muted" id="sb-list-loading">Loading…</p>
+          <p class="text-muted" id="sb-list-empty" hidden>No progress claims saved to this project yet.</p>
+          <ul class="sb-list" id="sb-list" hidden></ul>
         </div>
 
         <!-- FormEngine renders sections here -->
@@ -192,14 +264,18 @@
 
 </div><!-- /.app-shell -->
 
+<script src="js/vendor/supabase-js.min.js"></script>
 <script type="module">
   import { init } from './js/tools/progress-claim/index.js';
+  import { initProgressClaimSupabaseIntegration } from './js/tools/progress-claim/supabase-integration.js';
 
-  // Initialise when DOM is ready
+  // initProgressClaimSupabaseIntegration() gates the page (session +
+  // project context) and, once resolved, mounts the tool itself via init()
+  // — the tool must not render before that gate resolves (no-flash pattern).
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => initProgressClaimSupabaseIntegration(init));
   } else {
-    init();
+    initProgressClaimSupabaseIntegration(init);
   }
 </script>
 
