@@ -24,8 +24,12 @@
  * and a live Supabase project; see docs/PHASE_3_SPRINT_3_MANUAL_TEST_STEPS.md.
  */
 
-import { gateOnSupabaseProject, applySnapshotOnce } from '../../toolkit/supabase-project-context.js';
-import { wireSaveButton, refreshRecordList, escapeHtml } from '../../toolkit/supabase-record-panel.js';
+// ?v= cache-busts these two specific files across a GitHub Pages release —
+// both were modified by the PR #7 hotfix, and ES module imports are cached
+// by exact URL with no build-time content hashing on this static site.
+// Bump the version token whenever either file changes again.
+import { gateOnSupabaseProject, applySnapshotOnce } from '../../toolkit/supabase-project-context.js?v=20260802b';
+import { wireSaveButton, refreshRecordList, escapeHtml } from '../../toolkit/supabase-record-panel.js?v=20260802b';
 import { formatAUD, centsToDollars } from '../../toolkit/calculator.js';
 import {
   buildRpcParams,
@@ -50,27 +54,38 @@ export async function initVariationSupabaseIntegration(mountTool) {
     mountTool,
     customerFields: 'business_name, first_name, last_name, email',
     onGated(project, mount) {
-      mount(({ engine }) => {
-        applySnapshotOnce(engine, deriveClientSnapshot(project));
+      // The list panel below has nothing to do with whether the form
+      // itself mounts successfully — it only needs project.id, already in
+      // hand. Without this try/catch, any exception anywhere in mounting
+      // the (large) variation-notice form — completely unrelated to
+      // Supabase — would abort this function before refreshVariationsList()
+      // ever ran, leaving the list stuck on its default static "Loading…"
+      // with nothing to explain why. See docs/changelog.md's hotfix entry.
+      try {
+        mount(({ engine }) => {
+          applySnapshotOnce(engine, deriveClientSnapshot(project));
 
-        wireSaveButton({
-          engine,
-          project,
-          table: TABLE,
-          rpcName: RPC_CREATE,
-          buildInsertPayload: (state, proj) => buildRpcParams(state, proj.id),
-          buildUpdatePayload,
-          validate: validateForSave,
-          getRecordRef: (row) => row.variation_number,
-          recordLabel: 'Variation',
-          friendlyError: friendlyVariationError,
-          // The database is the sole source of the canonical number —
-          // write back exactly what it returned, never anything computed
-          // client-side. See variation-save-logic.js's header comment.
-          applyResultToEngine: (row, eng) => eng.setState('variationNumber', row.variation_number),
-          onSaved: () => refreshVariationsList(project.id)
+          wireSaveButton({
+            engine,
+            project,
+            table: TABLE,
+            rpcName: RPC_CREATE,
+            buildInsertPayload: (state, proj) => buildRpcParams(state, proj.id),
+            buildUpdatePayload,
+            validate: validateForSave,
+            getRecordRef: (row) => row.variation_number,
+            recordLabel: 'Variation',
+            friendlyError: friendlyVariationError,
+            // The database is the sole source of the canonical number —
+            // write back exactly what it returned, never anything computed
+            // client-side. See variation-save-logic.js's header comment.
+            applyResultToEngine: (row, eng) => eng.setState('variationNumber', row.variation_number),
+            onSaved: () => refreshVariationsList(project.id)
+          });
         });
-      });
+      } catch (err) {
+        console.error('[BIK] Variation Notice failed to mount:', err);
+      }
 
       refreshVariationsList(project.id);
     }

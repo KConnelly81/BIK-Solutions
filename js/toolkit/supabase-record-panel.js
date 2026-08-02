@@ -22,9 +22,24 @@
  * supabase-project-context.js):
  *   Save panel:  #sb-save-btn, #sb-save-hint, #sb-save-error, #sb-save-success
  *   List panel:  #sb-list-loading, #sb-list-empty, #sb-list, #sb-list-total
+ *
+ * refreshRecordList()'s branching (loading -> populated/empty/error) is a
+ * thin DOM-applying wrapper around record-list-logic.js's
+ * determineListOutcome() — that pure function is what's unit tested
+ * (js/toolkit/__tests__/record-list-logic.test.js), this file's own DOM
+ * wiring is not (requires a browser — see
+ * docs/PHASE_3_SPRINT_3_MANUAL_TEST_STEPS.md for the manual coverage).
  */
 
 import { supabase } from '../supabase/client.js';
+import { determineListOutcome } from './record-list-logic.js';
+import { withTimeout } from './with-timeout.js';
+
+// A query that never settles at all — not even with a rejection — leaves
+// the try/catch below waiting forever, since neither the try nor the catch
+// path ever runs. See with-timeout.js's header for why this exists: the
+// PR #7 defect fix (the try/catch) only covers a query that rejects.
+const LIST_QUERY_TIMEOUT_MS = 15000;
 
 /**
  * Wires the "Save to project" button. First click creates the record
@@ -142,46 +157,80 @@ export function wireSaveButton(cfg) {
  * @param {(row: Object) => string} cfg.renderRow — HTML for one `<li class="sb-list-item">...`
  * @param {(rows: Object[]) => (string|null)} [cfg.renderTotal] — text for #sb-list-total, or null to leave it blank
  * @param {string} [cfg.emptyMessage]
+ * @param {string} [cfg.errorMessage] — shown in #sb-list-empty when the query fails, for either
+ *   reason (a resolved {error} result or a thrown/rejected promise — see the try/catch below,
+ *   added after PR #7's live testing found that a rejected query left this function exiting
+ *   before `loadingEl.hidden = true` was ever reached, so the panel stayed on "Loading…"
+ *   permanently with no error surfaced at all)
  */
 export async function refreshRecordList(cfg) {
+  // Defensive rather than assumed correct: a wrong/missing id degrades
+  // safely (the relevant UI update is just skipped) instead of throwing.
   const $ = (id) => document.getElementById(id);
   const loadingEl = $('sb-list-loading');
   const emptyEl = $('sb-list-empty');
   const listEl = $('sb-list');
   const totalEl = $('sb-list-total');
 
-  loadingEl.hidden = false;
-  emptyEl.hidden = true;
-  listEl.hidden = true;
+  if (loadingEl) loadingEl.hidden = false;
+  if (emptyEl) emptyEl.hidden = true;
+  if (listEl) listEl.hidden = true;
 
-  const { data, error } = await supabase
-    .from(cfg.table)
-    .select(cfg.selectColumns)
-    .eq('project_id', cfg.projectId)
-    .order('created_at', { ascending: false });
+  // try/catch/finally is deliberate, not defensive boilerplate:
+  //   - catch: a query that rejects (network failure, a thrown exception
+  //     inside the client library) rather than resolving with
+  //     {data, error} must still reach the loading-state cleanup below —
+  //     this is the exact defect PR #7's live testing found.
+  //   - finally: guarantees the loading state clears no matter which path
+  //     out of the try block is taken, including one this function itself
+  //     doesn't anticipate. withTimeout() (with-timeout.js) additionally
+  //     guarantees the query itself can never hang indefinitely.
+  let data, error, thrown;
+  try {
+    ({ data, error } = await withTimeout(
+      supabase
+        .from(cfg.table)
+        .select(cfg.selectColumns)
+        .eq('project_id', cfg.projectId)
+        .order('created_at', { ascending: false }),
+      LIST_QUERY_TIMEOUT_MS,
+      'Loading this list is taking longer than expected.'
+    ));
+  } catch (err) {
+    thrown = err;
+  } finally {
+    if (loadingEl) loadingEl.hidden = true;
+  }
 
-  loadingEl.hidden = true;
+  const outcome = determineListOutcome({ data, error, thrown });
 
-  if (error) {
+  if (outcome.state === 'error') {
     // Non-fatal for the page as a whole — the save panel above is the
     // primary flow. Keep this quiet rather than stacking a second error
     // banner on top of whatever the save panel already shows.
-    console.error(`[BIK] Failed to load project records from ${cfg.table}:`, error);
-    emptyEl.textContent = 'Could not load this list.';
-    emptyEl.hidden = false;
-    return;
-  }
-
-  if (!data.length) {
-    emptyEl.textContent = cfg.emptyMessage || 'Nothing saved to this project yet.';
-    emptyEl.hidden = false;
+    console.error(`[BIK] Failed to load project records from ${cfg.table}:`, error || thrown);
+    if (emptyEl) {
+      emptyEl.textContent = cfg.errorMessage || 'Could not load this list. Refresh the page to try again.';
+      emptyEl.hidden = false;
+    }
     if (totalEl) totalEl.textContent = '';
     return;
   }
 
-  if (totalEl) totalEl.textContent = cfg.renderTotal ? (cfg.renderTotal(data) || '') : '';
-  listEl.innerHTML = data.map(cfg.renderRow).join('');
-  listEl.hidden = false;
+  if (outcome.state === 'empty') {
+    if (emptyEl) {
+      emptyEl.textContent = cfg.emptyMessage || 'Nothing saved to this project yet.';
+      emptyEl.hidden = false;
+    }
+    if (totalEl) totalEl.textContent = '';
+    return;
+  }
+
+  if (totalEl) totalEl.textContent = cfg.renderTotal ? (cfg.renderTotal(outcome.rows) || '') : '';
+  if (listEl) {
+    listEl.innerHTML = outcome.rows.map(cfg.renderRow).join('');
+    listEl.hidden = false;
+  }
 }
 
 /** Minimal HTML entity escaping for row renderers built on top of this module. */

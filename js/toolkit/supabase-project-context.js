@@ -19,6 +19,12 @@
  *   #sb-context-org
  *   #sb-context-project
  *
+ * gateOnSupabaseProject()'s branching (missing param / not-found / query
+ * failure / ready) is a thin DOM-applying wrapper around
+ * project-gate-logic.js's determineGateOutcome() — that pure function is
+ * what's unit tested (js/toolkit/__tests__/project-gate-logic.test.js),
+ * this file's own DOM/session wiring is not (requires a browser).
+ *
  * Usage (from a tool's own supabase-integration.js):
  *   import { gateOnSupabaseProject } from '../../toolkit/supabase-project-context.js';
  *   gateOnSupabaseProject({
@@ -30,6 +36,13 @@
 
 import { supabase } from '../supabase/client.js';
 import { requireSession, friendlyAuthError } from '../supabase/session.js';
+import { determineGateOutcome } from './project-gate-logic.js';
+import { withTimeout } from './with-timeout.js';
+
+// See with-timeout.js's header and supabase-record-panel.js's identical
+// guard: a query that never settles at all leaves the try/catch below
+// waiting forever, since neither the try nor the catch path ever runs.
+const PROJECT_QUERY_TIMEOUT_MS = 15000;
 
 /**
  * @param {Object} opts
@@ -59,26 +72,47 @@ export async function gateOnSupabaseProject({ mountTool, customerFields, onGated
   const shellEl = $('sb-app-shell');
 
   const projectId = new URLSearchParams(location.search).get('project');
-  if (!projectId) {
-    showGateError(loadingEl, errorEl, errorTextEl, 'No project was specified. Open this tool from a project on your dashboard.');
-    return;
-  }
 
-  const session = await requireSession(signInUrl);
-  if (!session) return; // requireSession already redirected
+  const session = projectId ? await requireSession(signInUrl) : null;
+  if (projectId && !session) return; // requireSession already redirected
 
   const customerEmbed = customerFields ? `, customers ( ${customerFields} )` : '';
-  const { data: project, error: projectError } = await supabase
-    .from('projects')
-    .select(`id, name, status, site_address, organisation_id, organisations ( name )${customerEmbed}`)
-    .eq('id', projectId)
-    .maybeSingle();
 
-  if (projectError || !project) {
-    showGateError(
-      loadingEl, errorEl, errorTextEl,
-      projectError ? friendlyAuthError(projectError) : 'This project could not be found in your organisation.'
-    );
+  // try/catch is deliberate, not defensive boilerplate: a query that
+  // rejects (network failure, a thrown exception inside the client
+  // library) rather than resolving with {data, error} must still reach
+  // `loadingEl.hidden = true` below — otherwise the page is stuck on its
+  // initial loading screen forever, with no error ever shown. Same
+  // defect class PR #7's live testing found in refreshRecordList()
+  // (supabase-record-panel.js) — fixed here for consistency, not because
+  // this specific path was seen to fail live.
+  let project, projectError, thrown;
+  if (projectId) {
+    try {
+      ({ data: project, error: projectError } = await withTimeout(
+        supabase
+          .from('projects')
+          .select(`id, name, status, site_address, organisation_id, organisations ( name )${customerEmbed}`)
+          .eq('id', projectId)
+          .maybeSingle(),
+        PROJECT_QUERY_TIMEOUT_MS,
+        'Loading this project is taking longer than expected.'
+      ));
+    } catch (err) {
+      thrown = err;
+    }
+  }
+
+  const outcome = determineGateOutcome({ projectId, project, error: projectError, thrown });
+
+  if (!outcome.ok) {
+    const message =
+      outcome.reason === 'missing-project-id'
+        ? 'No project was specified. Open this tool from a project on your dashboard.'
+        : outcome.reason === 'not-found'
+          ? 'This project could not be found in your organisation.'
+          : friendlyAuthError(outcome.detail);
+    showGateError(loadingEl, errorEl, errorTextEl, message);
     return;
   }
 
