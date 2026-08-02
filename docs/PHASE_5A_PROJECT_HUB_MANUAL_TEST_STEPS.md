@@ -4,11 +4,14 @@
 Supabase project (`hpcqncghvdrlvufxfdnd`) — the parts an automated unit test cannot cover (a
 real browser, a real session, real network calls, real viewport). Same rationale as
 `docs/PHASE_3_SPRINT_3_MANUAL_TEST_STEPS.md`.
-**Status:** Not yet run. **Blocked on PR #7 (Sprint 4 shared modules, `sprint-4-clean` →
-`main`) merging first** — `project-hub.html` depends on modules only PR #7 introduces; see
-`docs/PHASE_5A_PROJECT_HUB_PR_NOTES.md` for the dependency chain. Do not open the Hub PR (let
-alone run this checklist against it) until PR #7 has merged and the Hub branch
-(`sprint-5a-quotes-progress-claims-hub`) has been refreshed from the new `main`.
+**Status:** Not yet run. The prior blocker — PR #7 (Sprint 4 shared modules) needing to merge
+first — is resolved: PR #7 merged, three further hotfix rounds (PR #8, #9, #10) fixed an
+unrelated production defect found during its own testing (see
+`docs/RELEASE_v0.4.0_SPRINT4.md`), and `sprint-5a-quotes-progress-claims-hub` has been merged
+with the updated `main` and re-verified compatible. This branch (`feature/project-hub`) is cut
+from that updated `main`. The Hub PR has been opened as a **draft** — this checklist still needs
+to be run live and passed before it merges. See `docs/PHASE_5A_PROJECT_HUB_PR_NOTES.md` for the
+full chain of events.
 **Scope:** `project-hub.html` and its one new entry point on `app-dashboard.html`. Quotes and
 Progress Claims are not in scope — their tool-launch actions are expected to show as disabled
 "Coming soon", not to be tested as working links.
