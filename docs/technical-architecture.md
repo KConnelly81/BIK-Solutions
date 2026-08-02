@@ -276,6 +276,8 @@ There are two, deliberately separate "project" concepts on the platform right no
 
 **Migration boundary going forward:** a tool moving onto the authenticated model uses the Supabase system exclusively, via the two shared modules above — not a bespoke, per-tool integration file (that was Sprint 3's one-off approach for Variation Notice, generalised in Sprint 4 once it was proven). The legacy system is not being deleted; it keeps serving every tool that stays anonymous/free-tier, and is retired tool-by-tool as each one migrates, not in a single cutover. See `docs/PHASE_3_VARIATION_NOTICES_SCHEMA.md` and the Sprint 4 changelog entry for the worked example.
 
+**Migrated so far:** Variation Notice (Sprint 3), Quote Builder and Progress Claim (Sprint 5b — retrofitted onto the Sprint 4 pattern exactly like Variation Notice was, not built from scratch; both tools already existed as legacy localStorage document generators). Quote Builder and Progress Claim also each gained a typed line-items child table synced separately from the header row on every save (`js/toolkit/supabase-line-items.js`'s `syncLineItems()`) — a shape Variation Notice's single-table record didn't need. See `docs/changelog.md`'s Sprint 5b entry for the full detail.
+
 ---
 
 ## Security Considerations
