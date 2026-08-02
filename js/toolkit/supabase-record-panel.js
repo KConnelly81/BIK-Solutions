@@ -41,6 +41,34 @@ import { withTimeout } from './with-timeout.js';
 // PR #7 defect fix (the try/catch) only covers a query that rejects.
 const LIST_QUERY_TIMEOUT_MS = 15000;
 
+// Temporary diagnostic instrumentation (hotfix/sprint4-variation-list-
+// diagnostics) — PR #8's mount()-exception fix deployed live with no
+// [BIK] mount-failure error and no other uncaught exception, yet the list
+// still reportedly never leaves "Loading…". These checkpoints exist to
+// find exactly which statement the live page actually stops at, since
+// this environment has no way to run the page in a real browser to see
+// for itself. Remove once the live cause is confirmed and fixed.
+function diag(n, label, extra) {
+  if (extra !== undefined) {
+    console.log(`[BIK-DIAG ${n}] ${label}`, extra);
+  } else {
+    console.log(`[BIK-DIAG ${n}] ${label}`);
+  }
+}
+
+function describeEl(el) {
+  if (!el) return 'NOT FOUND (getElementById returned null)';
+  const style = getComputedStyle(el);
+  return {
+    element: el,
+    id: el.id,
+    className: el.className,
+    hiddenProperty: el.hidden,
+    computedDisplay: style.display,
+    computedVisibility: style.visibility
+  };
+}
+
 /**
  * Wires the "Save to project" button. First click creates the record
  * (via `rpcName` if given, otherwise a plain authenticated INSERT);
@@ -164,23 +192,39 @@ export function wireSaveButton(cfg) {
  *   permanently with no error surfaced at all)
  */
 export async function refreshRecordList(cfg) {
+  diag(8, 'refreshRecordList() entered', { table: cfg.table, projectId: cfg.projectId });
+
+  // Deliberately not assumed correct — logging what getElementById()
+  // actually finds live, rather than trusting these ids match the
+  // deployed HTML, per the diagnostic request that prompted this.
   const $ = (id) => document.getElementById(id);
   const loadingEl = $('sb-list-loading');
   const emptyEl = $('sb-list-empty');
   const listEl = $('sb-list');
   const totalEl = $('sb-list-total');
 
-  loadingEl.hidden = false;
-  emptyEl.hidden = true;
-  listEl.hidden = true;
+  diag(9, 'DOM elements resolved', {
+    loadingEl: describeEl(loadingEl),
+    emptyEl: describeEl(emptyEl),
+    listEl: describeEl(listEl),
+    totalEl: describeEl(totalEl)
+  });
 
-  // try/catch is deliberate, not defensive boilerplate: a query that
-  // rejects (network failure, a thrown exception inside the client
-  // library) rather than resolving with {data, error} must still reach
-  // `loadingEl.hidden = true` below — otherwise the panel is stuck on its
-  // initial "Loading…" state forever, with no error ever shown. This is
-  // the exact defect PR #7's live testing found.
+  if (loadingEl) loadingEl.hidden = false;
+  if (emptyEl) emptyEl.hidden = true;
+  if (listEl) listEl.hidden = true;
+
+  // try/catch/finally is deliberate, not defensive boilerplate:
+  //   - catch: a query that rejects (network failure, a thrown exception
+  //     inside the client library) rather than resolving with
+  //     {data, error} must still reach the loading-state cleanup below —
+  //     this is the exact defect PR #7's live testing found.
+  //   - finally: guarantees the loading state clears no matter which path
+  //     out of the try block is taken, including one this function itself
+  //     doesn't anticipate. withTimeout() (with-timeout.js) additionally
+  //     guarantees the query itself can never hang indefinitely.
   let data, error, thrown;
+  diag(10, 'Supabase query starting');
   try {
     ({ data, error } = await withTimeout(
       supabase
@@ -191,35 +235,45 @@ export async function refreshRecordList(cfg) {
       LIST_QUERY_TIMEOUT_MS,
       'Loading this list is taking longer than expected.'
     ));
+    diag(11, 'Supabase query settled', { outcome: error ? 'resolved-with-error' : 'resolved-with-data', error, rowCount: data?.length });
   } catch (err) {
     thrown = err;
+    diag(11, 'Supabase query settled', { outcome: 'thrown-or-timed-out', err });
+  } finally {
+    if (loadingEl) loadingEl.hidden = true;
+    diag(12, 'loading cleared in finally', describeEl(loadingEl));
   }
 
-  loadingEl.hidden = true;
-
   const outcome = determineListOutcome({ data, error, thrown });
+  diag(13, 'final outcome', { state: outcome.state, rowCount: outcome.rows.length });
 
   if (outcome.state === 'error') {
     // Non-fatal for the page as a whole — the save panel above is the
     // primary flow. Keep this quiet rather than stacking a second error
     // banner on top of whatever the save panel already shows.
     console.error(`[BIK] Failed to load project records from ${cfg.table}:`, error || thrown);
-    emptyEl.textContent = cfg.errorMessage || 'Could not load this list. Refresh the page to try again.';
-    emptyEl.hidden = false;
+    if (emptyEl) {
+      emptyEl.textContent = cfg.errorMessage || 'Could not load this list. Refresh the page to try again.';
+      emptyEl.hidden = false;
+    }
     if (totalEl) totalEl.textContent = '';
     return;
   }
 
   if (outcome.state === 'empty') {
-    emptyEl.textContent = cfg.emptyMessage || 'Nothing saved to this project yet.';
-    emptyEl.hidden = false;
+    if (emptyEl) {
+      emptyEl.textContent = cfg.emptyMessage || 'Nothing saved to this project yet.';
+      emptyEl.hidden = false;
+    }
     if (totalEl) totalEl.textContent = '';
     return;
   }
 
   if (totalEl) totalEl.textContent = cfg.renderTotal ? (cfg.renderTotal(outcome.rows) || '') : '';
-  listEl.innerHTML = outcome.rows.map(cfg.renderRow).join('');
-  listEl.hidden = false;
+  if (listEl) {
+    listEl.innerHTML = outcome.rows.map(cfg.renderRow).join('');
+    listEl.hidden = false;
+  }
 }
 
 /** Minimal HTML entity escaping for row renderers built on top of this module. */
