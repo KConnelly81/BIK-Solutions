@@ -42,22 +42,6 @@ import {
 const TABLE = 'variation_notices';
 const RPC_CREATE = 'create_variation_notice';
 
-// Temporary diagnostic instrumentation (hotfix/sprint4-variation-list-
-// diagnostics) — see js/toolkit/supabase-record-panel.js's matching
-// comment for why this exists. Numbered so the live console trace reads
-// as one ordered sequence across both files; checkpoints 8+ are in
-// supabase-record-panel.js's refreshRecordList(). Remove once the live
-// cause is confirmed and fixed.
-function diag(n, label, extra) {
-  if (extra !== undefined) {
-    console.log(`[BIK-DIAG ${n}] ${label}`, extra);
-  } else {
-    console.log(`[BIK-DIAG ${n}] ${label}`);
-  }
-}
-
-diag(1, 'supabase-integration.js module loaded');
-
 /**
  * Gates variation-generator.html on an authenticated session and a valid
  * `?project=` id, then mounts the tool (mountTool = js/tools/variation-
@@ -66,13 +50,10 @@ diag(1, 'supabase-integration.js module loaded');
  * variations list. No part of the tool is shown before the gate resolves.
  */
 export async function initVariationSupabaseIntegration(mountTool) {
-  diag(2, 'initVariationSupabaseIntegration() called');
   await gateOnSupabaseProject({
     mountTool,
     customerFields: 'business_name, first_name, last_name, email',
     onGated(project, mount) {
-      diag(3, 'onGated() entered', { projectId: project?.id });
-
       // The list panel below has nothing to do with whether the form
       // itself mounts successfully — it only needs project.id, already in
       // hand. Without this try/catch, any exception anywhere in mounting
@@ -81,9 +62,7 @@ export async function initVariationSupabaseIntegration(mountTool) {
       // ever ran, leaving the list stuck on its default static "Loading…"
       // with nothing to explain why. See docs/changelog.md's hotfix entry.
       try {
-        diag(4, 'mount() call starting');
         mount(({ engine }) => {
-          diag(5, 'mount() onReady callback fired — form mounted, wiring save button');
           applySnapshotOnce(engine, deriveClientSnapshot(project));
 
           wireSaveButton({
@@ -104,13 +83,10 @@ export async function initVariationSupabaseIntegration(mountTool) {
             onSaved: () => refreshVariationsList(project.id)
           });
         });
-        diag(6, 'mount() call returned without throwing');
       } catch (err) {
-        diag(6, 'mount() threw', err);
         console.error('[BIK] Variation Notice failed to mount:', err);
       }
 
-      diag(7, 'calling refreshVariationsList()', { projectId: project.id });
       refreshVariationsList(project.id);
     }
   });
