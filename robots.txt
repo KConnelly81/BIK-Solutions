@@ -1,0 +1,36 @@
+User-agent: *
+Allow: /
+
+# App/tool pages self-exclude via <meta name="robots" content="noindex"> on
+# the page itself (see sitemap.xml for the indexable set) — deliberately not
+# Disallow'd here. Blocking crawl at the robots.txt level would stop
+# crawlers from ever seeing that noindex tag in the first place, which can
+# make a URL linked from elsewhere show up in search with no snippet
+# instead of not showing up at all. Crawl is allowed everywhere; indexing
+# is controlled per-page.
+
+# Explicitly named for clarity — these already inherit the wildcard Allow
+# above and need no separate rule, but are listed so it's obvious this site
+# welcomes AI crawlers rather than leaving it ambiguous.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+Sitemap: https://biksolutions.com.au/sitemap.xml
