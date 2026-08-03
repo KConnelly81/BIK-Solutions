@@ -36,6 +36,22 @@ Section content should be scannable. Headers, short paragraphs, bullet points. N
 ### 5. Trust is earned, not assumed
 The audience has been burned by cowboys and overpriced software. Every design element should reinforce professionalism, reliability, and honesty.
 
+### 6. Reduce typing and clicks over adding configurability (added 2026-08, product direction update)
+Every field asked for is a field a builder has to type standing on a site with dirty hands, or
+skip a job entirely. Prefer inferring/prefilling from data the platform already has (a project's
+own name/address/client, a previous save's values) over asking again. Prefer a fixed, well-chosen
+default over an options menu. When a feature could be built as a configurable form or as a
+dedicated workflow that already understands the business process (Quote, Variation Notice,
+Progress Claim, and — next — Attendance), **build the dedicated workflow** — see
+`docs/business-strategy.md`'s Competitive Landscape section for the full reasoning against
+Sitemate's generic-form-builder model.
+
+### 7. Little or no setup, task done in under a minute
+The primary customer dislikes software. A feature that requires a setup wizard, a configuration
+step, or reading instructions before first use will not get adopted, however powerful. Target: a
+returning user can complete a common task (save a quote, issue a variation) in under a minute,
+including the time to open the right tool.
+
 ---
 
 ## Page Structure Patterns

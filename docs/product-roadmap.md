@@ -21,9 +21,18 @@ since — see `docs/RELEASE_v0.3.0_SPRINT3.md`, `RELEASE_v0.4.0_SPRINT4.md`, and
 - **Still legacy localStorage, not yet migrated:** every other tool in the table below (Scope of
   Works, Site Diary, Defect Report, Toolbox Talk, SWMS, Payment Reminder, Site Inspection, and the
   full Phase 2/3 list).
-- **Next proposed sprint:** a secure server-side AI proxy (Supabase Edge Function) to remove the
-  direct-from-browser Anthropic API key model the AI Professional Writer currently uses — see the
-  Sprint 6 proposal referenced from `docs/RELEASE_v0.5.0_SPRINT5.md`.
+- **Next proposed sprint:** migrate the AI Professional Writer's existing Cloudflare Worker proxy
+  (already server-side, holding the Anthropic key — no direct-from-browser key model exists today)
+  to a session-authenticated Supabase Edge Function, closing the current gap that the proxy is
+  unauthenticated with no per-organisation attribution or rate limiting — see
+  `docs/SPRINT_6_PROPOSAL_AI_EDGE_FUNCTION.md`.
+
+**Confirmed product direction (2026-08):** BIK is the AI operating layer that sits above/alongside
+job-management platforms (ServiceM8, Buildxact, SimPRO), not a replacement for them — dedicated
+workflows over configurable forms, reduce typing/clicks, mobile-first, little-to-no setup, and a
+long-term AI Contract Manager vision (proactive issue-flagging, not just document generation on
+request). Full detail: `docs/business-strategy.md` ("Competitive Landscape" and "AI Direction").
+This does not change current sprint priorities — the core quote-to-cash suite remains the focus.
 
 ---
 

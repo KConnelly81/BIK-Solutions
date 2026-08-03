@@ -4,6 +4,13 @@
 to be reviewed and either approved, amended, or rejected before any code is written.
 **Owner:** BIK Solutions Pty Ltd
 **Depends on:** Sprint 5 (closed — `docs/RELEASE_v0.5.0_SPRINT5.md`)
+**Relationship to the confirmed product direction** (2026-08 — `docs/business-strategy.md`, "AI
+Direction — AI Contract Manager"): this sprint is infrastructure only — a session-authenticated
+backend for AI calls. It is the *prerequisite* for the long-term AI Contract Manager vision
+(proactive flagging of overdue variations, missing paperwork, at-risk projects), not that feature
+itself — proactive insight generation needs its own, later proposal, and needs a backend that
+already knows which organisation is asking. Scope here stays limited to the migration described
+below; do not read this document as committing to the proactive-AI feature set.
 
 ---
 

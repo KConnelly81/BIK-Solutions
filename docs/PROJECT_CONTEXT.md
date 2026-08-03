@@ -7,7 +7,7 @@
 
 ## What This Is
 
-**BIK Solutions** is an Australian construction business evolving into an AI-powered Business Toolkit SaaS for builders and tradies. The platform generates professional construction documents (quotes, variation notices, scope of works, site diaries, defect reports) with AI writing assistance. Everything runs client-side — static HTML/CSS/vanilla ES6 modules on GitHub Pages. No backend, no bundler, no npm.
+**BIK Solutions** is an Australian construction business evolving into an AI-powered Business Toolkit SaaS for builders and tradies. **Confirmed positioning (2026-08):** BIK is not trying to replace job-management platforms like ServiceM8, Buildxact, or SimPRO — it's the AI operating layer that sits above or alongside them, reducing admin, protecting profit through better documentation, and helping trades get paid faster. Long-term vision: an **AI Contract Manager** that proactively flags what needs attention (overdue variations, missing paperwork, at-risk projects) rather than only generating documents on request. Full detail: `docs/business-strategy.md`. Current delivery: dedicated workflows (not configurable forms) for quotes, variation notices, progress claims, and site documentation, several now live on an authenticated Supabase backend (see "Current architecture" below), the rest still static-generated with AI writing assistance. Frontend is static HTML/CSS/vanilla ES6 modules on GitHub Pages — no framework, no bundler, no npm.
 
 **Live site:** biksolutions.com.au  
 **Repo:** `kconnelly81/bik-solutions`  

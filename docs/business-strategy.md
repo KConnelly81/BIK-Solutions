@@ -70,16 +70,66 @@ The two units share a brand but operate independently. Services revenue funds pl
 
 ## Competitive Landscape
 
+**Confirmed strategic direction (2026-08, informed by builder/tradie conversations and
+competitor research including Sitemate):** BIK Solutions is **not** trying to replace job
+management platforms such as **ServiceM8, Buildxact, or SimPRO**. Those products own scheduling,
+job costing, and field-service dispatch — a different, well-served problem. **BIK's strategy is to
+become the AI operating layer that sits above or alongside existing systems**, not one more
+all-in-one platform competing for the same seat. When an implementation decision could go either
+way, **favour integrating with an existing system over replacing it**.
+
 | Competitor | Strength | Weakness | Our Angle |
 |---|---|---|---|
+| ServiceM8 / Buildxact / SimPRO | Job management, scheduling, costing — the system of record for the job itself | Not document/compliance/contract-protection focused; generic AI, if any | **Complementary, not competing** — BIK sits above/alongside as the AI layer, not a replacement |
 | Procore | Enterprise-grade, comprehensive | Expensive, complex, overkill for SME | We're simpler and construction-specific |
 | Aconex / Oracle | Large project management | Not for small businesses at all | Different market |
-| Buildxact | Estimating and quoting | Narrow scope, not AI-first | We cover more document types |
+| Sitemate | Configurable forms/checklists platform | Generic form-builder model — understands "collect data," not the business process | We build **dedicated workflows** (Quote, Variation, Progress Claim, Attendance) that understand the process itself, not configurable forms a user has to design |
 | Generic AI (ChatGPT) | Flexible | Not construction-specific, no templates, no Australian compliance | We're purpose-built |
 | Microsoft Word/Excel | Familiar | No automation, no intelligence | We save 2–4 hours per document |
-| Deputy / ServiceM8 | Field service management | Not document/compliance focused | Complementary, not competing |
 
-**Positioning statement:** BIK Business Toolkit is the only AI-powered document and compliance platform built specifically for Australian trade businesses — fast enough for a sole trader, powerful enough for a 20-person builder.
+**Positioning statement:** BIK is the AI Contract Manager for Australian trade businesses — the
+layer that reduces admin, protects profit through better documentation, and helps builders get
+paid faster, working alongside whatever job-management software a business already uses rather
+than asking them to switch.
+
+**Primary customer, stated plainly:** a small-to-medium trade business owner who dislikes
+software but values anything that visibly saves time or prevents lost revenue. Every feature
+decision should be tested against that bar, not against what a bigger, more configurable platform
+would offer.
+
+**Product principles this implies** (full detail: `docs/ux-principles.md`) — favour features that:
+reduce typing, reduce clicks, work well on mobile, require little or no setup, and let a user
+complete a task in under a minute. Build dedicated workflows (the business process is known and
+modelled in the product) rather than configurable forms (the user has to tell the product what the
+process is) — Quote, Variation Notice, and Progress Claim already work this way; Attendance is the
+next workflow this applies to.
+
+## AI Direction — AI Contract Manager
+
+The long-term AI vision is broader than text generation. AI should move from **reactive** (rewrite
+this text on request) to **proactive** (surface what needs attention before being asked) —
+identifying pending approvals, overdue variations, missing paperwork, projects at financial risk,
+workers still signed on, and contracts requiring follow-up, and **recommending an action**, not
+just reporting a status. This is a multi-sprint direction, not a single feature — the current AI
+Professional Writer (text rewriting) is the reactive foundation; proactive insight generation is
+future work building on the same authenticated, organisation-scoped data model Sprints 3-5
+established (it requires real data to reason over — quotes, variations, and claims with real
+statuses and dates — which is exactly what's now live). See
+`docs/SPRINT_6_PROPOSAL_AI_EDGE_FUNCTION.md` for the immediate next step (a session-authenticated
+AI backend, a prerequisite for any proactive feature that needs to reason over one organisation's
+private data) and treat any future proactive-AI proposal as needing this same direction as its
+starting brief.
+
+## Future opportunities (lower priority — noted, not scheduled)
+
+Kept in view for extensibility, not current sprint priorities: trade-specific starter packs,
+client portals, a project timeline view, better dashboards, accounting integrations, read-only
+links for builders to share with clients, digital worker profiles. Current priority remains the
+core quote-to-cash suite (Quote → Variation → Progress Claim, now live) and the project-management
+foundation under it. When making architecture decisions now, prefer designs that don't foreclose
+these later — e.g. this sprint's shared Supabase-tool integration pattern is deliberately generic
+enough that a future client-portal read-only view could reuse the same RLS-scoped query shape
+rather than needing a parallel access model built from scratch.
 
 ---
 
