@@ -13,7 +13,11 @@
  * preview-target/etc. — a shared controller assumes a shared HTML shape,
  * not a per-tool id mapping):
  *   #sb-loading            — shown until the gate resolves
- *   #sb-project-error            (hidden by default)
+ *   #sb-project-error            (hidden by default) — must contain a
+ *                             static "Back to dashboard" link to
+ *                             app-dashboard.html; this module only sets
+ *                             the message and reveals the panel, it does
+ *                             not add that link
  *   #sb-project-error-text
  *   #sb-app-shell           — the tool itself; hidden until gated (no-flash)
  *   #sb-context-org
@@ -24,6 +28,11 @@
  * project-gate-logic.js's determineGateOutcome() — that pure function is
  * what's unit tested (js/toolkit/__tests__/project-gate-logic.test.js),
  * this file's own DOM/session wiring is not (requires a browser).
+ *
+ * The entire function body is one outer try/catch (see inline comment at
+ * its start): gateOnSupabaseProject() always resolves to either a mounted
+ * tool or a visible error, never an indefinite #sb-loading — so callers
+ * do not need their own top-level .catch() as well.
  *
  * Usage (from a tool's own supabase-integration.js):
  *   import { gateOnSupabaseProject } from '../../toolkit/supabase-project-context.js';
@@ -72,78 +81,101 @@ export async function gateOnSupabaseProject({ mountTool, customerFields, onGated
   const errorTextEl = $('sb-project-error-text');
   const shellEl = $('sb-app-shell');
 
-  const projectId = new URLSearchParams(location.search).get('project');
+  // Outermost startup error boundary: everything below this line is one
+  // try/catch. Whatever goes wrong — a thrown exception from
+  // requireSession(), from the DOM lookups above returning null on a page
+  // missing part of the fixed contract, from anything not already covered
+  // by the inner try/catch below — must still resolve to a visible error
+  // state, never leave #sb-loading showing forever. This makes
+  // gateOnSupabaseProject() unconditionally terminal: it always either
+  // mounts the tool or shows an error, with no third "hung" outcome, so
+  // no caller needs its own top-level .catch() as well.
+  try {
+    const projectId = new URLSearchParams(location.search).get('project');
 
-  const session = projectId ? await requireSession(signInUrl) : null;
-  if (projectId && !session) return; // requireSession already redirected
+    const session = projectId ? await requireSession(signInUrl) : null;
+    if (projectId && !session) return; // requireSession already redirected
 
-  const customerEmbed = customerFields ? `, customers ( ${customerFields} )` : '';
+    const customerEmbed = customerFields ? `, customers ( ${customerFields} )` : '';
 
-  // try/catch is deliberate, not defensive boilerplate: a query that
-  // rejects (network failure, a thrown exception inside the client
-  // library) rather than resolving with {data, error} must still reach
-  // `loadingEl.hidden = true` below — otherwise the page is stuck on its
-  // initial loading screen forever, with no error ever shown. Same
-  // defect class PR #7's live testing found in refreshRecordList()
-  // (supabase-record-panel.js) — fixed here for consistency, not because
-  // this specific path was seen to fail live.
-  let project, projectError, thrown;
-  if (projectId) {
-    try {
-      ({ data: project, error: projectError } = await withTimeout(
-        supabase
-          .from('projects')
-          .select(`id, name, status, site_address, description, project_number, start_date, completion_date, organisation_id, organisations ( name )${customerEmbed}`)
-          .eq('id', projectId)
-          .maybeSingle(),
-        PROJECT_QUERY_TIMEOUT_MS,
-        'Loading this project is taking longer than expected.'
-      ));
-    } catch (err) {
-      thrown = err;
+    // try/catch is deliberate, not defensive boilerplate: a query that
+    // rejects (network failure, a thrown exception inside the client
+    // library) rather than resolving with {data, error} must still reach
+    // `loadingEl.hidden = true` below — otherwise the page is stuck on its
+    // initial loading screen forever, with no error ever shown. Same
+    // defect class PR #7's live testing found in refreshRecordList()
+    // (supabase-record-panel.js) — fixed here for consistency, not because
+    // this specific path was seen to fail live.
+    let project, projectError, thrown;
+    if (projectId) {
+      try {
+        ({ data: project, error: projectError } = await withTimeout(
+          supabase
+            .from('projects')
+            .select(`id, name, status, site_address, description, project_number, start_date, completion_date, organisation_id, organisations ( name )${customerEmbed}`)
+            .eq('id', projectId)
+            .maybeSingle(),
+          PROJECT_QUERY_TIMEOUT_MS,
+          'Loading this project is taking longer than expected.'
+        ));
+      } catch (err) {
+        thrown = err;
+      }
     }
+
+    const outcome = determineGateOutcome({ projectId, project, error: projectError, thrown });
+
+    if (!outcome.ok) {
+      const message =
+        outcome.reason === 'missing-project-id'
+          ? 'No project was specified. Open this tool from a project on your dashboard.'
+          : outcome.reason === 'not-found'
+            ? 'This project could not be found in your organisation.'
+            : friendlyAuthError(outcome.detail);
+      showGateError(loadingEl, errorEl, errorTextEl, message);
+      return;
+    }
+
+    loadingEl.hidden = true;
+    shellEl.hidden = false;
+    const orgEl = $('sb-context-org');
+    const projEl = $('sb-context-project');
+    if (orgEl) orgEl.textContent = project.organisations?.name || 'Your organisation';
+    if (projEl) projEl.textContent = project.name;
+
+    // Every tool one level below Project Hub (Quote Builder, Variation
+    // Notice, Progress Claim, Attendance) points its context-bar link back
+    // to that project's Hub, not straight to the dashboard's full project
+    // list — Project Hub is the thing a user actually wants to return to
+    // between tools. Set centrally, once, so every tool stays in sync
+    // rather than five copies of the same href drifting apart. Opt-in via
+    // #sb-context-change — project-hub.html itself has no such element
+    // (its own context-bar link is deliberately "All projects", the one
+    // level *above* a project, and must not be overwritten here).
+    const changeLinkEl = $('sb-context-change');
+    if (changeLinkEl) {
+      changeLinkEl.href = `project-hub.html?project=${encodeURIComponent(project.id)}`;
+      changeLinkEl.textContent = 'Project Hub';
+    }
+
+    onGated(project, mountTool);
+  } catch (err) {
+    console.error('[BIK] Unexpected error starting this tool:', err);
+    showGateError(loadingEl, errorEl, errorTextEl, 'Something went wrong loading this tool. Please try again.');
   }
-
-  const outcome = determineGateOutcome({ projectId, project, error: projectError, thrown });
-
-  if (!outcome.ok) {
-    const message =
-      outcome.reason === 'missing-project-id'
-        ? 'No project was specified. Open this tool from a project on your dashboard.'
-        : outcome.reason === 'not-found'
-          ? 'This project could not be found in your organisation.'
-          : friendlyAuthError(outcome.detail);
-    showGateError(loadingEl, errorEl, errorTextEl, message);
-    return;
-  }
-
-  loadingEl.hidden = true;
-  shellEl.hidden = false;
-  const orgEl = $('sb-context-org');
-  const projEl = $('sb-context-project');
-  if (orgEl) orgEl.textContent = project.organisations?.name || 'Your organisation';
-  if (projEl) projEl.textContent = project.name;
-
-  // Every tool one level below Project Hub (Quote Builder, Variation
-  // Notice, Progress Claim, Attendance) points its context-bar link back
-  // to that project's Hub, not straight to the dashboard's full project
-  // list — Project Hub is the thing a user actually wants to return to
-  // between tools. Set centrally, once, so every tool stays in sync
-  // rather than five copies of the same href drifting apart. Opt-in via
-  // #sb-context-change — project-hub.html itself has no such element
-  // (its own context-bar link is deliberately "All projects", the one
-  // level *above* a project, and must not be overwritten here).
-  const changeLinkEl = $('sb-context-change');
-  if (changeLinkEl) {
-    changeLinkEl.href = `project-hub.html?project=${encodeURIComponent(project.id)}`;
-    changeLinkEl.textContent = 'Project Hub';
-  }
-
-  onGated(project, mountTool);
 }
 
+/**
+ * Shows the gate's error state. Every host page's #sb-project-error
+ * already carries a static "Back to dashboard" link to app-dashboard.html
+ * (the fixed DOM contract documented at the top of this file) — this
+ * function only ever needs to set the message and reveal it. Defensive
+ * against a page missing part of that contract (rather than throwing,
+ * which would defeat the outer try/catch's own purpose).
+ */
 function showGateError(loadingEl, errorEl, errorTextEl, message) {
-  loadingEl.hidden = true;
+  if (loadingEl) loadingEl.hidden = true;
+  if (!errorEl || !errorTextEl) return; // page is missing the fixed DOM contract — nothing left to show safely
   errorTextEl.textContent = message;
   errorEl.hidden = false;
 }

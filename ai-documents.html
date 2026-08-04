@@ -235,14 +235,14 @@ svg{display:block}
 
 <!-- ====== APP HEADER ====== -->
 <header class="app-hdr" role="banner">
-  <a href="dashboard.html" class="app-logo" aria-label="BIK Solutions — dashboard">
+  <a href="app-dashboard.html" class="app-logo" aria-label="BIK Solutions — dashboard">
     <div class="logo-mark" aria-hidden="true">B</div>
     <span class="logo-name">BIK Business Toolkit</span>
   </a>
   <nav class="app-nav" aria-label="App navigation">
-    <a href="dashboard.html" class="nav-link">Dashboard</a>
-    <a href="project.html" class="nav-link">Projects</a>
-    <a href="attendance.html" class="nav-link">Site</a>
+    <a href="app-dashboard.html" class="nav-link">Dashboard</a>
+    <a href="app-dashboard.html" class="nav-link">Projects</a>
+    <a href="app-dashboard.html" class="nav-link">Site</a>
     <a href="ai-documents.html" class="nav-link act" aria-current="page">Tools</a>
   </nav>
   <div class="hdr-space"></div>
@@ -1016,8 +1016,8 @@ function detailHTML(id, cat) {
       </div>
     </div>
     <div class="det-foot">
-      <a class="btn-p" href="${t.href}" style="--cc:${cat.color}"
-        onclick="recordOpen('${id}')">Open ${t.name} →</a>
+      <a class="btn-p" href="app-dashboard.html" style="--cc:${cat.color}"
+        onclick="recordOpen('${id}')">Select or create a project to use ${t.name} →</a>
       ${hiw}
       ${draftNote}
     </div>
@@ -1287,7 +1287,12 @@ function renderHistory() {
     const cat = t ? CATS.find(c => c.id === t.cat) : null;
     const color = cat ? cat.color : '#888';
     const icon = t ? t.icon : '📄';
-    const href = t ? t.href : '#';
+    // This local document-history log predates the Supabase project model —
+    // none of the connected tools read a `?resume=`/bare-URL local draft
+    // any more (everything now lives on the authenticated project), so
+    // "Open" here can only correctly mean "go select the project this
+    // belongs to," not "reopen this specific draft."
+    const href = 'app-dashboard.html';
     const date = rec.updatedAt
       ? new Date(rec.updatedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
       : '';

@@ -16,8 +16,11 @@
  * directly. This file requires a browser and a live Supabase project.
  */
 
-import { gateOnSupabaseProject, applySnapshotOnce } from '../../toolkit/supabase-project-context.js';
-import { wireSaveButton, refreshRecordList, escapeHtml } from '../../toolkit/supabase-record-panel.js';
+// ?v= cache-busts these shared files — see js/toolkit/asset-version.js's
+// header for why this must be a literal, not an imported constant, and
+// which other files carry the same token.
+import { gateOnSupabaseProject, applySnapshotOnce } from '../../toolkit/supabase-project-context.js?v=20260804a';
+import { wireSaveButton, refreshRecordList, escapeHtml } from '../../toolkit/supabase-record-panel.js?v=20260804a';
 import { wireIssueButton } from '../../toolkit/supabase-issue-button.js';
 import { syncLineItems } from '../../toolkit/supabase-line-items.js';
 import { formatAUD, centsToDollars } from '../../toolkit/calculator.js';

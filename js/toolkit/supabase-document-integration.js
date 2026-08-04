@@ -21,8 +21,12 @@
  * reimplementation per tool.
  */
 
-import { gateOnSupabaseProject } from './supabase-project-context.js';
-import { wireSaveButton, refreshRecordList, escapeHtml } from './supabase-record-panel.js';
+// ?v= cache-busts these shared files — see js/toolkit/asset-version.js's
+// header for why this must be a literal, not an imported constant, and
+// which other files carry the same token. This one file's tokens cover
+// all 17 project_documents tools that import it, not just this file.
+import { gateOnSupabaseProject } from './supabase-project-context.js?v=20260804a';
+import { wireSaveButton, refreshRecordList, escapeHtml } from './supabase-record-panel.js?v=20260804a';
 import { DOCUMENT_TYPE_LABELS } from './document-type-labels.js';
 
 const TABLE = 'project_documents';

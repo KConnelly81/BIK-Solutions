@@ -165,8 +165,11 @@
 
 <script src="js/vendor/supabase-js.min.js"></script>
 <script type="module">
-  import { gateOnSupabaseProject } from './js/toolkit/supabase-project-context.js';
-  import { refreshRecordList, escapeHtml } from './js/toolkit/supabase-record-panel.js';
+  // ?v= cache-busts these shared files — see js/toolkit/asset-version.js's
+  // header for why this must be a literal, not an imported constant, and
+  // which other files carry the same token.
+  import { gateOnSupabaseProject } from './js/toolkit/supabase-project-context.js?v=20260804a';
+  import { refreshRecordList, escapeHtml } from './js/toolkit/supabase-record-panel.js?v=20260804a';
   import { refreshGroupedDocumentList } from './js/toolkit/supabase-document-integration.js';
   import { DOCUMENT_TYPE_GROUPS } from './js/toolkit/document-type-labels.js';
   import { formatAUD, centsToDollars } from './js/toolkit/calculator.js';

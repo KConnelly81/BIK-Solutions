@@ -24,12 +24,19 @@
  * and a live Supabase project; see docs/PHASE_3_SPRINT_3_MANUAL_TEST_STEPS.md.
  */
 
-// ?v= cache-busts these two specific files across a GitHub Pages release —
-// both were modified by the PR #7 hotfix, and ES module imports are cached
-// by exact URL with no build-time content hashing on this static site.
-// Bump the version token whenever either file changes again.
-import { gateOnSupabaseProject, applySnapshotOnce } from '../../toolkit/supabase-project-context.js?v=20260802b';
-import { wireSaveButton, refreshRecordList, escapeHtml } from '../../toolkit/supabase-record-panel.js?v=20260802b';
+// ?v= cache-busts these two shared files across a GitHub Pages release —
+// ES module imports are cached by exact URL with no build-time content
+// hashing on this static site. ONE version token, ASSET_VERSION (see
+// js/toolkit/asset-version.js), is used everywhere any tool imports either
+// file — quote-builder, progress-claim, all 17 project_documents tools
+// (via supabase-document-integration.js), attendance.html, and
+// project-hub.html. Static import specifiers can't reference a shared
+// constant directly, so ASSET_VERSION is the single source of truth to
+// copy from when bumping — bump it there and in every literal `?v=`
+// below whenever supabase-project-context.js or supabase-record-panel.js
+// changes again.
+import { gateOnSupabaseProject, applySnapshotOnce } from '../../toolkit/supabase-project-context.js?v=20260804a';
+import { wireSaveButton, refreshRecordList, escapeHtml } from '../../toolkit/supabase-record-panel.js?v=20260804a';
 import { formatAUD, centsToDollars } from '../../toolkit/calculator.js';
 import {
   buildRpcParams,

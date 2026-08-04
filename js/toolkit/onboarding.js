@@ -439,7 +439,7 @@ function buildStep3HTML(builderName, projectName) {
         BIK will now track health, activity, and smart actions for this project automatically.
       </p>
       <div class="ob-celebrate-actions">
-        <a href="quote-builder.html" class="ob-btn-primary">Generate your first quote →</a>
+        <a href="app-dashboard.html" class="ob-btn-primary">Select or create a project to use this tool →</a>
         <button type="button" class="ob-celebrate-skip" id="ob-go-dash">Take me to the dashboard</button>
       </div>
     </div>

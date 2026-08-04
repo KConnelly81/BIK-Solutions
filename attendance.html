@@ -452,7 +452,10 @@
 </div>
 
 <script type="module">
-  import { gateOnSupabaseProject } from './js/toolkit/supabase-project-context.js';
+  // ?v= cache-busts this shared file — see js/toolkit/asset-version.js's
+  // header for why this must be a literal, not an imported constant, and
+  // which other files carry the same token.
+  import { gateOnSupabaseProject } from './js/toolkit/supabase-project-context.js?v=20260804a';
   import { supabase }        from './js/supabase/client.js';
   import { renderQR }        from './js/toolkit/qr-generator.js';
   import {
