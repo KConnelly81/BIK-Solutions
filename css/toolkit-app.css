@@ -1708,3 +1708,18 @@
 .dli-qty, .dli-unit, .dli-price, .dli-gst, .dli-total { white-space: nowrap; }
 .dli-price, .dli-total { text-align: right; font-variant-numeric: tabular-nums; }
 .dli-gst { text-align: center; }
+
+/* ── Standalone-tool notice ──
+   For tools not yet connected to Project Hub / Supabase — makes clear the
+   document is generated and saved on this device only, so the UI never
+   implies cloud persistence or project history it doesn't actually have. */
+.standalone-tool-notice {
+  background: #fff8e1;
+  border-bottom: 1px solid #ffe082;
+  padding: 9px 20px;
+  font-size: 0.78rem;
+  color: #6b5a1f;
+  text-align: center;
+  line-height: 1.5;
+}
+.standalone-tool-notice strong { color: #4d3f10; }

@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex" />
   <title>Site Sign-Out — BIK Solutions</title>
   <link rel="stylesheet" href="css/bik-design-system.css" />
+  <script src="js/vendor/supabase-js.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root { --radius: 10px; }
@@ -86,7 +87,18 @@
 <!-- Loading -->
 <div id="screen-loading" class="screen active" style="padding:60px 20px;text-align:center;color:#888;font-size:0.9rem;">Loading…</div>
 
-<!-- Manual lookup (no id in URL) -->
+<!-- No id and no site token in the URL — nothing safe to look up -->
+<div id="screen-no-context" class="screen">
+  <div class="not-found" style="padding:60px 20px;text-align:center;max-width:360px;margin:0 auto">
+    <div style="font-size:2.5rem;margin-bottom:16px;">⚠️</div>
+    <h2 style="font-size:1.1rem;color:var(--bik-text);margin-bottom:8px;">Sign-out link not found</h2>
+    <p style="font-size:0.85rem;color:var(--bik-text-muted);line-height:1.65">
+      Please use the "Check Out" link from your sign-in confirmation, or scan the site sign-in QR code again to sign out.
+    </p>
+  </div>
+</div>
+
+<!-- Manual lookup (a site token but no specific id in URL) -->
 <div id="screen-lookup" class="screen">
   <div class="co-form">
     <div class="ci-step-label">Sign out</div>
@@ -192,7 +204,7 @@
 </div>
 
 <script type="module">
-  import { attendanceStore } from './js/toolkit/attendance-store.js';
+  import { attendanceGetById, attendanceLookupActive, attendanceCheckOut, friendlyAttendanceError } from './js/toolkit/attendance-rpc.js';
 
   const $ = id => document.getElementById(id);
 
@@ -213,42 +225,53 @@
 
   const params = new URLSearchParams(location.search);
   const attId  = params.get('id');
+  const token  = params.get('t');
 
-  let currentRecord = null;
+  let currentRecordId = null;
 
   function populateCheckout(rec) {
-    currentRecord = rec;
+    currentRecordId = rec.id;
     $('co-name').textContent    = rec.name;
     $('co-company').textContent = rec.company || '';
     $('co-trade').textContent   = rec.trade   || '';
-    $('co-project').textContent = rec.projectName || 'this site';
-    $('co-timein').textContent  = new Date(rec.timeIn).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
+    $('co-project').textContent = rec.project_name || 'this site';
+    $('co-timein').textContent  = new Date(rec.time_in).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' });
     $('co-notes').value = '';
     show('screen-checkout');
   }
 
   function showAlreadyOut(rec) {
     $('ao-name').textContent  = rec.name;
-    $('ao-hours').textContent = rec.hoursOnSite != null ? rec.hoursOnSite.toFixed(2) : '—';
+    $('ao-hours').textContent = rec.hours_on_site != null ? Number(rec.hours_on_site).toFixed(2) : '—';
     show('screen-already-out');
   }
 
-  // ── Direct link via ?id= ──
+  // ── Direct link via ?id= (the record's own uuid is the capability) ──
   if (attId) {
-    const rec = attendanceStore.get(attId);
+    const { data: rec } = await attendanceGetById(attId);
     if (!rec) {
-      show('screen-lookup');
-    } else if (rec.timeOut || rec.status === 'checked-out') {
+      token ? show('screen-lookup') : show('screen-no-context');
+    } else if (rec.status === 'checked-out') {
       showAlreadyOut(rec);
+    } else if (rec.status === 'voided') {
+      if (token) {
+        show('screen-lookup');
+        $('lookup-error').textContent = 'That sign-in record is no longer active. Please check your details, or ask the site supervisor.';
+        $('lookup-error').style.display = 'block';
+      } else {
+        show('screen-no-context');
+      }
     } else {
       populateCheckout(rec);
     }
-  } else {
+  } else if (token) {
     show('screen-lookup');
+  } else {
+    show('screen-no-context');
   }
 
-  // ── Manual lookup ──
-  $('btn-lookup').addEventListener('click', () => {
+  // ── Manual lookup, scoped to this project's token (never a global search) ──
+  $('btn-lookup').addEventListener('click', async () => {
     const name    = $('lookup-name').value.trim();
     const mobile  = $('lookup-mobile').value.trim();
     const errEl   = $('lookup-error');
@@ -260,7 +283,13 @@
       return;
     }
 
-    const matches = attendanceStore.findActiveByLookup(name, mobile);
+    const { data: matches, error } = await attendanceLookupActive(token, name, mobile);
+
+    if (error) {
+      errEl.textContent = friendlyAttendanceError(error);
+      errEl.style.display = 'block';
+      return;
+    }
 
     if (!matches.length) {
       errEl.textContent = 'No active sign-in found. Please check your name and mobile number, or ask the site supervisor.';
@@ -277,7 +306,7 @@
     $('match-list').innerHTML = matches.map((r, i) => `
       <div class="match-card" data-idx="${i}">
         <div class="mc-name">${r.name}</div>
-        <div class="mc-meta">${r.projectName || 'Site'} · Signed in at ${new Date(r.timeIn).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' })}</div>
+        <div class="mc-meta">${r.project_name || 'Site'} · Signed in at ${new Date(r.time_in).toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit' })}</div>
       </div>
     `).join('');
 
@@ -285,33 +314,34 @@
       card.addEventListener('click', () => populateCheckout(matches[i]));
     });
 
-    window._lookupMatches = matches;
     show('screen-matches');
   });
 
   $('btn-matches-back').addEventListener('click', () => show('screen-lookup'));
 
   // ── Confirm sign-out ──
-  $('btn-checkout').addEventListener('click', () => {
-    if (!currentRecord) return;
+  $('btn-checkout').addEventListener('click', async () => {
+    if (!currentRecordId) return;
     const notes = $('co-notes').value.trim();
-    const ok = attendanceStore.checkOut(currentRecord.id, { notes });
-    if (!ok) {
-      $('co-error').textContent = 'Unable to record sign-out. The sign-out time may be before the sign-in time.';
+    const btn = $('btn-checkout');
+    btn.disabled = true;
+    const { data: updated, error } = await attendanceCheckOut(currentRecordId, notes);
+    btn.disabled = false;
+    if (error) {
+      $('co-error').textContent = friendlyAttendanceError(error);
       $('co-error').style.display = 'block';
       return;
     }
-    const updated = attendanceStore.get(currentRecord.id);
     $('s-name').textContent  = updated.name;
-    $('s-sub').textContent   = `Signed out from ${updated.projectName || 'the site'}. See you next time.`;
-    $('s-hours').textContent = updated.hoursOnSite != null ? updated.hoursOnSite.toFixed(2) : '—';
+    $('s-sub').textContent   = `Signed out from ${updated.project_name || 'the site'}. See you next time.`;
+    $('s-hours').textContent = updated.hours_on_site != null ? Number(updated.hours_on_site).toFixed(2) : '—';
     show('screen-success');
   });
 
   $('btn-wrong').addEventListener('click', () => {
-    currentRecord = null;
+    currentRecordId = null;
     $('co-error').style.display = 'none';
-    show('screen-lookup');
+    token ? show('screen-lookup') : show('screen-no-context');
   });
 
   // Allow pressing Enter in lookup fields

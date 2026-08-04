@@ -6,6 +6,7 @@
   <meta name="robots" content="noindex" />
   <title>Site Sign-In — BIK Solutions</title>
   <link rel="stylesheet" href="css/bik-design-system.css" />
+  <script src="js/vendor/supabase-js.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root { --radius: 10px; }
@@ -276,8 +277,7 @@
 </div>
 
 <script type="module">
-  import { attendanceStore } from './js/toolkit/attendance-store.js';
-  import { checkinTokens }   from './js/toolkit/checkin-token.js';
+  import { resolveCheckinToken, attendanceCheckIn, friendlyAttendanceError } from './js/toolkit/attendance-rpc.js';
 
   const $ = id => document.getElementById(id);
 
@@ -298,41 +298,34 @@
     $(id)?.classList.add('active');
   }
 
-  // ── Resolve token ──
+  // ── Resolve token against Supabase ──
   const params  = new URLSearchParams(location.search);
   const token   = params.get('t');
 
-  let resolvedProjectId = null;
-  let projectName       = '';
-  let projectAddress    = '';
-
-  if (token) {
-    const info = checkinTokens.lookup(token);
-    if (info) {
-      resolvedProjectId = info.projectId;
-      projectName       = info.name    || 'Site Project';
-      projectAddress    = info.address || '';
-    } else {
-      resolvedProjectId = token;   // worker's own device — fallback
-      projectName       = 'Site';
-      projectAddress    = '';
-    }
-  }
+  let projectName    = '';
+  let projectAddress = '';
 
   if (!token) {
     show('screen-notfound');
   } else {
-    // Show project band on form and sub-screens
-    $('project-band').style.display        = 'flex';
-    $('project-name-display').textContent  = projectName;
-    $('project-addr-display').textContent  = projectAddress;
-    $('ai-project-name').textContent       = projectName;
-    $('ai-project-addr').textContent       = projectAddress;
-    if (projectName) $('project-band-ai').style.display = 'flex';
-    $('s-project-band-name').textContent   = projectName;
-    $('s-project-band-addr').textContent   = projectAddress;
-    if (projectName) $('project-band-s').style.display = 'flex';
-    show('screen-form');
+    const { data, error } = await resolveCheckinToken(token);
+    if (error || !data) {
+      show('screen-notfound');
+    } else {
+      projectName    = data.project_name    || 'Site Project';
+      projectAddress = data.site_address || '';
+
+      $('project-band').style.display        = 'flex';
+      $('project-name-display').textContent  = projectName;
+      $('project-addr-display').textContent  = projectAddress;
+      $('ai-project-name').textContent       = projectName;
+      $('ai-project-addr').textContent       = projectAddress;
+      if (projectName) $('project-band-ai').style.display = 'flex';
+      $('s-project-band-name').textContent   = projectName;
+      $('s-project-band-addr').textContent   = projectAddress;
+      if (projectName) $('project-band-s').style.display = 'flex';
+      show('screen-form');
+    }
   }
 
   // ── Worker type selector ──
@@ -390,15 +383,16 @@
   }
 
   // ── Already signed in state ──
-  let duplicateRecord = null;
+  let duplicateRecordId = null;
 
   function showAlreadyIn(rec) {
-    duplicateRecord = rec;
+    duplicateRecordId = rec.id;
     $('ai-name').textContent = rec.name;
-    $('ai-project').textContent = rec.projectName || projectName;
-    $('ai-timein').textContent = new Date(rec.timeIn).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+    $('ai-project').textContent = rec.project_name || projectName;
+    $('ai-timein').textContent = new Date(rec.time_in).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
     if (rec.trade) {
       $('ai-trade').textContent = rec.trade;
+      $('ai-trade-row').style.display = '';
     } else {
       $('ai-trade-row').style.display = 'none';
     }
@@ -406,20 +400,20 @@
   }
 
   $('ai-btn-checkout').addEventListener('click', () => {
-    if (duplicateRecord) {
-      location.href = `checkout.html?id=${encodeURIComponent(duplicateRecord.id)}`;
+    if (duplicateRecordId) {
+      location.href = `checkout.html?id=${encodeURIComponent(duplicateRecordId)}&t=${encodeURIComponent(token)}`;
     }
   });
 
   $('ai-btn-different').addEventListener('click', () => {
-    duplicateRecord = null;
+    duplicateRecordId = null;
     $('f-name').value = '';
     $('f-mobile').value = '';
     show('screen-form');
   });
 
   // ── Form submit ──
-  document.getElementById('checkin-form').addEventListener('submit', e => {
+  document.getElementById('checkin-form').addEventListener('submit', async e => {
     e.preventDefault();
     $('ci-error').style.display = 'none';
 
@@ -431,33 +425,39 @@
     const name   = $('f-name').value.trim();
     const mobile = $('f-mobile').value.trim();
 
-    // Duplicate check
-    const dup = attendanceStore.findDuplicate(resolvedProjectId, token, name, mobile);
-    if (dup) {
-      showAlreadyIn(dup);
+    const submitBtn = $('btn-submit');
+    submitBtn.disabled = true;
+
+    const { data: rec, error } = await attendanceCheckIn({
+      token,
+      name,
+      company:   $('f-company').value.trim(),
+      trade:     $('f-trade').value.trim(),
+      mobile,
+      workerType: selectedType,
+    });
+
+    submitBtn.disabled = false;
+
+    if (error) {
+      $('ci-error').textContent = friendlyAttendanceError(error);
+      $('ci-error').style.display = 'block';
+      $('ci-error').scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
-    const id = attendanceStore.checkIn({
-      projectId:    resolvedProjectId,
-      checkinToken: token,
-      projectName,
-      name,
-      company:      $('f-company').value.trim(),
-      trade:        $('f-trade').value.trim(),
-      mobile,
-      type:         selectedType,
-      checkedInBy:  'self',
-    });
+    if (rec.is_duplicate) {
+      showAlreadyIn(rec);
+      return;
+    }
 
-    const rec     = attendanceStore.get(id);
-    const timeStr = new Date(rec.timeIn).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+    const timeStr = new Date(rec.time_in).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
 
-    $('s-name').textContent    = name;
+    $('s-name').textContent    = rec.name;
     $('s-project').textContent = projectName;
     $('s-timein').textContent  = timeStr;
     $('s-trade').textContent   = rec.trade  || '—';
-    $('s-type').textContent    = TYPE_LABELS[rec.type] || rec.type;
+    $('s-type').textContent    = TYPE_LABELS[rec.worker_type] || rec.worker_type;
 
     if (projectAddress) {
       $('s-addr').textContent     = projectAddress;
@@ -465,11 +465,11 @@
     }
 
     $('btn-checkout-now').onclick = () => {
-      location.href = `checkout.html?id=${encodeURIComponent(id)}`;
+      location.href = `checkout.html?id=${encodeURIComponent(rec.id)}&t=${encodeURIComponent(token)}`;
     };
 
     $('btn-checkin-another').onclick = () => {
-      duplicateRecord = null;
+      duplicateRecordId = null;
       $('f-name').value    = '';
       $('f-company').value = '';
       $('f-trade').value   = '';

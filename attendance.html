@@ -7,6 +7,9 @@
   <title>Site Attendance — BIK Solutions</title>
   <link rel="stylesheet" href="css/bik-design-system.css" />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/supabase-app.css" />
+  <link rel="stylesheet" href="css/supabase-tool-panel.css" />
+  <script src="js/vendor/supabase-js.min.js"></script>
   <style>
     /* ── Shell ── */
     .att-shell { display:flex;flex-direction:column;min-height:100vh;background:#f5f0e8; }
@@ -14,7 +17,6 @@
     /* Project bar */
     .att-project-bar { background:#1a1816;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap; }
     .att-project-label { font-size:0.72rem;color:rgba(255,255,255,0.4);white-space:nowrap; }
-    .att-project-select { background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:7px 12px;border-radius:6px;font-size:0.82rem;font-family:inherit;outline:none;flex:1;max-width:360px; }
     .att-date-input { background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:7px 12px;border-radius:6px;font-size:0.82rem;font-family:inherit;outline:none; }
 
     /* Header action buttons */
@@ -139,8 +141,6 @@
     .report-actions { display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px; }
     .report-btn { background:#fff;border:1px solid #e8e4de;border-radius:7px;padding:10px 16px;font-size:0.82rem;font-weight:600;color:#252320;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px; }
     .report-btn:hover { background:#f5f0e8; }
-    .demo-section { background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:16px;margin-top:20px; }
-    .demo-section h4 { font-size:0.78rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px; }
 
     /* Void banner */
     .void-section { margin-top:16px; }
@@ -157,24 +157,38 @@
 </head>
 <body>
 
-<div class="att-shell">
+<div class="app-loading" id="sb-loading">Loading…</div>
+
+<div class="empty-state" id="sb-project-error" hidden>
+  <p id="sb-project-error-text">This project could not be found.</p>
+  <a class="btn btn--coral" href="app-dashboard.html">Back to dashboard</a>
+</div>
+
+<div class="att-shell" id="sb-app-shell" hidden>
+
+  <div class="project-context-bar" id="sb-project-context">
+    <span class="project-context-org" id="sb-context-org"></span>
+    <span class="project-context-sep" aria-hidden="true">·</span>
+    <span class="project-context-project" id="sb-context-project"></span>
+    <a class="project-context-change" id="sb-context-hub-link" href="app-dashboard.html">Project Hub</a>
+  </div>
 
   <header class="bik-app-header" role="banner">
-    <a href="dashboard.html" class="bik-app-header-logo" aria-label="BIK Solutions — dashboard">
+    <a href="app-dashboard.html" class="bik-app-header-logo" aria-label="BIK Solutions — dashboard">
       <div class="bik-logo-mark" aria-hidden="true">B</div>
       <div class="bik-logo-text">
         <span class="bik-logo-name">Site Attendance</span>
-        <a href="dashboard.html" class="bik-logo-tag" style="text-decoration:none">← Dashboard</a>
+        <span class="bik-logo-tag">Beyond Industry Knowledge</span>
       </div>
     </a>
     <div class="bik-app-header-spacer"></div>
     <div class="bik-app-header-actions">
-      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-rollcall" disabled
+      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-rollcall"
         title="Emergency roll call — on-site workers only" aria-label="Emergency roll call"
         style="border-color:rgba(180,83,9,0.5);color:#fbbf24;">
         🚨 Roll Call
       </button>
-      <button class="bik-btn bik-btn--primary bik-btn--sm" id="btn-show-qr" disabled
+      <button class="bik-btn bik-btn--primary bik-btn--sm" id="btn-show-qr"
         aria-label="Show site QR code for sign-in">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3m0 4h4V14h-4m-3 7h3"/></svg>
         Show Site QR
@@ -183,12 +197,12 @@
   </header>
 
   <div class="att-project-bar">
-    <span class="att-project-label">Project</span>
-    <select class="att-project-select" id="project-select">
-      <option value="">Select a project…</option>
-    </select>
     <span class="att-project-label">Date</span>
     <input type="date" class="att-date-input" id="date-select" />
+    <button class="qr-btn" id="btn-refresh" type="button" style="background:rgba(255,255,255,0.1);margin-left:auto"
+      title="Reload attendance from the server — records from another device may not appear until you refresh">
+      🔄 Refresh
+    </button>
   </div>
 
   <div class="att-tabs">
@@ -284,16 +298,7 @@
         <button class="report-btn" id="btn-print-qr">📋 Print QR Sign</button>
       </div>
       <div id="report-preview" style="background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:20px;font-size:0.82rem;color:#888;min-height:80px">
-        Select a project and date, then choose a report above.
-      </div>
-
-      <div class="demo-section">
-        <h4>Demo &amp; testing</h4>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="report-btn" id="btn-load-demo">🧪 Load Attendance Demo Data</button>
-          <button class="report-btn" id="btn-clear-demo">🗑 Remove Demo Data</button>
-        </div>
-        <div style="font-size:0.72rem;color:#aaa;margin-top:8px">Demo data includes sample workers, checked-out records, a forgotten checkout, a visitor, and a corrected record.</div>
+        Choose a date, then choose a report above.
       </div>
     </div>
 
@@ -447,9 +452,13 @@
 </div>
 
 <script type="module">
-  import { attendanceStore } from './js/toolkit/attendance-store.js';
+  import { gateOnSupabaseProject } from './js/toolkit/supabase-project-context.js';
+  import { supabase }        from './js/supabase/client.js';
   import { renderQR }        from './js/toolkit/qr-generator.js';
-  import { checkinTokens }   from './js/toolkit/checkin-token.js';
+  import {
+    getOrCreateCheckinToken, attendanceCheckOut, attendanceEdit, attendanceVoid,
+    friendlyAttendanceError,
+  } from './js/toolkit/attendance-rpc.js';
 
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -466,29 +475,65 @@
     supplier:'Supplier / Delivery', other:'Other',
   };
 
-  const todayStr = attendanceStore._today();
+  function todayStrLocal() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  const todayStr = todayStrLocal();
   $('date-select').value = todayStr;
 
-  // ── Load projects ──
-  let projects = [];
-  try { projects = JSON.parse(localStorage.getItem('bik-projects') || '[]'); } catch {}
-  const sel = $('project-select');
-  projects.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p.id;
-    opt.textContent = p.name || p.projectName || p.id;
-    sel.appendChild(opt);
-  });
+  // ── Supabase-backed state (populated once the project gate passes) ──
+  let project       = null;
+  let allRecords     = [];   // every record for this project (all dates), camelCase-mapped
+  let correctedIds    = new Set();
+  const getRecord     = id => allRecords.find(r => r.id === id);
 
-  let selectedProjectId = null;
+  function mapRow(row) {
+    return {
+      id: row.id, name: row.name, company: row.company, trade: row.trade,
+      mobile: row.mobile, type: row.worker_type, date: row.attendance_date,
+      timeIn: row.time_in, timeOut: row.time_out, breakMinutes: row.break_minutes,
+      hoursOnSite: row.hours_on_site != null ? Number(row.hours_on_site) : null,
+      status: row.status, voidReason: row.void_reason, notes: row.notes,
+      checkedInBy: row.checked_in_by,
+    };
+  }
 
-  sel.addEventListener('change', () => {
-    selectedProjectId = sel.value || null;
-    $('btn-show-qr').disabled = !selectedProjectId;
-    $('btn-rollcall').disabled = !selectedProjectId;
+  async function refreshAllRecords() {
+    const { data, error } = await supabase
+      .from('attendance_records')
+      .select('id, name, company, trade, mobile, worker_type, attendance_date, time_in, time_out, break_minutes, hours_on_site, status, void_reason, notes, checked_in_by')
+      .eq('project_id', project.id)
+      .order('time_in', { ascending: false });
+    if (error) {
+      console.error('[BIK] attendance fetch error:', error);
+      allRecords = [];
+      return;
+    }
+    allRecords = (data || []).map(mapRow);
+
+    correctedIds = new Set();
+    if (allRecords.length) {
+      const { data: auditRows } = await supabase
+        .from('attendance_audit_log')
+        .select('attendance_record_id')
+        .in('attendance_record_id', allRecords.map(r => r.id));
+      (auditRows || []).forEach(row => correctedIds.add(row.attendance_record_id));
+    }
+  }
+
+  async function refreshAndRender() {
+    await refreshAllRecords();
     render();
-  });
+    if ($('tab-register').classList.contains('active')) renderRegister();
+  }
+
   $('date-select').addEventListener('change', render);
+  $('btn-refresh').addEventListener('click', async () => {
+    $('btn-refresh').disabled = true;
+    await refreshAndRender();
+    $('btn-refresh').disabled = false;
+  });
 
   // ── Tabs ──
   document.querySelectorAll('.att-tab').forEach(tab => {
@@ -503,14 +548,12 @@
 
   // ── Render today tab ──
   function render() {
-    const pid   = selectedProjectId;
     const date  = $('date-select').value || todayStr;
-    const tok   = pid ? checkinTokens.forProject(pid) : null;
-    const all   = pid ? attendanceStore.forProjectOrToken(pid, tok).filter(r => r.date === date) : [];
+    const all   = allRecords.filter(r => r.date === date);
     const now18 = new Date(Date.now() - 18 * 3600000).toISOString();
 
     const onSite     = all.filter(r => r.status === 'active' && !r.timeOut);
-    const reqCheckout = all.filter(r => r.status === 'checkout-required' || (r.status === 'active' && !r.timeOut && r.timeIn < now18));
+    const reqCheckout = all.filter(r => r.status === 'active' && !r.timeOut && r.timeIn < now18);
     const checkedOut = all.filter(r => r.status === 'checked-out' || r.timeOut);
     const voided     = all.filter(r => r.status === 'voided');
     const active     = all.filter(r => r.status !== 'voided');
@@ -518,11 +561,8 @@
     const totalHrs = checkedOut.reduce((s, r) => s + (r.hoursOnSite || 0), 0);
 
     $('stat-onsite').textContent = onSite.length;
-    const _heroProj = projects.find(p => p.id === pid);
-    const projLabel = _heroProj ? (_heroProj.name || _heroProj.projectName || 'Project') : null;
-    $('stat-onsite-sub').textContent = projLabel
-      ? (onSite.length === 1 ? '1 person on site' : `${onSite.length} people on site`) + ` · ${projLabel}`
-      : 'Select a project to begin';
+    $('stat-onsite-sub').textContent =
+      (onSite.length === 1 ? '1 person on site' : `${onSite.length} people on site`) + ` · ${project.name}`;
     $('stat-left').textContent   = checkedOut.length;
     $('stat-total').textContent  = active.length;
     $('stat-hours').textContent  = totalHrs.toFixed(1);
@@ -538,11 +578,6 @@
     $('voided-list').innerHTML       = renderCards(voided, 'voided');
     $('voided-section').style.display = voided.length ? '' : 'none';
 
-    if (!pid) {
-      $('on-site-list').innerHTML = '<div class="empty-state">Select a project to view attendance.</div>';
-      $('checked-out-list').innerHTML = '';
-      return;
-    }
     if (!active.length) {
       $('on-site-list').innerHTML = '<div class="empty-state">No attendance records for this date.<br>Share the QR code for workers to sign in.</div>';
       $('checked-out-list').innerHTML = '';
@@ -565,7 +600,7 @@
         ? `In: ${fmtTime(r.timeIn)} · Out: ${fmtTime(r.timeOut)}${r.hoursOnSite != null ? ' · ' + r.hoursOnSite.toFixed(1) + 'h' : ''}${r.breakMinutes ? ' (−' + r.breakMinutes + 'min break)' : ''}`
         : `In: ${fmtTime(r.timeIn)}`;
 
-      const hasCorrected = r.auditLog && r.auditLog.length;
+      const hasCorrected = correctedIds.has(r.id);
       const isVoided = r.status === 'voided';
 
       const mobileLink = r.mobile ? `<a href="tel:${esc(r.mobile)}" class="act-btn" title="Call ${esc(r.name)}">📞</a>` : '';
@@ -601,16 +636,17 @@
   }
 
   // ── Quick check-out ──
-  window.doCheckout = function(id) {
-    attendanceStore.checkOut(id);
-    render();
+  window.doCheckout = async function(id) {
+    const { error } = await attendanceCheckOut(id);
+    if (error) { alert(friendlyAttendanceError(error)); return; }
+    await refreshAndRender();
   };
 
   // ── Edit modal ──
   let editingId = null;
 
   window.openEdit = function(id) {
-    const rec = attendanceStore.get(id);
+    const rec = getRecord(id);
     if (!rec) return;
     editingId = id;
     $('edit-modal-title').textContent = `Edit: ${rec.name}`;
@@ -630,7 +666,7 @@
   $('edit-cancel').addEventListener('click', () => $('edit-modal').classList.remove('open'));
   $('edit-modal').addEventListener('click', e => { if (e.target === $('edit-modal')) $('edit-modal').classList.remove('open'); });
 
-  $('edit-save').addEventListener('click', () => {
+  $('edit-save').addEventListener('click', async () => {
     const reason = $('edit-reason').value;
     if (!reason) { alert('Please select a correction reason before saving.'); return; }
     const timeIn  = $('edit-timein').value ? localToISO($('edit-timein').value) : null;
@@ -638,27 +674,35 @@
     if (timeIn && timeOut && new Date(timeOut) <= new Date(timeIn)) {
       alert('Check-out time must be after check-in time.'); return;
     }
-    attendanceStore.edit(editingId, {
+    const saveBtn = $('edit-save');
+    saveBtn.disabled = true;
+    const { error } = await attendanceEdit(editingId, {
       name:         $('edit-name').value.trim(),
       company:      $('edit-company').value.trim(),
       trade:        $('edit-trade').value.trim(),
       mobile:       $('edit-mobile').value.trim(),
-      type:         $('edit-type').value,
-      timeIn:       timeIn || attendanceStore.get(editingId)?.timeIn,
+      workerType:   $('edit-type').value,
+      timeIn:       timeIn || getRecord(editingId)?.timeIn,
       timeOut:      timeOut || null,
       breakMinutes: parseInt($('edit-break').value) || 0,
       notes:        $('edit-notes').value.trim(),
-    }, { reason, source: 'dashboard edit' });
+    }, reason);
+    saveBtn.disabled = false;
+    if (error) { alert(friendlyAttendanceError(error)); return; }
     $('edit-modal').classList.remove('open');
-    render();
+    await refreshAndRender();
   });
 
   // ── Audit history modal ──
-  window.openAudit = function(id) {
-    const log = attendanceStore.getAudit(id);
-    if (!log.length) { alert('No change history for this record.'); return; }
+  window.openAudit = async function(id) {
+    const { data: log, error } = await supabase
+      .from('attendance_audit_log')
+      .select('changed_at, source, reason, changes')
+      .eq('attendance_record_id', id)
+      .order('changed_at', { ascending: false });
+    if (error || !log || !log.length) { alert('No change history for this record.'); return; }
     $('audit-list').innerHTML = log.map(entry => {
-      const changes = entry.changes.map(c =>
+      const changes = (entry.changes || []).map(c =>
         `<div class="audit-change">
           <strong>${esc(c.field)}</strong>:
           <span class="from">${esc(String(c.from ?? '(empty)'))}</span>
@@ -666,11 +710,11 @@
         </div>`
       ).join('');
       return `<div class="audit-entry">
-        <div class="audit-ts">${fmtDateTime(entry.timestamp)} · ${esc(entry.changedBy)}</div>
+        <div class="audit-ts">${fmtDateTime(entry.changed_at)} · Business User</div>
         <div class="audit-reason">${esc(entry.reason)}</div>
         ${changes}
       </div>`;
-    }).reverse().join('');
+    }).join('');
     $('audit-modal').classList.add('open');
   };
 
@@ -688,35 +732,32 @@
   $('void-cancel').addEventListener('click', () => $('void-modal').classList.remove('open'));
   $('void-modal').addEventListener('click', e => { if (e.target === $('void-modal')) $('void-modal').classList.remove('open'); });
 
-  $('void-confirm').addEventListener('click', () => {
+  $('void-confirm').addEventListener('click', async () => {
     if (!voidingId) return;
     const reason = $('void-reason').value;
-    attendanceStore.voidRecord(voidingId, `Voided – ${reason}`, 'dashboard edit');
+    const { error } = await attendanceVoid(voidingId, `Voided – ${reason}`);
     $('void-modal').classList.remove('open');
     voidingId = null;
-    render();
+    if (error) { alert(friendlyAttendanceError(error)); return; }
+    await refreshAndRender();
   });
 
   // ── Emergency Roll Call ──
-  $('btn-rollcall').addEventListener('click', () => {
-    if (!selectedProjectId) return;
+  $('btn-rollcall').addEventListener('click', async () => {
+    await refreshAllRecords();
     renderRollCall();
     $('rollcall-modal').classList.add('open');
   });
 
-  $('btn-rollcall-refresh').addEventListener('click', renderRollCall);
+  $('btn-rollcall-refresh').addEventListener('click', async () => { await refreshAllRecords(); renderRollCall(); });
   $('btn-close-rollcall').addEventListener('click', () => $('rollcall-modal').classList.remove('open'));
 
   function renderRollCall() {
-    const tok = checkinTokens.forProject(selectedProjectId);
-    const proj = projects.find(p => p.id === selectedProjectId);
-    const projName = proj?.name || proj?.projectName || 'Site';
-    const onSite = attendanceStore.forProjectOrToken(selectedProjectId, tok)
-      .filter(r => !r.timeOut && r.status !== 'voided');
+    const onSite = allRecords.filter(r => !r.timeOut && r.status !== 'voided');
 
     const now = new Date().toLocaleString('en-AU', { weekday:'short', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
     $('rollcall-meta').innerHTML = `
-      <strong>${esc(projName)}</strong>${proj?.siteAddress ? ' · ' + esc(proj.siteAddress) : ''}<br>
+      <strong>${esc(project.name)}</strong>${project.site_address ? ' · ' + esc(project.site_address) : ''}<br>
       ${now} · <strong>${onSite.length}</strong> person${onSite.length !== 1 ? 's' : ''} currently on site
     `;
 
@@ -744,13 +785,25 @@
   }
 
   // ── Workforce register ──
-  function renderRegister() {
-    if (!selectedProjectId) {
-      $('register-empty').style.display = 'block';
-      $('register-table-wrap').style.display = 'none';
-      return;
+  function computeWorkforceRegister(records) {
+    const seen = new Map();
+    for (const r of records) {
+      if (r.status === 'voided') continue;
+      const key = r.name.toLowerCase() + '|' + (r.company || '').toLowerCase();
+      if (!seen.has(key)) {
+        seen.set(key, { name: r.name, company: r.company, trade: r.trade, type: r.type, mobile: r.mobile, firstSeen: r.date, lastSeen: r.date, visits: 0, totalHours: 0 });
+      }
+      const entry = seen.get(key);
+      entry.visits++;
+      entry.totalHours = Math.round((entry.totalHours + (r.hoursOnSite || 0)) * 100) / 100;
+      if (r.date < entry.firstSeen) entry.firstSeen = r.date;
+      if (r.date > entry.lastSeen)  entry.lastSeen  = r.date;
     }
-    const workers = attendanceStore.workforceRegister(selectedProjectId, checkinTokens.forProject(selectedProjectId));
+    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  function renderRegister() {
+    const workers = computeWorkforceRegister(allRecords);
     if (!workers.length) {
       $('register-empty').style.display = 'block';
       $('register-empty').textContent = 'No workers on record for this project yet.';
@@ -773,14 +826,25 @@
   }
 
   // ── QR Code modal ──
-  $('btn-show-qr').addEventListener('click', () => {
-    if (!selectedProjectId) return;
-    const proj = projects.find(p => p.id === selectedProjectId);
-    const token = checkinTokens.getOrCreate(proj);
-    const url   = `${location.origin}${location.pathname.replace('attendance.html','checkin.html')}?t=${token}`;
-    $('qr-url-display').textContent = url;
-    renderQR(url, $('qr-canvas'), { scale: 5, padding: 3 });
-    $('qr-modal').classList.add('open');
+  async function checkinUrl() {
+    const { data: token, error } = await getOrCreateCheckinToken(project.id);
+    if (error) throw error;
+    return `${location.origin}${location.pathname.replace('attendance.html','checkin.html')}?t=${token}`;
+  }
+
+  $('btn-show-qr').addEventListener('click', async () => {
+    const btn = $('btn-show-qr');
+    btn.disabled = true;
+    try {
+      const url = await checkinUrl();
+      $('qr-url-display').textContent = url;
+      renderQR(url, $('qr-canvas'), { scale: 5, padding: 3 });
+      $('qr-modal').classList.add('open');
+    } catch (error) {
+      alert(friendlyAttendanceError(error));
+    } finally {
+      btn.disabled = false;
+    }
   });
 
   $('btn-close-qr').addEventListener('click', () => $('qr-modal').classList.remove('open'));
@@ -794,74 +858,65 @@
 
   // ── Reports ──
   $('btn-export-daily').addEventListener('click', () => {
-    if (!selectedProjectId) { alert('Select a project first.'); return; }
     const date = $('date-select').value || todayStr;
-    const tok  = checkinTokens.forProject(selectedProjectId);
-    const csv  = attendanceStore.exportCSV(selectedProjectId, date, tok);
-    const proj = projects.find(p => p.id === selectedProjectId);
-    const name = (proj?.name || 'project').replace(/[^a-zA-Z0-9]/g,'-');
+    const rows = allRecords.filter(r => r.date === date && r.status !== 'voided');
+    const csv  = exportDailyCSV(rows);
+    const name = (project.name || 'project').replace(/[^a-zA-Z0-9]/g,'-');
     _download(csv, `attendance-${name}-${date}.csv`, 'text/csv;charset=utf-8');
   });
 
+  function exportDailyCSV(rows) {
+    const fmt = iso => iso ? new Date(iso).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '';
+    const csv = v => `"${String(v == null ? '' : v).replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+    const header = 'Name,Company,Trade,Type,Mobile,Check-In,Check-Out,Break (min),Recorded Site Hours,Status,Notes,Record Corrected';
+    const lines = rows.map(r => [
+      r.name, r.company, r.trade, r.type, r.mobile,
+      fmt(r.timeIn), r.timeOut ? fmt(r.timeOut) : 'On site',
+      r.breakMinutes || 0, r.hoursOnSite != null ? r.hoursOnSite.toFixed(2) : '',
+      r.status || '', r.notes || '', correctedIds.has(r.id) ? 'Yes' : 'No',
+    ].map(csv).join(','));
+    return '﻿' + [header, ...lines].join('\r\n');
+  }
+
   $('btn-export-register').addEventListener('click', () => {
-    if (!selectedProjectId) { alert('Select a project first.'); return; }
-    const tok = checkinTokens.forProject(selectedProjectId);
-    const workers = attendanceStore.workforceRegister(selectedProjectId, tok);
+    const workers = computeWorkforceRegister(allRecords);
     const header = 'Name,Company,Trade,Type,Mobile,First Visit,Last Visit,Visits,Total Recorded Site Hours';
     const csv = v => `"${String(v ?? '').replace(/"/g,'""').replace(/\r?\n/g,' ')}"`;
     const lines = workers.map(w => [
       w.name, w.company, w.trade, TYPE_LABELS[w.type]||w.type, w.mobile,
       fmtDate(w.firstSeen), fmtDate(w.lastSeen), w.visits, w.totalHours.toFixed(2)
     ].map(csv).join(','));
-    const proj = projects.find(p => p.id === selectedProjectId);
-    const name = (proj?.name || 'project').replace(/[^a-zA-Z0-9]/g,'-');
+    const name = (project.name || 'project').replace(/[^a-zA-Z0-9]/g,'-');
     _download('﻿' + [header,...lines].join('\r\n'), `workforce-register-${name}.csv`, 'text/csv;charset=utf-8');
   });
 
   $('btn-print-daily').addEventListener('click', () => {
-    if (!selectedProjectId) { alert('Select a project first.'); return; }
     const date  = $('date-select').value || todayStr;
-    const tok   = checkinTokens.forProject(selectedProjectId);
-    const all   = attendanceStore.forProjectOrToken(selectedProjectId, tok).filter(r => r.date === date && r.status !== 'voided');
-    const proj  = projects.find(p => p.id === selectedProjectId);
+    const all   = allRecords.filter(r => r.date === date && r.status !== 'voided');
     const w = window.open('', '_blank');
-    w.document.write(buildPrintReport(proj, date, all));
+    w.document.write(buildPrintReport(project, date, all));
     w.document.close();
     w.print();
   });
 
-  $('btn-print-qr').addEventListener('click', () => {
-    if (!selectedProjectId) { alert('Select a project first.'); return; }
-    const proj  = projects.find(p => p.id === selectedProjectId);
-    const token = checkinTokens.getOrCreate(proj);
-    const base  = location.origin + location.pathname.replace('attendance.html','checkin.html');
-    const url   = `${base}?t=${token}`;
-    const w = window.open('', '_blank');
-    w.document.write(buildQRSign(proj, url));
-    w.document.close();
-    setTimeout(() => w.print(), 800);
-  });
-
-  // ── Demo data ──
-  $('btn-load-demo').addEventListener('click', () => {
-    if (!selectedProjectId) { alert('Select a project first, then load demo data.'); return; }
-    const proj = projects.find(p => p.id === selectedProjectId);
-    const tok  = checkinTokens.forProject(selectedProjectId) || '';
-    attendanceStore.seedDemo(selectedProjectId, proj?.name || 'Demo Site', tok);
-    alert('Demo attendance data loaded.');
-    render();
-    renderRegister();
-  });
-
-  $('btn-clear-demo').addEventListener('click', () => {
-    if (!confirm('Remove all demo attendance records?')) return;
-    attendanceStore.clearDemo();
-    render();
-    renderRegister();
+  $('btn-print-qr').addEventListener('click', async () => {
+    const btn = $('btn-print-qr');
+    btn.disabled = true;
+    try {
+      const url = await checkinUrl();
+      const w = window.open('', '_blank');
+      w.document.write(buildQRSign(project, url));
+      w.document.close();
+      setTimeout(() => w.print(), 800);
+    } catch (error) {
+      alert(friendlyAttendanceError(error));
+    } finally {
+      btn.disabled = false;
+    }
   });
 
   function buildPrintReport(proj, date, records) {
-    const projName = proj?.name || proj?.projectName || 'Project';
+    const projName = proj?.name || 'Project';
     const onSite   = records.filter(r => !r.timeOut);
     const left     = records.filter(r =>  r.timeOut);
     const totalHrs = records.reduce((s,r) => s + (r.hoursOnSite||0), 0);
@@ -878,7 +933,7 @@
       <td>${r.hoursOnSite != null ? r.hoursOnSite.toFixed(2) : '—'}</td>
       <td>${esc(r.status||'')}</td>
       <td>${esc(r.notes||'')}</td>
-      <td>${(r.auditLog&&r.auditLog.length)?'Yes':''}</td>
+      <td>${correctedIds.has(r.id)?'Yes':''}</td>
     </tr>`).join('');
     return `<!DOCTYPE html><html><head><title>Attendance Report — ${esc(projName)}</title><meta charset="UTF-8"><style>
       body{font-family:Arial,sans-serif;font-size:10.5px;padding:20px;color:#222}
@@ -896,7 +951,7 @@
     </style></head><body>
       <div class="bik">BIK Solutions — Site Attendance</div>
       <h1>Daily Attendance Report — ${esc(projName)}</h1>
-      <h2>${proj?.siteAddress ? esc(proj.siteAddress) + ' · ' : ''}${new Date(date+'T00:00:00').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h2>
+      <h2>${proj?.site_address ? esc(proj.site_address) + ' · ' : ''}${new Date(date+'T00:00:00').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h2>
       <div class="stats">
         <div class="stat"><div class="stat-val">${records.length}</div><div class="stat-label">Total</div></div>
         <div class="stat"><div class="stat-val">${onSite.length}</div><div class="stat-label">On site</div></div>
@@ -917,8 +972,8 @@
   }
 
   function buildQRSign(proj, url) {
-    const projName = proj?.name || proj?.projectName || 'Site Project';
-    const addr     = proj?.siteAddress || '';
+    const projName = proj?.name || 'Site Project';
+    const addr     = proj?.site_address || '';
     // Inline a small QR placeholder — actual QR rendered via canvas then exported as dataURL in a separate flow
     return `<!DOCTYPE html><html><head><title>Sign-In QR — ${esc(projName)}</title><meta charset="UTF-8"><style>
       @page{size:A4;margin:20mm}
@@ -965,7 +1020,16 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   }
 
-  render();
+  gateOnSupabaseProject({
+    mountTool: () => {}, // no FormEngine tool to mount — this page is its own dashboard
+    async onGated(proj) {
+      project = proj;
+      const hubLink = $('sb-context-hub-link');
+      if (hubLink) hubLink.href = `project-hub.html?project=${encodeURIComponent(proj.id)}`;
+      await refreshAllRecords();
+      render();
+    }
+  });
 </script>
 
 <script type="module" src="./js/toolkit/beta-banner.js"></script>

@@ -70,6 +70,15 @@
          every single-list tool page (variation-generator.html,
          quote-builder.html, progress-claim.html), which keep the original
          unprefixed ids unchanged. -->
+    <!-- ====== SITE ATTENDANCE TODAY ====== -->
+    <section class="sb-list-panel" id="sb-attendance-panel">
+      <div class="sb-list-panel-header">
+        <span>Site attendance today</span>
+        <a class="project-context-change" href="#" id="sb-attendance-open-link">Open Site Attendance →</a>
+      </div>
+      <p class="text-muted" id="sb-attendance-summary">Loading…</p>
+    </section>
+
     <section class="sb-list-panel" id="sb-list-variations-panel">
       <div class="sb-list-panel-header">
         <span>Variation notices for this project</span>
@@ -111,6 +120,7 @@
   import { gateOnSupabaseProject } from './js/toolkit/supabase-project-context.js';
   import { refreshRecordList, escapeHtml } from './js/toolkit/supabase-record-panel.js';
   import { formatAUD, centsToDollars } from './js/toolkit/calculator.js';
+  import { supabase } from './js/supabase/client.js';
 
   const STATUS_LABELS = {
     draft: 'Draft',
@@ -134,6 +144,10 @@
     const grid = document.getElementById('hub-tools-grid');
     const projectParam = encodeURIComponent(project.id);
     grid.innerHTML = `
+      <a class="hub-tool-btn" href="attendance.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">👷</span>
+        <span>Site Attendance</span>
+      </a>
       <a class="hub-tool-btn" href="variation-generator.html?project=${projectParam}">
         <span class="hub-tool-icon" aria-hidden="true">📝</span>
         <span>New Variation Notice</span>
@@ -147,6 +161,35 @@
         <span>New Progress Claim</span>
       </a>
     `;
+  }
+
+  async function renderAttendanceSummary(project) {
+    const link = document.getElementById('sb-attendance-open-link');
+    link.href = `attendance.html?project=${encodeURIComponent(project.id)}`;
+
+    const summaryEl = document.getElementById('sb-attendance-summary');
+    const today = (() => {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    })();
+
+    const { data, error } = await supabase
+      .from('attendance_records')
+      .select('time_out, status')
+      .eq('project_id', project.id)
+      .eq('attendance_date', today)
+      .neq('status', 'voided');
+
+    if (error) {
+      summaryEl.textContent = 'Attendance could not be loaded.';
+      return;
+    }
+    if (!data.length) {
+      summaryEl.textContent = 'No sign-ins recorded yet today.';
+      return;
+    }
+    const onSite = data.filter(r => !r.time_out).length;
+    summaryEl.textContent = `${onSite} on site now · ${data.length} sign-in${data.length !== 1 ? 's' : ''} today`;
   }
 
   function renderVariationRow(row) {
@@ -187,6 +230,7 @@
     onGated(project) {
       renderProjectHeader(project);
       renderToolLaunchRow(project);
+      renderAttendanceSummary(project);
 
       refreshRecordList({
         idPrefix: 'variations',
