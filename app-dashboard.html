@@ -170,7 +170,7 @@
     emptyNewProjectBtn.addEventListener('click', () => toggleCreateForm(true));
     cancelProjectBtn.addEventListener('click', () => toggleCreateForm(false));
 
-    function renderProjects(projects) {
+    function renderProjects(projects, onSiteCounts) {
       projectsLoadingEl.hidden = true;
       if (!projects.length) {
         projectsEmptyEl.hidden = false;
@@ -181,11 +181,15 @@
       projectGridEl.hidden = false;
       projectGridEl.innerHTML = projects.map((project) => {
         const statusLabel = project.status.replace('-', ' ');
+        const onSite = onSiteCounts.get(project.id) || 0;
         return `
           <div class="project-card">
             <div class="project-card-name">${escapeHtml(project.name)}</div>
             ${project.site_address ? `<div class="project-card-address">${escapeHtml(project.site_address)}</div>` : ''}
-            <span class="status-pill status-pill--${project.status}">${escapeHtml(statusLabel)}</span>
+            <div class="project-card-badges">
+              <span class="status-pill status-pill--${project.status}">${escapeHtml(statusLabel)}</span>
+              ${onSite > 0 ? `<span class="status-pill status-pill--onsite">👷 ${onSite} on site now</span>` : ''}
+            </div>
             <div class="project-card-actions">
               <a class="btn btn--ghost" href="project-hub.html?project=${encodeURIComponent(project.id)}">Open project</a>
             </div>
@@ -217,7 +221,26 @@
         projectsErrorBanner.hidden = false;
         return;
       }
-      renderProjects(data);
+
+      // "What needs attention?" signal: who's on site right now, across
+      // every project — cheap (existing attendance_records table, no new
+      // schema) and immediately actionable, unlike a bare status pill.
+      const onSiteCounts = new Map();
+      const today = (() => {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      })();
+      const { data: onSiteRows } = await supabase
+        .from('attendance_records')
+        .select('project_id')
+        .eq('attendance_date', today)
+        .is('time_out', null)
+        .neq('status', 'voided');
+      (onSiteRows || []).forEach(row => {
+        onSiteCounts.set(row.project_id, (onSiteCounts.get(row.project_id) || 0) + 1);
+      });
+
+      renderProjects(data, onSiteCounts);
     }
 
     createProjectForm.addEventListener('submit', async (event) => {
@@ -352,5 +375,7 @@
       }
     })();
   </script>
+
+  <script type="module" src="./js/toolkit/beta-banner.js"></script>
 </body>
 </html>

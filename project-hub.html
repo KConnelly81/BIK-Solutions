@@ -54,6 +54,12 @@
       <div class="hub-project-meta" id="hub-project-meta"></div>
     </div>
 
+    <!-- ====== PROJECT INFORMATION ====== -->
+    <section class="hub-tools-row" id="hub-info-panel" hidden>
+      <div class="hub-tools-label">Project information</div>
+      <div class="hub-info-grid" id="hub-info-grid"><!-- rendered by JS --></div>
+    </section>
+
     <!-- ====== TOOL LAUNCH ROW ======
          The single source of navigation for this project's tools
          (Sprint 5a). New tools get added here as they're connected to
@@ -63,14 +69,8 @@
       <div class="hub-tools-grid" id="hub-tools-grid"><!-- rendered by JS --></div>
     </section>
 
-    <!-- ====== VARIATION NOTICES FOR THIS PROJECT ======
-         Three list panels now share this page (Sprint 5a) —
-         supabase-record-panel.js's refreshRecordList() takes an idPrefix
-         so each list's #sb-list-* ids don't collide; omitted entirely on
-         every single-list tool page (variation-generator.html,
-         quote-builder.html, progress-claim.html), which keep the original
-         unprefixed ids unchanged. -->
-    <!-- ====== SITE ATTENDANCE TODAY ====== -->
+    <!-- ====== ATTENDANCE ====== -->
+    <div class="hub-group-heading">Attendance</div>
     <section class="sb-list-panel" id="sb-attendance-panel">
       <div class="sb-list-panel-header">
         <span>Site attendance today</span>
@@ -79,17 +79,14 @@
       <p class="text-muted" id="sb-attendance-summary">Loading…</p>
     </section>
 
-    <section class="sb-list-panel" id="sb-list-variations-panel">
-      <div class="sb-list-panel-header">
-        <span>Variation notices for this project</span>
-        <span class="sb-list-total" id="sb-list-variations-total"></span>
-      </div>
-      <p class="text-muted" id="sb-list-variations-loading">Loading…</p>
-      <p class="text-muted" id="sb-list-variations-empty" hidden>No variation notices saved to this project yet.</p>
-      <ul class="sb-list" id="sb-list-variations" hidden></ul>
-    </section>
-
-    <!-- ====== QUOTES FOR THIS PROJECT ====== -->
+    <!-- ====== COMMERCIAL ======
+         Three list panels now share this page (Sprint 5a) —
+         supabase-record-panel.js's refreshRecordList() takes an idPrefix
+         so each list's #sb-list-* ids don't collide; omitted entirely on
+         every single-list tool page (variation-generator.html,
+         quote-builder.html, progress-claim.html), which keep the original
+         unprefixed ids unchanged. -->
+    <div class="hub-group-heading">Commercial</div>
     <section class="sb-list-panel" id="sb-list-quotes-panel">
       <div class="sb-list-panel-header">
         <span>Quotes for this project</span>
@@ -100,7 +97,6 @@
       <ul class="sb-list" id="sb-list-quotes" hidden></ul>
     </section>
 
-    <!-- ====== PROGRESS CLAIMS FOR THIS PROJECT ====== -->
     <section class="sb-list-panel" id="sb-list-claims-panel">
       <div class="sb-list-panel-header">
         <span>Progress claims for this project</span>
@@ -109,6 +105,18 @@
       <p class="text-muted" id="sb-list-claims-loading">Loading…</p>
       <p class="text-muted" id="sb-list-claims-empty" hidden>No progress claims saved to this project yet.</p>
       <ul class="sb-list" id="sb-list-claims" hidden></ul>
+    </section>
+
+    <!-- ====== SITE ====== -->
+    <div class="hub-group-heading">Site</div>
+    <section class="sb-list-panel" id="sb-list-variations-panel">
+      <div class="sb-list-panel-header">
+        <span>Variation notices for this project</span>
+        <span class="sb-list-total" id="sb-list-variations-total"></span>
+      </div>
+      <p class="text-muted" id="sb-list-variations-loading">Loading…</p>
+      <p class="text-muted" id="sb-list-variations-empty" hidden>No variation notices saved to this project yet.</p>
+      <ul class="sb-list" id="sb-list-variations" hidden></ul>
     </section>
 
   </main>
@@ -140,6 +148,31 @@
     document.getElementById('hub-project-meta').textContent = project.site_address || '';
   }
 
+  function fmtDate(iso) {
+    if (!iso) return null;
+    return new Date(iso + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function renderProjectInfo(project) {
+    const items = [
+      project.project_number ? ['Project number', escapeHtml(project.project_number)] : null,
+      ['Site address', project.site_address ? escapeHtml(project.site_address) : 'Not recorded'],
+      project.description ? ['Description', escapeHtml(project.description)] : null,
+      fmtDate(project.start_date) ? ['Start date', fmtDate(project.start_date)] : null,
+      fmtDate(project.completion_date) ? ['Completion date', fmtDate(project.completion_date)] : null,
+    ].filter(Boolean);
+
+    if (!items.length) return; // nothing beyond what the header already shows — panel stays hidden
+
+    document.getElementById('hub-info-grid').innerHTML = items.map(([label, value]) => `
+      <div>
+        <div class="hub-info-item-label">${label}</div>
+        <div class="hub-info-item-value">${value}</div>
+      </div>
+    `).join('');
+    document.getElementById('hub-info-panel').hidden = false;
+  }
+
   function renderToolLaunchRow(project) {
     const grid = document.getElementById('hub-tools-grid');
     const projectParam = encodeURIComponent(project.id);
@@ -160,6 +193,11 @@
         <span class="hub-tool-icon" aria-hidden="true">📈</span>
         <span>New Progress Claim</span>
       </a>
+      <span class="hub-tool-btn" aria-disabled="true" title="Safety documents (SWMS, incident reports, toolbox talks) are not yet connected to Project Hub.">
+        <span class="hub-tool-icon" aria-hidden="true">🦺</span>
+        <span>Safety</span>
+        <span class="hub-tool-btn-soon">Soon</span>
+      </span>
     `;
   }
 
@@ -229,6 +267,7 @@
     mountTool: () => {}, // the hub isn't a FormEngine tool — nothing to mount
     onGated(project) {
       renderProjectHeader(project);
+      renderProjectInfo(project);
       renderToolLaunchRow(project);
       renderAttendanceSummary(project);
 

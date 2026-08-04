@@ -58,7 +58,8 @@ const PROJECT_QUERY_TIMEOUT_MS = 15000;
  *   no client-snapshot concept.
  * @param {(project: Object, mountTool: Function) => void} opts.onGated —
  *   called once session + project are confirmed. Receives the loaded
- *   project row (id, name, status, site_address, organisation_id, and,
+ *   project row (id, name, status, site_address, description,
+ *   project_number, start_date, completion_date, organisation_id, and,
  *   if requested, the embedded customer) and the same mountTool passed
  *   in, so the caller decides what to do with both (typically: derive a
  *   snapshot, mount the tool, wire its save panel).
@@ -92,7 +93,7 @@ export async function gateOnSupabaseProject({ mountTool, customerFields, onGated
       ({ data: project, error: projectError } = await withTimeout(
         supabase
           .from('projects')
-          .select(`id, name, status, site_address, organisation_id, organisations ( name )${customerEmbed}`)
+          .select(`id, name, status, site_address, description, project_number, start_date, completion_date, organisation_id, organisations ( name )${customerEmbed}`)
           .eq('id', projectId)
           .maybeSingle(),
         PROJECT_QUERY_TIMEOUT_MS,
@@ -122,6 +123,21 @@ export async function gateOnSupabaseProject({ mountTool, customerFields, onGated
   const projEl = $('sb-context-project');
   if (orgEl) orgEl.textContent = project.organisations?.name || 'Your organisation';
   if (projEl) projEl.textContent = project.name;
+
+  // Every tool one level below Project Hub (Quote Builder, Variation
+  // Notice, Progress Claim, Attendance) points its context-bar link back
+  // to that project's Hub, not straight to the dashboard's full project
+  // list — Project Hub is the thing a user actually wants to return to
+  // between tools. Set centrally, once, so every tool stays in sync
+  // rather than five copies of the same href drifting apart. Opt-in via
+  // #sb-context-change — project-hub.html itself has no such element
+  // (its own context-bar link is deliberately "All projects", the one
+  // level *above* a project, and must not be overwritten here).
+  const changeLinkEl = $('sb-context-change');
+  if (changeLinkEl) {
+    changeLinkEl.href = `project-hub.html?project=${encodeURIComponent(project.id)}`;
+    changeLinkEl.textContent = 'Project Hub';
+  }
 
   onGated(project, mountTool);
 }

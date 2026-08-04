@@ -102,3 +102,40 @@
   color: var(--stone, #888);
   margin-top: 8px;
 }
+
+/* ── Section group headings ───────────────────────────────────
+   Groups the per-category record panels below (Attendance,
+   Commercial = Quotes + Progress Claims, Site = Variation Notices) so
+   the Hub reads as organised sections, not an undifferentiated stack of
+   list panels. Same visual language as .hub-tools-label. */
+.hub-group-heading {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--coral, #c05a0f);
+  margin: 28px 0 10px;
+}
+.hub-group-heading:first-of-type {
+  margin-top: 0;
+}
+
+/* ── Project information panel ────────────────────────────────── */
+.hub-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+.hub-info-item-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 3px;
+}
+.hub-info-item-value {
+  font-size: 0.86rem;
+  color: var(--charcoal, #1a1a1a);
+  line-height: 1.4;
+}

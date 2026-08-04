@@ -59,6 +59,15 @@ export function wireIssueButton(cfg) {
       return;
     }
 
+    // Issuing is permanent and database-enforced (no undo, by anyone) —
+    // a single accidental click must not be enough to lock a real
+    // document. One native confirm(), same as every other irreversible
+    // action in the platform should get.
+    const confirmed = window.confirm(
+      cfg.confirmMessage || `Issue this ${cfg.recordLabel.toLowerCase()}? This locks it permanently — no further edits, by anyone.`
+    );
+    if (!confirmed) return;
+
     issuing = true;
     btn.disabled = true;
     btn.textContent = 'Issuing…';

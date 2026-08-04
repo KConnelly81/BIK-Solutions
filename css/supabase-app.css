@@ -247,6 +247,18 @@
 .status-pill--completed { background: #dbe9fa; color: #2c7dd4; }
 .status-pill--archived  { background: #e8e4de; color: var(--stone); }
 
+/* Not a lifecycle status — a live operational fact ("who's on site right
+   now"), shown alongside the project's status pill on dashboard cards.
+   Matches attendance.html's own green "on site now" live indicator. */
+.status-pill--onsite    { background: #e8f5e9; color: #2e7d32; text-transform: none; letter-spacing: 0.01em; }
+
+.project-card-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
 .empty-state {
   text-align: center;
   padding: 56px 24px;
