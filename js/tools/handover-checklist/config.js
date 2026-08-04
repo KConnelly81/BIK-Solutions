@@ -430,6 +430,7 @@ export const SCHEMA = [
 // ── Tool configuration ────────────────────────────────────────
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'handover-checklist',
   toolName:        'Handover Checklist',
   autosaveKey:     'bik-handover-checklist-draft',

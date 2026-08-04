@@ -284,6 +284,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'contract-termination',
   toolName:        'Contract Termination Notice',
   autosaveKey:     'bik-contract-termination-draft',

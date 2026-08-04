@@ -9,18 +9,35 @@
   <link rel="stylesheet" href="css/bik-design-system.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/toolkit-app.css" />
+  <link rel="stylesheet" href="css/supabase-app.css" />
+  <link rel="stylesheet" href="css/supabase-tool-panel.css" />
+  <script src="js/vendor/supabase-js.min.js"></script>
 </head>
 <body>
 
-<div class="app-shell">
+<div class="app-loading" id="sb-loading">Loading…</div>
+
+<div class="empty-state" id="sb-project-error" hidden>
+  <p id="sb-project-error-text">This project could not be found.</p>
+  <a class="btn btn--coral" href="app-dashboard.html">Back to dashboard</a>
+</div>
+
+<div class="app-shell" id="sb-app-shell" hidden>
+
+  <div class="project-context-bar" id="sb-project-context">
+    <span class="project-context-org" id="sb-context-org"></span>
+    <span class="project-context-sep" aria-hidden="true">·</span>
+    <span class="project-context-project" id="sb-context-project"></span>
+    <a class="project-context-change" id="sb-context-change" href="app-dashboard.html">Project Hub</a>
+  </div>
 
   <header class="bik-app-header" role="banner">
 
-    <a href="dashboard.html" class="bik-app-header-logo" aria-label="BIK Solutions — dashboard">
+    <a href="app-dashboard.html" class="bik-app-header-logo" aria-label="BIK Solutions — dashboard">
       <div class="bik-logo-mark" aria-hidden="true">B</div>
       <div class="bik-logo-text">
         <span class="bik-logo-name">Delay Notice</span>
-        <a href="dashboard.html" class="bik-logo-tag" style="text-decoration:none">← Dashboard</a>
+        <a href="app-dashboard.html" class="bik-logo-tag" style="text-decoration:none">← Dashboard</a>
       </div>
     </a>
 
@@ -31,13 +48,7 @@
       <span id="autosave-text">Autosave on</span>
     </div>
 
-    <div class="bik-app-header-actions">
-      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm app-btn--ai" id="btn-ai-setup" type="button"
-        title="Set up AI Professional Writer" aria-label="AI Writer setup">
-        <span aria-hidden="true" style="font-size:0.85rem;line-height:1">✦</span>
-        <span>AI Writer</span>
-      </button>
-      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-history" type="button"
+    <div class="bik-app-header-actions">      <button class="bik-btn bik-btn--ghost-dark bik-btn--sm" id="btn-history" type="button"
         title="View recent documents" aria-label="Document history">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span>History</span>
@@ -104,7 +115,7 @@
         <div class="privacy-notice" role="note">
           <span class="privacy-notice-icon" aria-hidden="true">🔒</span>
           <div>
-            <p>Your information stays on this device. Nothing you enter here is sent to a server. Drafts are saved in your browser's local storage only.</p>
+            <p>A draft of this form is kept in your browser's local storage as you type. Nothing is saved to this project until you click <strong>Save to project</strong> below — at that point the delay notice is stored against your organisation's project, visible to your team, not just this device.</p>
             <div class="draft-delete-wrap">
               <button id="btn-delete-draft" type="button" style="display:none"
                 aria-label="Delete saved draft from this device">
@@ -112,6 +123,32 @@
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- ====== SAVE TO PROJECT ====== -->
+        <div class="sb-save-panel" id="sb-save-panel">
+          <div class="sb-save-panel-row">
+            <div>
+              <div class="sb-save-panel-title">Save to project</div>
+              <div class="sb-save-panel-hint" id="sb-save-hint">Not yet saved to this project.</div>
+            </div>
+            <button class="bik-btn bik-btn--primary bik-btn--sm" id="sb-save-btn" type="button">
+              Save to project
+            </button>
+          </div>
+          <div class="banner banner--error" id="sb-save-error" hidden role="alert"></div>
+          <div class="banner banner--success" id="sb-save-success" hidden role="status" aria-live="polite"></div>
+        </div>
+
+        <!-- ====== DELAY NOTICES FOR THIS PROJECT ====== -->
+        <div class="sb-list-panel" id="sb-list-panel">
+          <div class="sb-list-panel-header">
+            <span>Delay Notices for this project</span>
+            <span class="sb-list-total" id="sb-list-total"></span>
+          </div>
+          <p class="text-muted" id="sb-list-loading">Loading…</p>
+          <p class="text-muted" id="sb-list-empty" hidden>No delay notices saved to this project yet.</p>
+          <ul class="sb-list" id="sb-list" hidden></ul>
         </div>
 
         <div id="form-container" aria-label="Delay Notice form fields">
@@ -160,11 +197,15 @@
 
 <script type="module">
   import { init } from './js/tools/delay-notice/index.js';
+  import { initDelayNoticeSupabaseIntegration } from './js/tools/delay-notice/supabase-integration.js';
 
+  // initDelayNoticeSupabaseIntegration() gates the page (session + project
+  // context) and, once resolved, mounts the tool itself via init() — the
+  // tool must not render before that gate resolves (no-flash pattern).
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => initDelayNoticeSupabaseIntegration(init));
   } else {
-    init();
+    initDelayNoticeSupabaseIntegration(init);
   }
 </script>
 

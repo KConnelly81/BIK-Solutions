@@ -53,16 +53,30 @@ remain as-planned, not yet built.
   `signin.html`, `app-dashboard.html`, `project-hub.html`. The Supabase JS SDK
   is vendored at `js/vendor/supabase-js.min.js` (official npm build, loaded
   via a plain `<script>` tag) rather than pulled from a CDN at runtime.
-- **Live on the authenticated Supabase model** (as of Sprint 5, 2026-08-02):
-  Variation Notice, Quote Builder, Progress Claim — each reached from
-  `project-hub.html`, gated on session + a valid organisation-scoped project,
-  with its own "records for this project" list. See "Two project systems"
-  below for the shared integration pattern all three use.
-- **Not yet connected:** `dashboard.html`, `project.html`, and
-  `js/toolkit/project-store.js` are unchanged and still run entirely on
-  localStorage, as does every tool other than the three above. No public nav
-  link points at the new pages yet — migrating the rest of the toolkit to
-  Supabase-backed projects is ongoing, tool-by-tool, not a single cutover.
+- **Live on the authenticated Supabase model** (as of the full-platform
+  migration, 2026-08-04): every tool is now reached from `project-hub.html`,
+  gated on session + a valid organisation-scoped project — Variation Notice,
+  Quote Builder, Progress Claim (each its own dedicated table), Site
+  Attendance (its own dedicated tables plus `SECURITY DEFINER` RPCs for the
+  anonymous worker check-in/out flow — see `supabase/migrations/018_create_
+  attendance.sql`), and the 17 simple document tools (Contract Termination,
+  Defect Report, Delay Notice, EOT Claim, Handover Checklist, Incident
+  Report, Inspection Checklist, Instruction to Proceed, Non-Conformance
+  Report, Notice to Show Cause, Payment Reminder, Practical Completion,
+  Scope of Works, Site Diary, Subcontractor Agreement, SWMS, Toolbox Talk),
+  which share one table, `public.project_documents` (`019_create_project_
+  documents.sql`) — see that migration's header for why one shared table,
+  not seventeen dedicated ones, was the right call for this category of
+  tool. See "Two project systems" below for the shared integration pattern.
+- **Deliberately unmigrated:** `dashboard.html`, `project.html`, and
+  `js/toolkit/project-store.js` remain, unchanged, as a separate
+  localStorage-only catalogue — not because migrating them was skipped, but
+  because they are the *old* entry point itself, superseded by
+  `app-dashboard.html` → `project-hub.html` (Completion Package 1). Old
+  links from that legacy catalogue into a now-migrated tool page degrade
+  gracefully (the Supabase gate's "project not found" screen, with a link
+  back to the real dashboard) rather than breaking — confirmed, not
+  assumed, for every tool migrated this pass.
 
 ### Branch reconciliation (2026-07-31)
 
@@ -289,6 +303,8 @@ There are two, deliberately separate "project" concepts on the platform right no
 **Migration boundary going forward:** a tool moving onto the authenticated model uses the Supabase system exclusively, via the two shared modules above — not a bespoke, per-tool integration file (that was Sprint 3's one-off approach for Variation Notice, generalised in Sprint 4 once it was proven). The legacy system is not being deleted; it keeps serving every tool that stays anonymous/free-tier, and is retired tool-by-tool as each one migrates, not in a single cutover. See `docs/PHASE_3_VARIATION_NOTICES_SCHEMA.md` and the Sprint 4 changelog entry for the worked example.
 
 **Migrated so far:** Variation Notice (Sprint 3), Quote Builder and Progress Claim (Sprint 5b — retrofitted onto the Sprint 4 pattern exactly like Variation Notice was, not built from scratch; both tools already existed as legacy localStorage document generators). Quote Builder and Progress Claim also each gained a typed line-items child table synced separately from the header row on every save (`js/toolkit/supabase-line-items.js`'s `syncLineItems()`) — a shape Variation Notice's single-table record didn't need. See `docs/changelog.md`'s Sprint 5b entry for the full detail.
+
+**Migration completed (2026-08-04):** every remaining tool. Site Attendance got its own bespoke schema (`018`) because of its anonymous worker-facing flow — see that migration's own header. The 17 remaining simple document tools (no line items, no server-computed totals — checked against each tool's actual field schema, not assumed) share one table, `public.project_documents` (`019`), with a `document_type` discriminator, rather than seventeen near-identical dedicated tables. Each tool's own `js/tools/<tool>/supabase-integration.js` is a ~15-line call into the one shared `js/toolkit/supabase-document-integration.js` — session gating, the Save-to-project panel, and the project's document list are not reimplemented per tool. `js/toolkit/supabase-record-panel.js`'s `refreshRecordList()` gained one small, additive extension (`cfg.match`, supporting both `.eq()` and `.in()`) to let a single tool's own list (`document_type: 'defect_report'`) and Project Hub's taxonomy-grouped lists (`document_type: [...]`) share the same function — every dedicated-table tool that doesn't pass `cfg.match` is unaffected. The legacy `ProjectUI`/localStorage system (above) is not deleted — it remains available as `cfg.projectMode`'s default/unset value for any future tool that isn't ready to migrate — but every tool that currently exists now uses the Supabase system exclusively.
 
 ---
 

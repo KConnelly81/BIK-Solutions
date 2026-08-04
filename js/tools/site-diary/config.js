@@ -148,6 +148,7 @@ export const SCHEMA = [
 // ── Tool configuration ────────────────────────────────────────
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:      'site-diary',
   toolName:    'Site Diary',
   autosaveKey: 'bik-diary-draft',

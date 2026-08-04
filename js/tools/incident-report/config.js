@@ -323,6 +323,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'incident-report',
   toolName:        'Incident Report',
   autosaveKey:     'bik-incident-report-draft',

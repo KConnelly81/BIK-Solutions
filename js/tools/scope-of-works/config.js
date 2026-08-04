@@ -152,6 +152,7 @@ export const SCHEMA = [
 // ── Tool configuration ────────────────────────────────────────
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:      'scope-of-works',
   toolName:    'Scope of Works',
   autosaveKey: 'bik-scope-draft',

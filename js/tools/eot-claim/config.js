@@ -289,6 +289,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'eot-claim',
   toolName:        'Extension of Time Claim',
   autosaveKey:     'bik-eot-claim-draft',

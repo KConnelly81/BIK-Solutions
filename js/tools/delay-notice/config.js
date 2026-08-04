@@ -281,6 +281,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'delay-notice',
   toolName:        'Delay Notice',
   autosaveKey:     'bik-delay-notice-draft',

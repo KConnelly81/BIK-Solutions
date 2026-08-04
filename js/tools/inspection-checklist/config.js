@@ -316,6 +316,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'inspection-checklist',
   toolName:        'Inspection Checklist',
   autosaveKey:     'bik-inspection-checklist-draft',

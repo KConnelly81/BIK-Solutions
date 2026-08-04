@@ -265,6 +265,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'practical-completion',
   toolName:        'Practical Completion Notice',
   autosaveKey:     'bik-practical-completion-draft',

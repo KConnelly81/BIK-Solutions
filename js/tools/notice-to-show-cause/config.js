@@ -266,6 +266,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'notice-to-show-cause',
   toolName:        'Notice to Show Cause',
   autosaveKey:     'bik-notice-to-show-cause-draft',

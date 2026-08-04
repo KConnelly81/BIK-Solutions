@@ -252,6 +252,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'payment-reminder',
   toolName:        'Payment Reminder',
   autosaveKey:     'bik-payment-reminder-draft',

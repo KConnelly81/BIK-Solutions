@@ -266,6 +266,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'instruction-to-proceed',
   toolName:        'Instruction to Proceed',
   autosaveKey:     'bik-instruction-to-proceed-draft',

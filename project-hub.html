@@ -107,6 +107,19 @@
       <ul class="sb-list" id="sb-list-claims" hidden></ul>
     </section>
 
+    <!-- Contract Termination, Payment Reminder, Subcontractor Agreement —
+         share public.project_documents (019), grouped here rather than
+         one panel each. See js/toolkit/document-type-labels.js. -->
+    <section class="sb-list-panel" id="sb-list-commdocs-panel">
+      <div class="sb-list-panel-header">
+        <span>Other commercial documents</span>
+        <span class="sb-list-total" id="sb-list-commdocs-total"></span>
+      </div>
+      <p class="text-muted" id="sb-list-commdocs-loading">Loading…</p>
+      <p class="text-muted" id="sb-list-commdocs-empty" hidden>No other commercial documents saved to this project yet.</p>
+      <ul class="sb-list" id="sb-list-commdocs" hidden></ul>
+    </section>
+
     <!-- ====== SITE ====== -->
     <div class="hub-group-heading">Site</div>
     <section class="sb-list-panel" id="sb-list-variations-panel">
@@ -119,6 +132,33 @@
       <ul class="sb-list" id="sb-list-variations" hidden></ul>
     </section>
 
+    <!-- Defect Report, Delay Notice, EOT Claim, Handover Checklist,
+         Practical Completion, Scope of Works, Instruction to Proceed,
+         Notice to Show Cause, Site Diary — see document-type-labels.js. -->
+    <section class="sb-list-panel" id="sb-list-sitedocs-panel">
+      <div class="sb-list-panel-header">
+        <span>Other site documents</span>
+        <span class="sb-list-total" id="sb-list-sitedocs-total"></span>
+      </div>
+      <p class="text-muted" id="sb-list-sitedocs-loading">Loading…</p>
+      <p class="text-muted" id="sb-list-sitedocs-empty" hidden>No other site documents saved to this project yet.</p>
+      <ul class="sb-list" id="sb-list-sitedocs" hidden></ul>
+    </section>
+
+    <!-- ====== SAFETY ======
+         Incident Report, Inspection Checklist, Non-Conformance Report,
+         SWMS, Toolbox Talk — see document-type-labels.js. -->
+    <div class="hub-group-heading">Safety</div>
+    <section class="sb-list-panel" id="sb-list-safetydocs-panel">
+      <div class="sb-list-panel-header">
+        <span>Safety documents for this project</span>
+        <span class="sb-list-total" id="sb-list-safetydocs-total"></span>
+      </div>
+      <p class="text-muted" id="sb-list-safetydocs-loading">Loading…</p>
+      <p class="text-muted" id="sb-list-safetydocs-empty" hidden>No safety documents saved to this project yet.</p>
+      <ul class="sb-list" id="sb-list-safetydocs" hidden></ul>
+    </section>
+
   </main>
 
 </div>
@@ -127,6 +167,8 @@
 <script type="module">
   import { gateOnSupabaseProject } from './js/toolkit/supabase-project-context.js';
   import { refreshRecordList, escapeHtml } from './js/toolkit/supabase-record-panel.js';
+  import { refreshGroupedDocumentList } from './js/toolkit/supabase-document-integration.js';
+  import { DOCUMENT_TYPE_GROUPS } from './js/toolkit/document-type-labels.js';
   import { formatAUD, centsToDollars } from './js/toolkit/calculator.js';
   import { supabase } from './js/supabase/client.js';
 
@@ -193,11 +235,74 @@
         <span class="hub-tool-icon" aria-hidden="true">📈</span>
         <span>New Progress Claim</span>
       </a>
-      <span class="hub-tool-btn" aria-disabled="true" title="Safety documents (SWMS, incident reports, toolbox talks) are not yet connected to Project Hub.">
+      <a class="hub-tool-btn" href="payment-reminder.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">💰</span>
+        <span>Payment Reminder</span>
+      </a>
+      <a class="hub-tool-btn" href="contract-termination.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">⚠️</span>
+        <span>Contract Termination</span>
+      </a>
+      <a class="hub-tool-btn" href="subcontractor-agreement.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">🤝</span>
+        <span>Subcontractor Agreement</span>
+      </a>
+      <a class="hub-tool-btn" href="defect-report.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">🔧</span>
+        <span>Defect Report</span>
+      </a>
+      <a class="hub-tool-btn" href="delay-notice.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">⏱️</span>
+        <span>Delay Notice</span>
+      </a>
+      <a class="hub-tool-btn" href="eot-claim.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">📅</span>
+        <span>EOT Claim</span>
+      </a>
+      <a class="hub-tool-btn" href="handover-checklist.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">🔑</span>
+        <span>Handover Checklist</span>
+      </a>
+      <a class="hub-tool-btn" href="practical-completion.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">✅</span>
+        <span>Practical Completion</span>
+      </a>
+      <a class="hub-tool-btn" href="scope-of-works.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">📋</span>
+        <span>Scope of Works</span>
+      </a>
+      <a class="hub-tool-btn" href="instruction-to-proceed.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">▶️</span>
+        <span>Instruction to Proceed</span>
+      </a>
+      <a class="hub-tool-btn" href="notice-to-show-cause.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">📢</span>
+        <span>Notice to Show Cause</span>
+      </a>
+      <a class="hub-tool-btn" href="site-diary.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">📓</span>
+        <span>Site Diary</span>
+      </a>
+      <a class="hub-tool-btn" href="incident-report.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">🚨</span>
+        <span>Incident Report</span>
+      </a>
+      <a class="hub-tool-btn" href="inspection-checklist.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">🔍</span>
+        <span>Inspection Checklist</span>
+      </a>
+      <a class="hub-tool-btn" href="non-conformance-report.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">❌</span>
+        <span>Non-Conformance Report</span>
+      </a>
+      <a class="hub-tool-btn" href="swms.html?project=${projectParam}">
         <span class="hub-tool-icon" aria-hidden="true">🦺</span>
-        <span>Safety</span>
-        <span class="hub-tool-btn-soon">Soon</span>
-      </span>
+        <span>SWMS</span>
+      </a>
+      <a class="hub-tool-btn" href="toolbox-talk.html?project=${projectParam}">
+        <span class="hub-tool-icon" aria-hidden="true">🗣️</span>
+        <span>Toolbox Talk</span>
+      </a>
     `;
   }
 
@@ -299,6 +404,27 @@
         renderRow: renderClaimRow,
         renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.net_payable_cents || 0), 0)))}`,
         emptyMessage: 'No progress claims saved to this project yet.'
+      });
+
+      refreshGroupedDocumentList({
+        idPrefix: 'commdocs',
+        projectId: project.id,
+        documentTypes: DOCUMENT_TYPE_GROUPS.commercial,
+        emptyMessage: 'No other commercial documents saved to this project yet.'
+      });
+
+      refreshGroupedDocumentList({
+        idPrefix: 'sitedocs',
+        projectId: project.id,
+        documentTypes: DOCUMENT_TYPE_GROUPS.site,
+        emptyMessage: 'No other site documents saved to this project yet.'
+      });
+
+      refreshGroupedDocumentList({
+        idPrefix: 'safetydocs',
+        projectId: project.id,
+        documentTypes: DOCUMENT_TYPE_GROUPS.safety,
+        emptyMessage: 'No safety documents saved to this project yet.'
       });
     }
   });

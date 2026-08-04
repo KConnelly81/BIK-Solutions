@@ -157,6 +157,7 @@ export const DOC_CONFIG = {
   docPrefix:   'DR',
   aiFields:    ['defectDescription', 'recommendedAction', 'additionalNotes'],
   printTitle:  'Defect Report',
+  projectMode: 'supabase',
 
   getDocTitle(state) {
     return `Defect Report DR-${state.defectNumber || '??'} — ${state.projectName || 'Untitled'}`;

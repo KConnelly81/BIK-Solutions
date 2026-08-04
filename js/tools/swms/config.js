@@ -279,6 +279,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'swms',
   toolName:        'Safe Work Method Statement',
   autosaveKey:     'bik-swms-draft',

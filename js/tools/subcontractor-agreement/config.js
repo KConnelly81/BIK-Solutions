@@ -378,6 +378,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'subcontractor-agreement',
   toolName:        'Subcontractor Agreement',
   autosaveKey:     'bik-subcontractor-agreement-draft',

@@ -191,6 +191,12 @@ export function wireSaveButton(cfg) {
  *   Given e.g. `idPrefix: 'quotes'`, the ids become `sb-list-quotes-loading`/
  *   `sb-list-quotes-empty`/`sb-list-quotes`/`sb-list-quotes-total`, so a host page provides a
  *   matching element per list without any two lists' ids colliding.
+ * @param {Object} [cfg.match] — extra `{ column: value }` filters applied after
+ *   `project_id`. An array value uses `.in()` (e.g. a Project Hub taxonomy-grouped list:
+ *   `{ document_type: ['swms', 'incident_report'] }`); any other value uses `.eq()` (a
+ *   single tool's own list: `{ document_type: 'defect_report' }`). Added for
+ *   project_documents (019, the shared table behind the 17 simple document tools);
+ *   every dedicated-table tool leaves this unset and is unaffected.
  */
 export async function refreshRecordList(cfg) {
   // Defensive rather than assumed correct: a wrong/missing id degrades
@@ -217,12 +223,22 @@ export async function refreshRecordList(cfg) {
   //     guarantees the query itself can never hang indefinitely.
   let data, error, thrown;
   try {
+    let query = supabase
+      .from(cfg.table)
+      .select(cfg.selectColumns)
+      .eq('project_id', cfg.projectId);
+    // Optional extra equality/membership filters, e.g. a single tool's own
+    // list (`{ document_type: 'defect_report' }`) or a Project Hub
+    // taxonomy-grouped list mixing several types
+    // (`{ document_type: ['swms', 'incident_report', ...] }`) — one
+    // shared table (project_documents, 019) needs this; every dedicated-
+    // table tool leaves cfg.match unset and gets the exact same query as
+    // before this parameter existed.
+    for (const [column, value] of Object.entries(cfg.match || {})) {
+      query = Array.isArray(value) ? query.in(column, value) : query.eq(column, value);
+    }
     ({ data, error } = await withTimeout(
-      supabase
-        .from(cfg.table)
-        .select(cfg.selectColumns)
-        .eq('project_id', cfg.projectId)
-        .order('created_at', { ascending: false }),
+      query.order('created_at', { ascending: false }),
       LIST_QUERY_TIMEOUT_MS,
       'Loading this list is taking longer than expected.'
     ));

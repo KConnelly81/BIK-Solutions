@@ -298,6 +298,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'non-conformance-report',
   toolName:        'Non-Conformance Report',
   autosaveKey:     'bik-non-conformance-report-draft',

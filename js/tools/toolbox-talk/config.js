@@ -213,6 +213,7 @@ export const SCHEMA = [
 ];
 
 export const DOC_CONFIG = {
+  projectMode: 'supabase',
   toolId:          'toolbox-talk',
   toolName:        'Toolbox Talk',
   autosaveKey:     'bik-toolbox-talk-draft',
