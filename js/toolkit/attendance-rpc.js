@@ -42,16 +42,20 @@ export async function attendanceLookupActive(token, name, mobile) {
   return { data: data || [], error };
 }
 
-export async function attendanceGetById(recordId) {
-  const { data, error } = await supabase.rpc('attendance_get_by_id', { p_record_id: recordId });
+export async function attendanceGetById(recordId, token) {
+  const { data, error } = await supabase.rpc('attendance_get_by_id', {
+    p_record_id: recordId,
+    p_token: token || null,
+  });
   if (error) return { data: null, error };
   return { data: data && data[0] ? data[0] : null, error: null };
 }
 
-export async function attendanceCheckOut(recordId, notes) {
+export async function attendanceCheckOut(recordId, notes, token) {
   const { data, error } = await supabase.rpc('attendance_checkout', {
     p_record_id: recordId,
     p_notes: notes || null,
+    p_token: token || null,
   });
   if (error) return { data: null, error };
   return { data: data && data[0] ? data[0] : null, error: null };

@@ -116,24 +116,62 @@ select :'sarah_is_duplicate' as should_be_f; -- expect: f
 select 'ANON: attendance_lookup_active finds Sarah by name, scoped to this project/token' as step;
 select count(*) as should_be_one from public.attendance_lookup_active(:'tok_a_get_or_create_checkin_token', 'Sarah Mitchell', '');
 
-select 'ANON: attendance_get_by_id returns James''s record for the checkout capability link' as step;
-select name, status from public.attendance_get_by_id(:'james_id'::uuid); -- expect: James Talbot, active
+select 'ANON: attendance_get_by_id returns James''s record for the checkout capability link, given the project''s token' as step;
+select name, status from public.attendance_get_by_id(:'james_id'::uuid, :'tok_a_get_or_create_checkin_token'); -- expect: James Talbot, active
 
-select 'ANON: checks James out' as step;
-select * from public.attendance_checkout(:'james_id'::uuid, 'All good, no issues.') \gset james_out_
+-- ============================================================
+-- Hardening (020): a bare record id is no longer sufficient for
+-- attendance_get_by_id() / attendance_checkout() — the caller must also
+-- supply the record's own project's current check-in token.
+-- ============================================================
+
+select 'ANON: attendance_get_by_id with a MISSING token returns zero rows, not the record' as step;
+select count(*) as should_be_zero from public.attendance_get_by_id(:'james_id'::uuid);
+
+select 'ANON: attendance_get_by_id with an INVALID/unknown token returns zero rows' as step;
+select count(*) as should_be_zero from public.attendance_get_by_id(:'james_id'::uuid, '00000000000000000000000000000000');
+
+select 'ANON: attendance_checkout with a MISSING token is rejected with a friendly message' as step;
+\set ON_ERROR_STOP off
+select * from public.attendance_checkout(:'james_id'::uuid, 'Trying without a token');
+\set ON_ERROR_STOP on
+
+select 'ANON: attendance_checkout with an INVALID/unknown token is rejected' as step;
+\set ON_ERROR_STOP off
+select * from public.attendance_checkout(:'james_id'::uuid, 'Trying with a bad token', '00000000000000000000000000000000');
+\set ON_ERROR_STOP on
+reset role;
+
+select 'BOB (Org B) mints his own project''s check-in token (needed for the cross-org probe below)' as step;
+set role authenticated;
+select set_config('bik_test.uid', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', false);
+select public.get_or_create_checkin_token('44444444-4444-4444-4444-444444444444') \gset tok_b_
+reset role;
+
+set role anon;
+select 'ANON: attendance_get_by_id with Org B''s (valid, but wrong-project) token returns zero rows for Org A''s record' as step;
+select count(*) as should_be_zero from public.attendance_get_by_id(:'james_id'::uuid, :'tok_b_get_or_create_checkin_token');
+
+select 'ANON: attendance_checkout with Org B''s (valid, but wrong-project) token is rejected as not-found — no cross-tenant existence leak' as step;
+\set ON_ERROR_STOP off
+select * from public.attendance_checkout(:'james_id'::uuid, 'Cross-org attempt', :'tok_b_get_or_create_checkin_token');
+\set ON_ERROR_STOP on
+
+select 'ANON: checks James out for real, with Org A''s own token' as step;
+select * from public.attendance_checkout(:'james_id'::uuid, 'All good, no issues.', :'tok_a_get_or_create_checkin_token') \gset james_out_
 select :'james_out_time_out' is not null as checked_out; -- expect: t
 reset role;
 select hours_on_site from public.attendance_records where id = :'james_id'::uuid; -- expect: 0.00 (instant checkout in test)
 set role anon;
 
-select 'ANON: checking out an already-checked-out record is rejected' as step;
+select 'ANON: checking out an already-checked-out record is rejected even with a valid token' as step;
 \set ON_ERROR_STOP off
-select * from public.attendance_checkout(:'james_id'::uuid);
+select * from public.attendance_checkout(:'james_id'::uuid, null, :'tok_a_get_or_create_checkin_token');
 \set ON_ERROR_STOP on
 
-select 'ANON: a nonexistent record id is rejected' as step;
+select 'ANON: a nonexistent record id is rejected even with a valid token' as step;
 \set ON_ERROR_STOP off
-select * from public.attendance_checkout('99999999-9999-9999-9999-999999999999'::uuid);
+select * from public.attendance_checkout('99999999-9999-9999-9999-999999999999'::uuid, null, :'tok_a_get_or_create_checkin_token');
 \set ON_ERROR_STOP on
 
 select 'ANON: cannot call the builder-only correction RPCs' as step;

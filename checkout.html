@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <meta name="robots" content="noindex" />
   <title>Site Sign-Out — BIK Solutions</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg" />
+  <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/bik-design-system.css" />
   <script src="js/vendor/supabase-js.min.js"></script>
   <style>
@@ -248,7 +250,7 @@
 
   // ── Direct link via ?id= (the record's own uuid is the capability) ──
   if (attId) {
-    const { data: rec } = await attendanceGetById(attId);
+    const { data: rec } = await attendanceGetById(attId, token);
     if (!rec) {
       token ? show('screen-lookup') : show('screen-no-context');
     } else if (rec.status === 'checked-out') {
@@ -325,7 +327,7 @@
     const notes = $('co-notes').value.trim();
     const btn = $('btn-checkout');
     btn.disabled = true;
-    const { data: updated, error } = await attendanceCheckOut(currentRecordId, notes);
+    const { data: updated, error } = await attendanceCheckOut(currentRecordId, notes, token);
     btn.disabled = false;
     if (error) {
       $('co-error').textContent = friendlyAttendanceError(error);
