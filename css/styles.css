@@ -1562,6 +1562,30 @@ ul {
    RESPONSIVE
    ============================================ */
 
+/* Nav overflows in this narrow tablet band: the full-width nav content
+   (logo + links + actions) needs ~899px, but the hamburger doesn't take
+   over until 768px. Trim spacing and hide the logo tagline just in this
+   band so everything fits on one line without changing the layout at
+   the breakpoints either side of it. */
+@media (min-width: 769px) and (max-width: 898px) {
+  .logo-tagline {
+    display: none;
+  }
+
+  .nav-inner {
+    padding-inline: 12px;
+  }
+
+  .nav-links {
+    gap: 14px;
+  }
+
+  .nav-actions {
+    margin-left: 8px;
+    gap: 8px;
+  }
+}
+
 @media (max-width: 900px) {
   .services-tiles {
     grid-template-columns: repeat(2, 1fr);
