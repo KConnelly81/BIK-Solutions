@@ -1,0 +1,10 @@
+# Template for local `wrangler dev` testing only.
+# Copy to `.dev.vars` (already git-ignored — see .gitignore in this folder)
+# and fill in a real key there. Never commit `.dev.vars` or paste a real
+# key into this example file.
+#
+# Production secret is set separately with:
+#   wrangler secret put ANTHROPIC_API_KEY
+
+ANTHROPIC_API_KEY=
+ALLOWED_ORIGIN=http://localhost:8765
