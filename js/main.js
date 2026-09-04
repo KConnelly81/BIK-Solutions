@@ -127,6 +127,37 @@
   stats.forEach(function (el) { obs.observe(el); });
 })();
 
+/* --- Services flip cards --- */
+(function () {
+  const cards = document.querySelectorAll('.flip-card');
+  if (!cards.length) return;
+
+  cards.forEach(function (card) {
+    const toggle = card.querySelector('.flip-card-toggle');
+    if (!toggle) return;
+
+    toggle.addEventListener('click', function () {
+      const flipped = card.classList.toggle('is-flipped');
+      toggle.setAttribute('aria-expanded', String(flipped));
+
+      if (!flipped) {
+        // The card may still be hovered/focused right after this click
+        // closes it — suppress the CSS hover/focus preview until the
+        // pointer or focus actually leaves, so the click sticks.
+        card.classList.add('suppress-hover');
+        card.addEventListener('mouseleave', clearSuppress, { once: true });
+        card.addEventListener('focusout', clearSuppress, { once: true });
+      } else {
+        card.classList.remove('suppress-hover');
+      }
+    });
+
+    function clearSuppress() {
+      card.classList.remove('suppress-hover');
+    }
+  });
+})();
+
 /* --- Free download form — Formspree AJAX + trigger download --- */
 (function () {
   const form = document.getElementById('free-download-form');
