@@ -27,19 +27,36 @@
 --            read or mutate anything.
 --
 --            The new p_token parameter changes each function's argument
---            signature, so CREATE OR REPLACE FUNCTION alone would not
---            replace the existing 018 definitions — Postgres identifies a
---            function by name *and* parameter type list, and a changed
---            list creates a second, separate overload alongside the
---            original rather than replacing it (confirmed empirically
---            against a local dry-run before writing this migration this
---            way). Each old signature is therefore explicitly DROPped
---            first, so exactly one (hardened) version of each function
---            exists afterwards — never both. A NULL/blank/wrong-project
---            token is treated identically to an unknown record id in each
---            function's existing error/empty-result style, so this does
---            not leak whether a given id exists in a different project or
---            organisation.
+--            signature, so this creates a second, separate overload
+--            ALONGSIDE the existing 018 definitions rather than replacing
+--            them — Postgres identifies a function by name *and* parameter
+--            type list, so attendance_get_by_id(uuid) and
+--            attendance_get_by_id(uuid, text) coexist as two distinct
+--            functions (same for attendance_checkout). This is
+--            deliberate: this migration is the EXPAND half of an
+--            expand/contract rollout, chosen after empirically confirming
+--            (two disposable local databases, one seeded at 018-019 only
+--            and one at this migration, each queried with both the old
+--            and new named-parameter call shapes) that dropping the old
+--            signature in the same migration that ships the new frontend
+--            is NOT safe: a browser with the pre-hardening frontend still
+--            loaded (old call shape, no p_token) hitting a database that
+--            already only has the hardened signature gets zero rows from
+--            attendance_get_by_id and a hard "missing site token" error
+--            from attendance_checkout — i.e. checkout breaks outright for
+--            that user. Keeping the old, unhardened signature callable
+--            for this transitional period does mean the capability-link
+--            exposure this migration exists to close is NOT yet fully
+--            closed — see 022_retire_legacy_attendance_signatures.sql,
+--            which drops the old signatures and must ship after the new
+--            frontend (this repo's PR shipping this migration) has been
+--            deployed and confirmed live. Do not consider this hardening
+--            complete until 022 has also been applied.
+--
+--            A NULL/blank/wrong-project token is treated identically to
+--            an unknown record id in each function's existing
+--            error/empty-result style, so this does not leak whether a
+--            given id exists in a different project or organisation.
 --
 --            Frontend callers (checkout.html, via
 --            js/toolkit/attendance-rpc.js) are updated in the same change
@@ -49,10 +66,13 @@
 -- Phase:     6 (Site Attendance — hardening follow-up)
 -- Depends on: 018_create_attendance.sql (project_checkin_tokens,
 --             attendance_records, attendance_get_by_id, attendance_checkout)
+-- Rollout:   EXPAND step 1 of 2 — see 022 for the CONTRACT step that
+--            actually retires the pre-hardening signatures.
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- attendance_get_by_id(p_record_id, p_token)
+-- attendance_get_by_id(p_record_id, p_token)  [NEW overload — old 1-arg
+-- attendance_get_by_id(uuid) from 018 is left untouched here; see 022]
 -- Was: SQL, unconditional lookup by id alone.
 -- Now: PL/pgSQL — resolves p_token to a project via project_checkin_tokens
 -- (same lookup attendance_checkin/attendance_lookup_active already use),
@@ -62,11 +82,9 @@
 -- — a missing/invalid/wrong-project token now falls into that same,
 -- already-handled empty-result path rather than a new error type.
 -- ----------------------------------------------------------------------------
-drop function if exists public.attendance_get_by_id(uuid);
-
 create or replace function public.attendance_get_by_id(
   p_record_id uuid,
-  p_token     text default null
+  p_token     text
 )
 returns table (
   id uuid, name text, company text, trade text, time_in timestamptz,
@@ -110,19 +128,19 @@ revoke all on function public.attendance_get_by_id(uuid, text) from public;
 grant execute on function public.attendance_get_by_id(uuid, text) to anon, authenticated;
 
 -- ----------------------------------------------------------------------------
--- attendance_checkout(p_record_id, p_notes, p_token)
+-- attendance_checkout(p_record_id, p_notes, p_token)  [NEW overload — old
+-- 2-arg attendance_checkout(uuid, text) from 018 is left untouched here;
+-- see 022]
 -- Was: unconditional lookup/update by id alone.
 -- Now: same token-to-project verification as attendance_get_by_id() above,
 -- applied before the record is even looked up, so a wrong-project token
 -- and a nonexistent id both fall through to the same existing
 -- "Sign-in record not found" message — no cross-tenant existence leak.
 -- ----------------------------------------------------------------------------
-drop function if exists public.attendance_checkout(uuid, text);
-
 create or replace function public.attendance_checkout(
   p_record_id uuid,
-  p_notes     text default null,
-  p_token     text default null
+  p_token     text,
+  p_notes     text default null
 )
 returns table (
   id uuid, name text, time_out timestamptz, hours_on_site numeric, project_name text

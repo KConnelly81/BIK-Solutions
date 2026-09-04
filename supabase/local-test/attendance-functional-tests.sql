@@ -120,25 +120,39 @@ select 'ANON: attendance_get_by_id returns James''s record for the checkout capa
 select name, status from public.attendance_get_by_id(:'james_id'::uuid, :'tok_a_get_or_create_checkin_token'); -- expect: James Talbot, active
 
 -- ============================================================
--- Hardening (020): a bare record id is no longer sufficient for
--- attendance_get_by_id() / attendance_checkout() — the caller must also
--- supply the record's own project's current check-in token.
+-- Hardening (020, fully retired to the token-only shape by 022): a bare
+-- record id is no longer sufficient for attendance_get_by_id() /
+-- attendance_checkout() — the caller must also supply the record's own
+-- project's current check-in token. Named-parameter calls throughout
+-- this section, matching how js/toolkit/attendance-rpc.js actually
+-- calls these RPCs (and avoiding any ambiguity from 020/022's
+-- parameter reordering of attendance_checkout, done to keep p_token
+-- non-defaulted while p_notes stays optional/trailing).
+--
+-- This file is run via run-local-dry-run.sh against the FULL migration
+-- set (currently through 022), i.e. the end state after the
+-- expand/contract rollout completes and the pre-hardening signatures
+-- are gone. For a dedicated test proving the INTERMEDIATE
+-- expand-only state (020/021 applied, 022 not yet applied) keeps the
+-- pre-hardening call shape working -- the actual compatibility
+-- property the expand/contract rollout depends on -- see
+-- attendance-020-expand-compatibility-test.sql in this directory.
 -- ============================================================
 
-select 'ANON: attendance_get_by_id with a MISSING token returns zero rows, not the record' as step;
-select count(*) as should_be_zero from public.attendance_get_by_id(:'james_id'::uuid);
+select 'ANON: attendance_get_by_id with a MISSING (explicit null) token returns zero rows, not the record' as step;
+select count(*) as should_be_zero from public.attendance_get_by_id(p_record_id => :'james_id'::uuid, p_token => null);
 
 select 'ANON: attendance_get_by_id with an INVALID/unknown token returns zero rows' as step;
-select count(*) as should_be_zero from public.attendance_get_by_id(:'james_id'::uuid, '00000000000000000000000000000000');
+select count(*) as should_be_zero from public.attendance_get_by_id(p_record_id => :'james_id'::uuid, p_token => '00000000000000000000000000000000');
 
-select 'ANON: attendance_checkout with a MISSING token is rejected with a friendly message' as step;
+select 'ANON: attendance_checkout with a MISSING (explicit null) token is rejected with a friendly message' as step;
 \set ON_ERROR_STOP off
-select * from public.attendance_checkout(:'james_id'::uuid, 'Trying without a token');
+select * from public.attendance_checkout(p_record_id => :'james_id'::uuid, p_token => null, p_notes => 'Trying without a token');
 \set ON_ERROR_STOP on
 
 select 'ANON: attendance_checkout with an INVALID/unknown token is rejected' as step;
 \set ON_ERROR_STOP off
-select * from public.attendance_checkout(:'james_id'::uuid, 'Trying with a bad token', '00000000000000000000000000000000');
+select * from public.attendance_checkout(p_record_id => :'james_id'::uuid, p_token => '00000000000000000000000000000000', p_notes => 'Trying with a bad token');
 \set ON_ERROR_STOP on
 reset role;
 
@@ -154,11 +168,11 @@ select count(*) as should_be_zero from public.attendance_get_by_id(:'james_id'::
 
 select 'ANON: attendance_checkout with Org B''s (valid, but wrong-project) token is rejected as not-found — no cross-tenant existence leak' as step;
 \set ON_ERROR_STOP off
-select * from public.attendance_checkout(:'james_id'::uuid, 'Cross-org attempt', :'tok_b_get_or_create_checkin_token');
+select * from public.attendance_checkout(p_record_id => :'james_id'::uuid, p_token => :'tok_b_get_or_create_checkin_token', p_notes => 'Cross-org attempt');
 \set ON_ERROR_STOP on
 
 select 'ANON: checks James out for real, with Org A''s own token' as step;
-select * from public.attendance_checkout(:'james_id'::uuid, 'All good, no issues.', :'tok_a_get_or_create_checkin_token') \gset james_out_
+select * from public.attendance_checkout(p_record_id => :'james_id'::uuid, p_token => :'tok_a_get_or_create_checkin_token', p_notes => 'All good, no issues.') \gset james_out_
 select :'james_out_time_out' is not null as checked_out; -- expect: t
 reset role;
 select hours_on_site from public.attendance_records where id = :'james_id'::uuid; -- expect: 0.00 (instant checkout in test)
@@ -166,12 +180,12 @@ set role anon;
 
 select 'ANON: checking out an already-checked-out record is rejected even with a valid token' as step;
 \set ON_ERROR_STOP off
-select * from public.attendance_checkout(:'james_id'::uuid, null, :'tok_a_get_or_create_checkin_token');
+select * from public.attendance_checkout(p_record_id => :'james_id'::uuid, p_token => :'tok_a_get_or_create_checkin_token', p_notes => null);
 \set ON_ERROR_STOP on
 
 select 'ANON: a nonexistent record id is rejected even with a valid token' as step;
 \set ON_ERROR_STOP off
-select * from public.attendance_checkout('99999999-9999-9999-9999-999999999999'::uuid, null, :'tok_a_get_or_create_checkin_token');
+select * from public.attendance_checkout(p_record_id => '99999999-9999-9999-9999-999999999999'::uuid, p_token => :'tok_a_get_or_create_checkin_token', p_notes => null);
 \set ON_ERROR_STOP on
 
 select 'ANON: cannot call the builder-only correction RPCs' as step;
