@@ -1523,6 +1523,10 @@ ul {
     grid-template-columns: 1fr;
   }
 
+  .builders-process-grid {
+    grid-template-columns: 1fr !important;
+  }
+
   .hero-stories,
   .hero-audience {
     margin-top: 44px;
