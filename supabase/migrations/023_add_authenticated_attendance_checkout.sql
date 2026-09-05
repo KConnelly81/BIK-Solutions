@@ -29,13 +29,15 @@
 --            attendance_void() (both already authenticated-only,
 --            org-scoped via internal.current_organisation_id()), it
 --            authorises the caller by their own organisation membership,
---            not by capability-link possession. Same checkout validation
---            (voided / already-signed-out rejection) and same field
---            updates (time_out, notes, status) as the worker-facing
---            attendance_checkout(uuid, text, text), so the two paths
---            cannot drift apart in behaviour -- only in how the caller is
---            authorised. Also writes an attendance_audit_log entry,
---            matching attendance_edit/attendance_void (the anonymous
+--            not by capability-link possession. It currently applies the
+--            same checkout validation (voided / already-signed-out
+--            rejection) and the same field updates (time_out, notes,
+--            status) as the worker-facing attendance_checkout(uuid,
+--            text, text) -- the logic is duplicated, not shared, so the
+--            two can drift apart if one is changed without the other;
+--            they only differ today in how the caller is authorised.
+--            Also writes an attendance_audit_log entry, matching
+--            attendance_edit/attendance_void (the anonymous
 --            worker checkout does not, and still doesn't -- there is no
 --            authenticated actor to attribute it to).
 --
@@ -80,7 +82,8 @@ begin
   select * into v_old
   from public.attendance_records ar
   where ar.id = p_record_id
-    and ar.organisation_id = v_org_id;
+    and ar.organisation_id = v_org_id
+  for update;
 
   if not found then
     raise exception 'Attendance record not found.' using errcode = 'P0002';
