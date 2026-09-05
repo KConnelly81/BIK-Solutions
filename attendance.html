@@ -461,7 +461,7 @@
   import { supabase }        from './js/supabase/client.js';
   import { renderQR }        from './js/toolkit/qr-generator.js';
   import {
-    getOrCreateCheckinToken, attendanceCheckOut, attendanceEdit, attendanceVoid,
+    getOrCreateCheckinToken, attendanceCheckOutAuthenticated, attendanceEdit, attendanceVoid,
     friendlyAttendanceError,
   } from './js/toolkit/attendance-rpc.js';
 
@@ -642,7 +642,7 @@
 
   // ── Quick check-out ──
   window.doCheckout = async function(id) {
-    const { error } = await attendanceCheckOut(id);
+    const { error } = await attendanceCheckOutAuthenticated(id);
     if (error) { alert(friendlyAttendanceError(error)); return; }
     await refreshAndRender();
   };
