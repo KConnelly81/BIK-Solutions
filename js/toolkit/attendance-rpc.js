@@ -61,6 +61,19 @@ export async function attendanceCheckOut(recordId, notes, token) {
   return { data: data && data[0] ? data[0] : null, error: null };
 }
 
+// Authenticated builder/admin dashboard quick-checkout (attendance.html).
+// Distinct from attendanceCheckOut() above: this caller has a Supabase
+// auth session, not a project capability token, so it calls a separate
+// RPC authorised by organisation membership instead (see migration 023).
+export async function attendanceCheckOutAuthenticated(recordId, notes) {
+  const { data, error } = await supabase.rpc('attendance_checkout_authenticated', {
+    p_record_id: recordId,
+    p_notes: notes || null,
+  });
+  if (error) return { data: null, error };
+  return { data: data && data[0] ? data[0] : null, error: null };
+}
+
 export async function getOrCreateCheckinToken(projectId) {
   return supabase.rpc('get_or_create_checkin_token', { p_project_id: projectId });
 }
