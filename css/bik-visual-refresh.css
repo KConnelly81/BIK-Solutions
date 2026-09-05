@@ -1,5 +1,5 @@
 /* ============================================================
-   BIK VISUAL REFRESH — PROTOTYPE ONLY
+   BIK VISUAL REFRESH — PROTOTYPE ONLY — "Field Control" direction
    css/bik-visual-refresh.css
 
    Design-differentiation pass for the BIK marketing site. This
@@ -8,50 +8,63 @@
    index.html, services.html, toolkit.html. No other page links
    it, so nothing outside those three pages is affected.
 
+   Direction: "Field Control" — a dual-accent system distinguishing
+   the two BIK businesses (teal = BIK Platform, muted green = BIK
+   Trade Services) sharing one restrained, non-dark, non-glowing
+   surface language. No glow, no glass, no gradients, no dark
+   full-page backgrounds. Validated interactively via a flip-card
+   prototype before being built into these real pages.
+
    It works by (a) re-pointing the EXISTING shared custom
    properties (--coral, --charcoal, --cream, --stone, --dark-stone,
    --bik-orange, --bik-navy, --bik-background, --font-stack,
-   --bik-font, --radius) to a more restrained, less generic
-   palette/typeface, so every element already using those tokens
-   inherits the new look with no markup changes, and (b) adding a
-   small number of NEW component classes for the specific pieces
-   that are being restructured (job cards, module cards, the
-   toolkit pathway strip, section index labels, hairline rules).
+   --bik-font, --radius) so every element already using those
+   tokens inherits the new look with no markup changes, and (b)
+   adding a small number of NEW component classes for the specific
+   pieces being restructured (job cards, module cards, the pathway
+   strip, per-category icons).
 
    Nothing here changes layout order, navigation links, URLs, or
    removes any existing class — it is additive/override only, and
    is intentionally NOT linked from any other page.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Public+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Public+Sans:wght@400;500;600;700&display=swap');
 
 :root {
   /* ── Re-tuned shared tokens (used site-wide via var(), but this
      file only loads on 3 pages, so the retune is scoped to them) ── */
-  --charcoal:   #1B2229;   /* was #252320 — warm near-black → deep ink-navy */
-  --coral:      #B5502C;   /* was #D85A30 — bright orange → restrained rust */
-  --cream:      #F1EAD9;   /* was #F5F0E8 — slightly deeper warm stone */
-  --stone:      #7C7867;   /* was #888780 — warmer, slightly deeper for contrast on stone */
-  --dark-stone: #2B3430;   /* was #3A3835 — ink-adjacent, not brown-black */
+  --charcoal:   #262220;   /* was #252320 — warm near-black → warm ink */
+  --coral:      #5B6B54;   /* was #D85A30 bright orange → muted trade green (BIK Trade Services accent) */
+  --cream:      #EBE5D6;   /* was #F5F0E8 — deeper warm putty, gives cards real separation */
+  --stone:      #7D7869;   /* was #888780 — kept mid-tone: used site-wide as muted text on BOTH light and dark backgrounds, so it can't be darkened for one context without breaking legibility in the other */
+  --dark-stone: #3A362E;   /* was #3A3835 — ink-adjacent, not brown-black; only used on light surfaces */
 
-  --bik-navy:       #1B2229;
-  --bik-orange:     #B5502C;
-  --bik-background: #F1EAD9;
-  --bik-text:       #1B2229;
+  --bik-navy:       #262220;
+  --bik-orange:     #5B6B54;
+  --bik-background: #EBE5D6;
+  --bik-text:       #262220;
 
   --font-stack: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --bik-font:   'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-display: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-  --radius: 3px;
+  --radius: 8px;
 
   /* ── New tokens this file introduces ── */
-  --eucalyptus:       #5B6B54;
-  --eucalyptus-deep:  #414A3C;
-  --eucalyptus-tint:  rgba(91,107,84,0.10);
-  --rust-tint:        rgba(181,80,44,0.10);
-  --ink-rule:         rgba(27,34,41,0.14);
-  --ink-rule-soft:    rgba(27,34,41,0.08);
+  --trade:        #5B6B54;   /* BIK Trade Services accent (muted green) */
+  --trade-deep:   #414A3C;
+  --trade-tint:   #E3E7DE;
+  --platform:      #3E8E93;  /* BIK Platform accent (teal) */
+  --platform-deep: #2C6C70;
+  --platform-tint: #E1EDEC;
+  --surface:      #FFFEFB;   /* card surface — clearly lighter than --cream page bg */
+  --surface-back: #EEF3DC;   /* flip-card back face wash (Trade Services) */
+  --ink-line:     rgba(38,34,32,0.16);
+  --ink-line-soft:rgba(38,34,32,0.09);
+
+  --shadow-rest: 0 1px 2px rgba(38,34,32,0.05), 0 10px 24px -10px rgba(38,34,32,0.22);
+  --shadow-hover:0 4px 10px rgba(38,34,32,0.08), 0 20px 36px -10px rgba(38,34,32,0.28);
 }
 
 body { font-family: var(--font-stack); }
@@ -60,7 +73,7 @@ body { font-family: var(--font-stack); }
    Body copy, nav, buttons stay on Public Sans for readability. */
 h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 800;
   letter-spacing: -0.01em;
 }
 
@@ -70,147 +83,139 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
   font-variant-numeric: tabular-nums;
 }
 
-/* Buttons: restrained radius, no lift/shadow theatrics — a border
-   or underline shift on interaction instead. */
+/* Buttons: restrained radius, no lift/shadow theatrics on the base
+   .btn — a border/colour shift on interaction instead. Platform
+   and Trade Services diverge in shape further down. */
 .btn { border-radius: var(--radius); transition: background var(--transition), border-color var(--transition), color var(--transition); }
 .btn:hover, .btn:focus-visible { transform: none !important; box-shadow: none !important; }
 
 /* ============================================================
-   VISUAL SIGNATURE 1 — Section index labels
-   Small, quiet, monospaced-feel numbering used to mark sections
-   and cards on both sides of the brand (job numbers on Services,
-   module numbers on Toolkit). Not a full third typeface — Public
-   Sans set with tabular numerals and wide tracking.
+   Shared card mechanics — soft resting shadow + hover lift,
+   used by both the Trade Services job cards and the Platform
+   module cards so the two feel like siblings, not two systems.
    ============================================================ */
-.vr-index {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-stack);
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-variant-numeric: tabular-nums;
-  color: var(--eucalyptus-deep);
+.vr-surface {
+  background: var(--surface);
+  border: 1px solid var(--ink-line);
+  box-shadow: var(--shadow-rest);
+  transition: box-shadow .25s ease, transform .25s ease, border-color .2s ease;
 }
-
-.vr-index::before {
-  content: '';
-  width: 14px;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.6;
+@media (prefers-reduced-motion: no-preference) {
+  .vr-surface:hover { transform: translateY(-5px); }
 }
+.vr-surface:hover { box-shadow: var(--shadow-hover); }
 
-.vr-index--rust { color: var(--coral); }
+.vr-art { width: 52px; height: 52px; margin-bottom: 16px; }
+.vr-art svg { width: 100%; height: 100%; display: block; }
 
 /* ============================================================
-   VISUAL SIGNATURE 2 — Fine architectural rule with a tick
-   A 1px hairline (not a bold coloured border) marking section
-   and card boundaries, with a short tick at the origin — a nod
-   to a spec sheet / drawing set rather than a UI card shadow.
-   ============================================================ */
-.vr-rule {
-  position: relative;
-  border: none;
-  border-top: 1px solid var(--ink-rule);
-  margin-block: 0;
-}
-
-.vr-rule::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: 0;
-  width: 1px;
-  height: 8px;
-  background: var(--ink-rule);
-}
-
-/* ============================================================
-   PROPERTY SERVICES — "What we do" tiles restyled as job-spec
-   panels instead of dark generic tiles with big centred icons.
+   PROPERTY / TRADE SERVICES — "What we do" tiles restyled as
+   job-spec panels instead of dark generic tiles with big centred
+   icons.
    ============================================================ */
 .services-tiles.vr-job-tiles {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: var(--ink-rule-soft);
-  border: 1px solid var(--ink-rule-soft);
+  gap: 20px;
+  background: transparent;
+  border: none;
 }
 
 .vr-job-tiles .service-tile {
-  background: var(--cream);
-  padding: 28px 24px 24px;
-  transition: background var(--transition);
+  background: var(--surface);
+  padding: 26px 22px;
+  border-radius: 8px;
+  border: 1px solid var(--ink-line);
   border-top: 2px solid transparent;
+  box-shadow: var(--shadow-rest);
+  transition: background var(--transition), box-shadow .25s ease, transform .25s ease, border-color .2s ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .vr-job-tiles .service-tile:hover { transform: translateY(-4px); }
 }
 
 .vr-job-tiles .service-tile:hover {
   background: #fff;
-  border-top-color: var(--eucalyptus);
-  transform: none;
-  box-shadow: none;
+  border-top-color: var(--trade);
+  box-shadow: var(--shadow-hover);
 }
 
-.vr-job-tiles .service-tile svg { display: none; }
+.vr-job-tiles .service-tile .vr-art { color: var(--trade); width: 40px; height: 40px; margin-bottom: 14px; }
 
 .vr-job-tiles .service-tile h3 {
   font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 500;
+  font-size: 1.05rem;
+  font-weight: 700;
   color: var(--charcoal);
-  margin-top: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .vr-job-tiles .service-tile p {
   font-family: var(--font-stack);
+  font-size: 0.87rem;
   color: var(--dark-stone);
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
 /* ============================================================
-   TWO-PATHWAY STRIP — new, small section making the Property /
-   Toolkit split explicit on the homepage without giving both
+   TWO-PATHWAY STRIP — small section making the Trade Services /
+   Platform split explicit on the homepage without giving both
    equal visual weight or restructuring the page.
    ============================================================ */
 .vr-pathways {
   padding-block: 56px;
   background: #fff;
-  border-top: 1px solid var(--ink-rule-soft);
-  border-bottom: 1px solid var(--ink-rule-soft);
+  border-top: 1px solid var(--ink-line-soft);
+  border-bottom: 1px solid var(--ink-line-soft);
 }
 
 .vr-pathways-grid {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
-  gap: 1px;
-  background: var(--ink-rule-soft);
-  border: 1px solid var(--ink-rule-soft);
+  gap: 20px;
 }
 
 .vr-pathway-panel {
-  background: #fff;
-  padding: 36px 32px;
+  background: var(--surface);
+  border: 1px solid var(--ink-line);
+  border-radius: 10px;
+  box-shadow: var(--shadow-rest);
+  padding: 32px 30px;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.vr-pathway-panel .vr-index { margin-bottom: 4px; }
+.vr-pathway-panel--platform { border-radius: 16px; }
+
+.vr-pathway-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.vr-pathway-tag .dot { width: 7px; height: 7px; border-radius: 50%; }
+.vr-pathway-panel--trade .vr-pathway-tag { color: var(--trade-deep); }
+.vr-pathway-panel--trade .vr-pathway-tag .dot { background: var(--trade); }
+.vr-pathway-panel--platform .vr-pathway-tag { color: var(--platform-deep); }
+.vr-pathway-panel--platform .vr-pathway-tag .dot { background: var(--platform); }
 
 .vr-pathway-panel h3 {
   font-family: var(--font-display);
   font-size: 1.4rem;
-  font-weight: 500;
+  font-weight: 700;
   color: var(--charcoal);
 }
 
 .vr-pathway-panel p {
   color: var(--dark-stone);
-  opacity: 0.8;
+  opacity: 0.85;
   max-width: 46ch;
   line-height: 1.65;
 }
@@ -218,134 +223,151 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 .vr-pathway-panel a.vr-pathway-link {
   margin-top: 8px;
   font-family: var(--font-stack);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.9rem;
-  color: var(--charcoal);
-  border-bottom: 1px solid var(--ink-rule);
   align-self: flex-start;
-  padding-bottom: 2px;
-  transition: border-color var(--transition), color var(--transition);
+  padding: 10px 20px;
+  color: #fff;
+  transition: opacity var(--transition);
 }
-
-.vr-pathway-panel--property a.vr-pathway-link:hover { color: var(--eucalyptus-deep); border-color: var(--eucalyptus-deep); }
-.vr-pathway-panel--toolkit  a.vr-pathway-link:hover { color: var(--coral); border-color: var(--coral); }
-
-.vr-pathway-panel--toolkit { background: var(--cream); }
+.vr-pathway-panel--trade a.vr-pathway-link { background: var(--trade); border-radius: 8px; }
+.vr-pathway-panel--platform a.vr-pathway-link { background: var(--platform); border-radius: 999px; }
+.vr-pathway-panel a.vr-pathway-link:hover { opacity: 0.88; }
 
 @media (max-width: 700px) {
   .vr-pathways-grid { grid-template-columns: 1fr; }
 }
 
 /* ============================================================
-   WHY BIK — stat blocks: hairline + index label instead of a
-   solid coral left-border block.
+   WHY BIK — stat blocks: hairline + accent instead of a solid
+   coral left-border block.
    ============================================================ */
 .stats-grid.vr-stats {
-  background: var(--ink-rule-soft);
-  border: 1px solid var(--ink-rule-soft);
-  gap: 1px;
+  background: transparent;
+  border: none;
+  gap: 20px;
 }
 
 .vr-stats .stat-block {
   border-left: none;
-  border-top: 2px solid var(--eucalyptus);
-  background: #fff;
+  border-top: 2px solid var(--trade);
+  background: var(--surface);
+  border-radius: 8px;
+  box-shadow: var(--shadow-rest);
+  padding: 26px;
 }
 
-.vr-stats .stat-value { font-family: var(--font-display); color: var(--charcoal); }
+.vr-stats .stat-value { font-family: var(--font-display); font-weight: 800; color: var(--charcoal); }
 
 /* ============================================================
    BUSINESS TOOLKIT — category cards restyled as structured
-   module panels: no big rounded orange icon box, a small square
-   index marker instead, hairline borders, document-style surface.
+   module panels: no big rounded orange icon box, a custom line
+   icon instead, teal accent, rounder radius than the Trade
+   Services cards (the one deliberate shape difference between
+   the two sides).
    ============================================================ */
 .toolkit-categories.vr-modules {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  background: var(--ink-rule-soft);
-  border: 1px solid var(--ink-rule-soft);
+  gap: 20px;
+  background: transparent;
+  border: none;
 }
 
 .vr-modules .toolkit-cat-card {
-  background: #fff;
-  border: none;
-  border-radius: 0;
-  padding: 28px 26px;
+  background: var(--surface);
+  border: 1px solid var(--ink-line);
+  border-top: 2px solid transparent;
+  border-radius: 14px;
+  padding: 26px 24px;
   gap: 8px;
-  transition: background var(--transition);
+  box-shadow: var(--shadow-rest);
+  transition: background var(--transition), box-shadow .25s ease, transform .25s ease, border-color .2s ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .vr-modules .toolkit-cat-card:hover { transform: translateY(-4px); }
 }
 
 .vr-modules .toolkit-cat-card:hover {
-  background: var(--cream);
-  transform: none;
-  box-shadow: none;
-  border-color: transparent;
+  background: #fff;
+  border-top-color: var(--platform);
+  box-shadow: var(--shadow-hover);
 }
 
-.vr-modules .cat-icon { display: none; }
-
-.vr-modules .toolkit-cat-card .vr-module-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
+.vr-modules .toolkit-cat-card .vr-art { color: var(--platform); }
 
 .vr-modules .toolkit-cat-card h3 {
   font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 1.1rem;
+  font-weight: 700;
+  font-size: 1.08rem;
 }
 
+.vr-modules .toolkit-cat-card p { color: var(--dark-stone); opacity: 0.85; }
+
 .vr-modules .toolkit-cat-card .cat-count {
-  color: var(--coral);
-  font-family: var(--font-stack);
+  color: var(--platform-deep);
+  font-family: 'IBM Plex Mono', monospace;
   font-weight: 600;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   letter-spacing: 0.02em;
 }
 
 @media (max-width: 900px) {
   .toolkit-categories.vr-modules { grid-template-columns: 1fr 1fr; }
+  .services-tiles.vr-job-tiles { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 600px) {
   .toolkit-categories.vr-modules { grid-template-columns: 1fr; }
-  .vr-job-tiles.services-tiles { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 420px) {
-  .vr-job-tiles.services-tiles { grid-template-columns: 1fr; }
+  .services-tiles.vr-job-tiles { grid-template-columns: 1fr; }
 }
 
 /* ============================================================
-   SERVICES — flip-card refinement: index label + hairline rule
-   in eucalyptus instead of a bold coral top border, ticked list
-   markers instead of dots.
+   SERVICES — flip-card refinement (validated interactively):
+   custom per-category line icon instead of an icon-font glyph or
+   a "Job 0X" tag, green top rule + soft shadow/lift on hover,
+   3D perspective on the flip, lime wash on the back face.
    ============================================================ */
 .flip-card.vr-job-card {
   border-top: 2px solid transparent;
-  min-height: 340px; /* shorter than the original 480px now the icon is gone */
+  min-height: 340px;
+  border-radius: 8px;
+  perspective: 1600px;
+  transition: border-color .2s ease, transform .25s ease;
 }
-
 @media (max-width: 600px) {
   .flip-card.vr-job-card { min-height: 300px; }
 }
+@media (prefers-reduced-motion: no-preference) {
+  .flip-card.vr-job-card:hover { transform: translateY(-5px); }
+}
 .flip-card.vr-job-card:hover,
-.flip-card.vr-job-card.is-flipped { border-top-color: var(--eucalyptus); background: #fff; }
+.flip-card.vr-job-card.is-flipped { border-top-color: var(--trade); }
 
-.vr-job-card .flip-card-front svg,
-.vr-job-card .flip-card-back svg { display: none; }
+.vr-job-card .flip-card-face {
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--ink-line);
+  box-shadow: var(--shadow-rest);
+  transition: box-shadow .25s ease;
+  justify-content: space-between;
+}
+.vr-job-card:hover .flip-card-face,
+.vr-job-card.is-flipped .flip-card-face { box-shadow: var(--shadow-hover); }
 
-.vr-job-card .flip-card-face { justify-content: space-between; }
+.vr-job-card .flip-card-back { background: var(--surface-back); }
 
-.vr-job-card .vr-index { margin-bottom: 16px; }
+.vr-job-card .vr-art { color: var(--trade); }
 
-.vr-job-card .flip-card-front > p { flex: none; }
+.vr-job-card .flip-card-front > p { flex: none; color: var(--dark-stone); opacity: 0.85; }
+.vr-job-card .flip-card-back li { color: var(--dark-stone); opacity: 0.85; }
 
 .vr-job-card .flip-card-front h3,
 .vr-job-card .flip-card-back h4 {
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .vr-job-card .flip-card-back li::before {
@@ -354,7 +376,7 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
   width: 6px !important;
   height: 1px !important;
   top: 0.75em !important;
-  background: var(--eucalyptus) !important;
+  background: var(--trade) !important;
 }
 
-.vr-job-card .flip-card-cue { color: var(--coral); font-weight: 600; }
+.vr-job-card .flip-card-cue { color: var(--trade); font-weight: 600; }
