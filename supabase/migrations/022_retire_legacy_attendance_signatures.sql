@@ -1,0 +1,35 @@
+-- ============================================================================
+-- Migration: 022_retire_legacy_attendance_signatures.sql
+-- Purpose:   CONTRACT step 2 of 2 of the attendance-hardening rollout begun
+--            in 020_harden_attendance_capability_checks.sql. 020 added
+--            token-scoped overloads of attendance_get_by_id() and
+--            attendance_checkout() ALONGSIDE the original 018 signatures
+--            (attendance_get_by_id(uuid), attendance_checkout(uuid, text))
+--            rather than replacing them, specifically so the pre-hardening
+--            frontend kept working uninterrupted while the new frontend
+--            (checkout.html / js/toolkit/attendance-rpc.js, same PR as 020)
+--            was rolled out — confirmed necessary by direct local testing
+--            (see 020's header): dropping the old signature in the same
+--            step as 020 broke checkout outright for anyone still on the
+--            old frontend at the moment of deploy.
+--
+--            This migration finally drops those old, unhardened
+--            signatures. Until this runs, the capability-link exposure
+--            020 exists to close is NOT fully closed — the old id-only
+--            path is still callable by anyone who knows a record's uuid,
+--            token or no token.
+--
+--            SAFE TO RUN ONLY AFTER: the frontend from 020's PR has been
+--            merged, deployed, and confirmed live (i.e. no realistic
+--            chance a client is still requesting the pre-hardening call
+--            shape). This is a static site behind GitHub Pages with no
+--            long-lived client sessions, so the safe window is short —
+--            effectively as soon as the new deploy is confirmed and any
+--            already-open browser tabs have had a chance to either
+--            complete their in-flight action or reload.
+-- Depends on: 020_harden_attendance_capability_checks.sql
+-- Rollout:   CONTRACT step 2 of 2 — run after 020 + its frontend are live.
+-- ============================================================================
+
+drop function if exists public.attendance_get_by_id(uuid);
+drop function if exists public.attendance_checkout(uuid, text);

@@ -1160,6 +1160,12 @@
   .form-panel,
   .preview-panel {
     overflow-y: visible;
+    /* Grid items default to a min-width based on their content's
+       min-content size, which lets a wide child (e.g. the line-items
+       table) force this 1fr track — and the whole page — wider than
+       the viewport. Without this, that child's own overflow-x:auto
+       never gets a chance to engage. */
+    min-width: 0;
   }
 
   .tab-bar { display: flex; }
@@ -1284,7 +1290,32 @@
 }
 
 /* ============================================================
-   LINE ITEMS EDITOR
+   LINE ITEMS EDITOR (current markup — js/toolkit/line-items.js)
+
+   Scoped narrowly to overflow containment as part of the mobile
+   horizontal-scroll fix: the pricing table has more columns than a
+   narrow viewport can show at a readable size, so it scrolls within
+   its own wrapper instead of forcing the page wider. This does not
+   otherwise restyle the component — see the `.lie-*` block below,
+   which targets an older class-naming scheme unused by the current
+   line-items.js and is not wired to any rendered markup today.
+   ============================================================ */
+
+.line-items-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.line-items-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+}
+
+/* ============================================================
+   LINE ITEMS EDITOR (legacy — orphaned class names, no longer
+   rendered by js/toolkit/line-items.js; kept as-is, out of scope
+   for this fix)
    ============================================================ */
 
 .lie-wrap {

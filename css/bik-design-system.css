@@ -157,6 +157,12 @@ body {
   background: var(--bik-background);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Safety net: nothing on the page should be able to force a
+     horizontal scrollbar on the document itself. Components that
+     legitimately need more width than the viewport (wide tables, the
+     header action strip) scroll within their own container instead —
+     see .bik-app-header-actions and .lie-table-scroll. */
+  overflow-x: hidden;
 }
 
 /* Screen-reader utility */
@@ -847,7 +853,21 @@ button.bik-card:hover,
   display: flex;
   align-items: center;
   gap: var(--bik-space-2);
-  flex-shrink: 0;
+  /* On narrow viewports the full action set (History / Clear / Copy /
+     Save PDF / Email / Generate, etc.) is wider than the header has
+     room for. Rather than forcing the header — and with it the whole
+     page — wider than the viewport, this row shrinks and, if it still
+     doesn't fit, scrolls horizontally within itself. Every action
+     stays reachable (swipe/scroll), nothing is hidden outright. */
+  flex-shrink: 1;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.bik-app-header-actions::-webkit-scrollbar {
+  display: none;
 }
 
 
