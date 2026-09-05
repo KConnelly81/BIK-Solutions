@@ -380,3 +380,19 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 }
 
 .vr-job-card .flip-card-cue { color: var(--trade); font-weight: 600; }
+
+/* ============================================================
+   BUILDERS PAGE — same flip-card pattern as Services, applied
+   here because these four items (defect rectification, punchlist
+   completion, post-handover small works, site subcontract) each
+   have a real, enumerable example list behind them — same content
+   shape as Services, so the same interaction earns its place here
+   too (not used just because it exists elsewhere).
+   ============================================================ */
+.builders-grid.vr-job-tiles-grid {
+  gap: 20px;
+  margin-top: 48px;
+}
+@media (max-width: 700px) {
+  .builders-grid.vr-job-tiles-grid { grid-template-columns: 1fr; }
+}
