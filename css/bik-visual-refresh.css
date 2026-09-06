@@ -3,17 +3,26 @@
    css/bik-visual-refresh.css
 
    Design-differentiation pass for the BIK marketing site. This
-   file is loaded (last, after styles.css / bik-design-system.css)
-   ONLY on the three pages included in this prototype:
-   index.html, services.html, toolkit.html. No other page links
-   it, so nothing outside those three pages is affected.
+   file is loaded (last, after styles.css) ONLY on the four pages
+   included in this prototype: index.html, services.html,
+   toolkit.html, builders.html. No other page links it, so nothing
+   outside those four pages is affected.
 
    Direction: "Field Control" — a dual-accent system distinguishing
-   the two BIK businesses (teal = BIK Platform, muted green = BIK
-   Trade Services) sharing one restrained, non-dark, non-glowing
-   surface language. No glow, no glass, no gradients, no dark
-   full-page backgrounds. Validated interactively via a flip-card
-   prototype before being built into these real pages.
+   the two BIK businesses (teal = Business Toolkit, muted green =
+   Property Services) sharing one restrained, non-dark, non-glowing
+   surface language, under a neutral master-brand ink that belongs
+   to neither. No glow, no glass, no gradients, no dark full-page
+   backgrounds.
+
+   REFINEMENT PASS (round 2) — addresses the "generic web-design
+   patterns" critique: neutral master-brand logo, a more
+   characterful display face, an editorial (not full-colour-slab)
+   CTA, one unified icon/card language per page, shadow reserved
+   for genuinely clickable surfaces only, a small spec/work-order
+   label system as the real visual signature, one real-photography
+   placeholder (Property Services) and one real product-UI crop
+   (Toolkit).
 
    It works by (a) re-pointing the EXISTING shared custom
    properties (--coral, --charcoal, --cream, --stone, --dark-stone,
@@ -22,20 +31,20 @@
    tokens inherits the new look with no markup changes, and (b)
    adding a small number of NEW component classes for the specific
    pieces being restructured (job cards, module cards, the pathway
-   strip, per-category icons).
+   strip, per-category icons, spec tags, the editorial CTA).
 
    Nothing here changes layout order, navigation links, URLs, or
    removes any existing class — it is additive/override only, and
    is intentionally NOT linked from any other page.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500&family=Public+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zilla+Slab:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Public+Sans:wght@400;500;600;700&display=swap');
 
 :root {
   /* ── Re-tuned shared tokens (used site-wide via var(), but this
-     file only loads on 3 pages, so the retune is scoped to them) ── */
+     file only loads on 4 pages, so the retune is scoped to them) ── */
   --charcoal:   #262220;   /* was #252320 — warm near-black → warm ink */
-  --coral:      #5B6B54;   /* was #D85A30 bright orange → muted trade green (BIK Trade Services accent) */
+  --coral:      #5B6B54;   /* was #D85A30 bright orange → muted trade green (Property Services accent) */
   --cream:      #EBE5D6;   /* was #F5F0E8 — deeper warm putty, gives cards real separation */
   --stone:      #7D7869;   /* was #888780 — kept mid-tone: used site-wide as muted text on BOTH light and dark backgrounds, so it can't be darkened for one context without breaking legibility in the other */
   --dark-stone: #3A362E;   /* was #3A3835 — ink-adjacent, not brown-black; only used on light surfaces */
@@ -47,22 +56,32 @@
 
   --font-stack: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --bik-font:   'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-  --font-display: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Zilla Slab', Georgia, 'Times New Roman', serif;
 
   --radius: 8px;
 
   /* ── New tokens this file introduces ── */
-  --trade:        #5B6B54;   /* BIK Trade Services accent (muted green) */
+
+  /* Master brand — belongs to BIK Solutions as a whole, not to
+     either business line. The logo mark uses this, never an
+     accent colour, so it doesn't silently take sides. */
+  --bik-master: #33291F;
+
+  --trade:        #5B6B54;   /* Property Services accent (muted green) */
   --trade-deep:   #414A3C;
   --trade-tint:   #E3E7DE;
-  --platform:      #3E8E93;  /* BIK Platform accent (teal) */
+  --platform:      #3E8E93;  /* Business Toolkit accent (teal) */
   --platform-deep: #2C6C70;
   --platform-tint: #E1EDEC;
   --surface:      #FFFEFB;   /* card surface — clearly lighter than --cream page bg */
-  --surface-back: #EEF3DC;   /* flip-card back face wash (Trade Services) */
+  --surface-back: #EEF3DC;   /* flip-card back face wash (Property Services) */
   --ink-line:     rgba(38,34,32,0.16);
   --ink-line-soft:rgba(38,34,32,0.09);
 
+  /* Elevation is now reserved for elements that are genuinely
+     clickable (flip-cards, toolkit module links). Static,
+     informational surfaces use --ink-line borders and tonal
+     shifts instead — see the "reduced elevation" block below. */
   --shadow-rest: 0 1px 2px rgba(38,34,32,0.05), 0 10px 24px -10px rgba(38,34,32,0.22);
   --shadow-hover:0 4px 10px rgba(38,34,32,0.08), 0 20px 36px -10px rgba(38,34,32,0.28);
 }
@@ -73,8 +92,8 @@ body { font-family: var(--font-stack); }
    Body copy, nav, buttons stay on Public Sans for readability. */
 h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
   font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.005em;
 }
 
 .eyebrow, .hero-eyebrow span {
@@ -83,16 +102,61 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
   font-variant-numeric: tabular-nums;
 }
 
+/* ============================================================
+   MASTER BRAND — logo mark is decoupled from both business
+   accents. BIK Solutions = neutral ink; Property Services =
+   green; Business Toolkit = teal. One logo, not two.
+   ============================================================ */
+.logo-mark,
+.footer-logo .logo-mark {
+  background: var(--bik-master);
+}
+
 /* Buttons: restrained radius, no lift/shadow theatrics on the base
-   .btn — a border/colour shift on interaction instead. Platform
-   and Trade Services diverge in shape further down. */
+   .btn — a border/colour shift on interaction instead. Toolkit
+   and Property Services diverge in shape further down. */
 .btn { border-radius: var(--radius); transition: background var(--transition), border-color var(--transition), color var(--transition); }
 .btn:hover, .btn:focus-visible { transform: none !important; box-shadow: none !important; }
 
 /* ============================================================
-   Shared card mechanics — soft resting shadow + hover lift,
-   used by both the Trade Services job cards and the Platform
-   module cards so the two feel like siblings, not two systems.
+   SPEC / WORK-ORDER LABEL SYSTEM — the actual visual signature.
+   Small technical labels referencing BIK's operational world
+   (service sheets, module references, status lines) without
+   drawing a fake blueprint. Public Sans only — no third font
+   family is introduced for this.
+   ============================================================ */
+.vr-tag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-stack);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.vr-tag::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.55;
+  transform: translateY(-2px);
+}
+.vr-tag--trade { color: var(--trade-deep); }
+.vr-tag--platform { color: var(--platform-deep); }
+.vr-tag--muted { color: var(--dark-stone); opacity: 0.65; }
+.vr-tag--on-dark { color: var(--stone); }
+
+/* ============================================================
+   Shared card mechanics — used by both the Property Services job
+   cards and the Business Toolkit module cards so the two feel
+   like siblings, not two systems. Reserved for surfaces that are
+   genuinely clickable (a link, a flip-card) — see below for the
+   static-surface treatment used everywhere else.
    ============================================================ */
 .vr-surface {
   background: var(--surface);
@@ -109,9 +173,10 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 .vr-art svg { width: 100%; height: 100%; display: block; }
 
 /* ============================================================
-   PROPERTY / TRADE SERVICES — "What we do" tiles restyled as
-   job-spec panels instead of dark generic tiles with big centred
-   icons.
+   PROPERTY SERVICES — "What we do" tiles restyled as job-spec
+   panels. These are informational, not links, so they get a
+   hairline top rule and a static surface — no hover lift, no
+   resting shadow. Elevation is not the signature here.
    ============================================================ */
 .services-tiles.vr-job-tiles {
   display: grid;
@@ -124,29 +189,25 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 .vr-job-tiles .service-tile {
   background: var(--surface);
   padding: 26px 22px;
-  border-radius: 8px;
+  border-radius: 4px;
   border: 1px solid var(--ink-line);
-  border-top: 2px solid transparent;
-  box-shadow: var(--shadow-rest);
-  transition: background var(--transition), box-shadow .25s ease, transform .25s ease, border-color .2s ease;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .vr-job-tiles .service-tile:hover { transform: translateY(-4px); }
+  border-top: 2px solid var(--trade);
+  transition: background var(--transition), border-color .2s ease;
 }
 
 .vr-job-tiles .service-tile:hover {
   background: #fff;
-  border-top-color: var(--trade);
-  box-shadow: var(--shadow-hover);
+  border-color: var(--ink-line);
 }
 
-.vr-job-tiles .service-tile .vr-art { color: var(--trade); width: 40px; height: 40px; margin-bottom: 14px; }
+.vr-job-tiles .service-tile .vr-art { color: var(--trade); width: 36px; height: 36px; margin-bottom: 10px; }
+
+.vr-job-tiles .service-tile .vr-tag { margin-bottom: 14px; }
 
 .vr-job-tiles .service-tile h3 {
   font-family: var(--font-display);
   font-size: 1.05rem;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--charcoal);
   margin-bottom: 8px;
 }
@@ -159,9 +220,10 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 }
 
 /* ============================================================
-   TWO-PATHWAY STRIP — small section making the Trade Services /
-   Platform split explicit on the homepage without giving both
-   equal visual weight or restructuring the page.
+   TWO-PATHWAY STRIP — small section making the Property Services
+   / Business Toolkit split explicit on the homepage without
+   giving both equal visual weight or restructuring the page.
+   Static informational panels: hairline border, no shadow.
    ============================================================ */
 .vr-pathways {
   padding-block: 56px;
@@ -179,25 +241,27 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 .vr-pathway-panel {
   background: var(--surface);
   border: 1px solid var(--ink-line);
-  border-radius: 10px;
-  box-shadow: var(--shadow-rest);
+  border-radius: 4px;
   padding: 32px 30px;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.vr-pathway-panel--platform { border-radius: 16px; }
+.vr-pathway-panel--platform { border-radius: 14px; }
+.vr-pathway-panel--trade { border-left: 3px solid var(--trade); }
+.vr-pathway-panel--platform { border-left: 3px solid var(--platform); }
 
 .vr-pathway-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-stack);
   font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
   margin-bottom: 6px;
 }
 .vr-pathway-tag .dot { width: 7px; height: 7px; border-radius: 50%; }
@@ -230,7 +294,7 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
   color: #fff;
   transition: opacity var(--transition);
 }
-.vr-pathway-panel--trade a.vr-pathway-link { background: var(--trade); border-radius: 8px; }
+.vr-pathway-panel--trade a.vr-pathway-link { background: var(--trade); border-radius: 4px; }
 .vr-pathway-panel--platform a.vr-pathway-link { background: var(--platform); border-radius: 999px; }
 .vr-pathway-panel a.vr-pathway-link:hover { opacity: 0.88; }
 
@@ -239,8 +303,35 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 }
 
 /* ============================================================
+   WHO WE WORK WITH — the six audience cards drop the large
+   generic line-icon (audience-icon) entirely: this section reads
+   fine, arguably better, on typography and a spec tag alone, so
+   an icon isn't forced in just to match the tiles above it.
+   ============================================================ */
+.audience-card--dark .audience-icon { display: none; }
+
+.audience-card--dark {
+  border-top: 2px solid var(--trade);
+  padding: 26px 22px 24px;
+}
+.audience-card--dark:hover {
+  transform: none;
+  box-shadow: none;
+  background: rgba(255,255,255,0.06);
+}
+.audience-card--dark .vr-tag { display: inline-flex; margin-bottom: 14px; }
+.audience-card--dark h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+.audience-card--dark a { color: var(--trade); }
+.audience-card--dark a:hover { color: var(--trade); }
+
+/* ============================================================
    WHY BIK — stat blocks: hairline + accent instead of a solid
-   coral left-border block.
+   coral left-border block, and no card-style shadow — these are
+   numbers on a page, not buttons.
    ============================================================ */
 .stats-grid.vr-stats {
   background: transparent;
@@ -252,19 +343,18 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
   border-left: none;
   border-top: 2px solid var(--trade);
   background: var(--surface);
-  border-radius: 8px;
-  box-shadow: var(--shadow-rest);
+  border-radius: 4px;
+  box-shadow: none;
   padding: 26px;
 }
 
-.vr-stats .stat-value { font-family: var(--font-display); font-weight: 800; color: var(--charcoal); }
+.vr-stats .stat-value { font-family: var(--font-display); font-weight: 700; color: var(--charcoal); }
 
 /* ============================================================
-   BUSINESS TOOLKIT — category cards restyled as structured
-   module panels: no big rounded orange icon box, a custom line
-   icon instead, teal accent, rounder radius than the Trade
-   Services cards (the one deliberate shape difference between
-   the two sides).
+   BUSINESS TOOLKIT — category ("module") cards are real links,
+   so they keep elevation and hover-lift: it communicates real
+   clickability here, which is exactly the case this pass argues
+   shadow should be reserved for.
    ============================================================ */
 .toolkit-categories.vr-modules {
   display: grid;
@@ -295,11 +385,13 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
   box-shadow: var(--shadow-hover);
 }
 
-.vr-modules .toolkit-cat-card .vr-art { color: var(--platform); }
+.vr-modules .toolkit-cat-card .vr-art { color: var(--platform); width: 40px; height: 40px; margin-bottom: 8px; }
+
+.vr-modules .toolkit-cat-card .vr-tag { margin-bottom: 2px; }
 
 .vr-modules .toolkit-cat-card h3 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
   font-size: 1.08rem;
 }
 
@@ -307,10 +399,11 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 
 .vr-modules .toolkit-cat-card .cat-count {
   color: var(--platform-deep);
-  font-family: 'IBM Plex Mono', monospace;
-  font-weight: 600;
+  font-family: var(--font-stack);
+  font-weight: 700;
   font-size: 0.76rem;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 900px) {
@@ -325,10 +418,183 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 }
 
 /* ============================================================
-   SERVICES — flip-card refinement (validated interactively):
-   custom per-category line icon instead of an icon-font glyph or
-   a "Job 0X" tag, green top rule + soft shadow/lift on hover,
-   3D perspective on the flip, lime wash on the back face.
+   TOOLKIT CARD FAMILY UNIFICATION — the Phase-1 "tool" cards and
+   the "Why BIK Toolkit" value cards previously read as two more
+   unrelated systems next to the module cards above. This is not
+   a content redesign: same copy, same grid, same badges — just
+   enough shared radius / border / rule / typography / teal accent
+   for the three to read as one family.
+
+   Tool cards are informational previews, not links (there's no
+   href on the card itself — "See all tools" is the real CTA
+   below), so they lose the lift/shadow-on-hover treatment and
+   keep only a border-colour shift.
+   ============================================================ */
+.tool-card {
+  border-radius: 14px;
+  border-top: 2px solid transparent;
+  box-shadow: none;
+  transition: border-color .2s ease;
+}
+.tool-card:hover {
+  border-color: rgba(28,28,26,0.1);
+  border-top-color: var(--platform);
+  box-shadow: none;
+  transform: none;
+}
+.tool-card-icon {
+  background: var(--platform-tint);
+  border-radius: 10px;
+}
+.tool-card-icon svg { stroke: var(--platform-deep); }
+.tool-card h3 { font-family: var(--font-display); font-weight: 600; }
+
+/* Value cards sit on a dark section and stay dark — that's the
+   one deliberate contrast in the family, not an oversight — but
+   pick up the same radius, top rule and teal numeral so they read
+   as a sibling of the module/tool cards rather than a third
+   system. */
+.value-card {
+  border-radius: 14px;
+  border-top: 2px solid var(--platform);
+}
+.value-card h3 { font-family: var(--font-display); font-weight: 600; }
+.value-num {
+  color: var(--platform);
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   TOOLKIT — "see it in action" real product screenshot. A crop of
+   the actual Quote Builder interface, not an abstract illustration
+   — see requirement: "the Toolkit should look real because it is
+   real."
+   ============================================================ */
+.vr-proof {
+  padding-block: 8px 12px;
+}
+.vr-proof-frame {
+  border: 1px solid var(--ink-line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.vr-proof-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.vr-proof-caption {
+  margin-top: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.vr-proof-caption p {
+  color: var(--dark-stone);
+  opacity: 0.75;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ============================================================
+   PROPERTY SERVICES — real job-photography moment. A clearly
+   marked placeholder frame (no stock photography, no AI-generated
+   tradespeople) reserved for real BIK job-site photos once
+   supplied.
+   ============================================================ */
+.vr-jobshot {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 40px;
+  align-items: center;
+}
+@media (max-width: 800px) {
+  .vr-jobshot { grid-template-columns: 1fr; }
+}
+.vr-jobshot-frame {
+  border: 1px dashed var(--ink-line);
+  border-radius: 4px;
+  background: repeating-linear-gradient(135deg, rgba(38,34,32,0.035) 0px, rgba(38,34,32,0.035) 10px, transparent 10px, transparent 20px);
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.vr-jobshot-frame-inner {
+  max-width: 30ch;
+}
+.vr-jobshot-frame .vr-tag { display: inline-flex; margin-bottom: 10px; }
+.vr-jobshot-frame p {
+  font-size: 0.85rem;
+  color: var(--dark-stone);
+  opacity: 0.7;
+  line-height: 1.6;
+  margin: 0;
+}
+.vr-jobshot-copy h2 { margin-bottom: 14px; }
+.vr-jobshot-copy p { color: var(--dark-stone); opacity: 0.85; line-height: 1.7; margin-bottom: 0; }
+
+/* ============================================================
+   EDITORIAL CTA — replaces the full-bleed solid-colour band with
+   a warm-neutral, rule-led, asymmetric layout. Keeps the message
+   and the button, drops the saturated panel.
+   ============================================================ */
+.cta-strip {
+  background: var(--cream);
+  padding-block: 48px;
+  text-align: left;
+  border-top: 3px solid var(--trade);
+}
+.cta-strip.vr-cta--platform { border-top-color: var(--platform); }
+
+.cta-strip .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.cta-strip .vr-tag { margin-bottom: 10px; }
+
+.cta-strip h2 {
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  font-weight: 600;
+  color: var(--charcoal);
+  margin-bottom: 0;
+  max-width: 34ch;
+  margin-inline: 0;
+  line-height: 1.3;
+  flex: 1 1 380px;
+}
+
+.cta-strip .btn {
+  flex: 0 0 auto;
+}
+.cta-strip .btn.btn--cream {
+  background: var(--charcoal);
+  color: var(--cream);
+  border: none;
+}
+.cta-strip .btn.btn--cream:hover { background: var(--dark-stone); }
+
+@media (max-width: 600px) {
+  .cta-strip .container { flex-direction: column; align-items: flex-start; }
+}
+
+/* ============================================================
+   SERVICES / BUILDERS — flip-card refinement (validated
+   interactively): custom per-category line icon, a small
+   "SERVICE / 0X" spec tag instead of a job-number pill, green top
+   rule + soft shadow/lift on hover (a flip-card is the one static
+   surface on these pages that genuinely earns elevation — the
+   hover/flip IS the interaction), 3D perspective on the flip,
+   lime wash on the back face.
    ============================================================ */
 .flip-card.vr-job-card {
   border-top: 2px solid transparent;
@@ -359,7 +625,9 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 
 .vr-job-card .flip-card-back { background: var(--surface-back); }
 
-.vr-job-card .vr-art { color: var(--trade); }
+.vr-job-card .vr-art { color: var(--trade); width: 44px; height: 44px; margin-bottom: 8px; }
+
+.vr-job-card .vr-tag { margin-bottom: 4px; }
 
 .vr-job-card .flip-card-front > p { flex: none; color: var(--dark-stone); opacity: 0.85; }
 .vr-job-card .flip-card-back li { color: var(--dark-stone); opacity: 0.85; }
@@ -367,7 +635,7 @@ h1, h2.section-title, .hero-block h1, .toolkit-hero h1, .page-hero h1 {
 .vr-job-card .flip-card-front h3,
 .vr-job-card .flip-card-back h4 {
   font-family: var(--font-display);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .vr-job-card .flip-card-back li::before {
