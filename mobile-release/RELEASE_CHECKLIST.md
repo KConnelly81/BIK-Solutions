@@ -99,10 +99,12 @@ Status: **DRAFT**, first pass. Three categories throughout, per the brief:
 
 ## CI / build pipeline
 
-- [x] **READY** — `mobile/codemagic.yaml`: unsigned Android debug build,
-      unsigned iOS simulator build, both triggered on push to
-      `claude/mobile-*` branches — runs before any Apple/Google
-      credentials exist, exactly as asked.
+- [x] **READY** — `codemagic.yaml` at the **repository root** (required by
+      Codemagic even though the app itself lives in `mobile/` — each
+      workflow sets `working_directory: mobile` so scripts run from
+      there): unsigned Android debug build, unsigned iOS simulator build,
+      both triggered on push to `claude/mobile-*` branches — runs before
+      any Apple/Google credentials exist, exactly as asked.
 - [x] **READY** — Signed release workflow present but commented out/
       inactive, with the exact list of Codemagic environment-variable
       groups it will need, so adding real credentials later is a

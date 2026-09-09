@@ -2,12 +2,14 @@ definitions:
   # Shared step: regenerate mobile/www/js/shared/ from ../js/ and sync
   # Capacitor's native projects with the current www/ before every build.
   # Never skip this — a build without it ships whatever was last committed
-  # to www/js/shared/, which (per .gitignore) is nothing, since that
-  # directory is a build artifact, not checked in.
+  # to mobile/www/js/shared/, which (per mobile/.gitignore) is nothing,
+  # since that directory is a build artifact, not checked in.
+  #
+  # Runs with working_directory: mobile already set on every workflow
+  # below, so paths here are relative to mobile/, not the repo root.
   sync_step: &sync_step
     name: Install deps and sync Capacitor
     script: |
-      cd mobile
       npm ci
       npm run sync
 
@@ -16,12 +18,13 @@ workflows:
   # Produces a debug-signed (not release-signed) APK any team member can
   # install to a test device without needing Play Console access or a
   # release keystore — exists specifically so Android builds can be
-  # verified before Google Play credentials exist. See NEXT STEPS below
+  # verified before Google Play credentials exist. See workflow 3 below
   # for adding a real release keystore later.
   android-unsigned:
     name: Android — unsigned debug build
     max_build_duration: 30
     instance_type: linux_x2
+    working_directory: mobile
     environment:
       node: 20
       java: 17
@@ -37,7 +40,7 @@ workflows:
       - *sync_step
       - name: Build debug APK
         script: |
-          cd mobile/android
+          cd android
           ./gradlew assembleDebug --stacktrace
     artifacts:
       - mobile/android/app/build/outputs/apk/debug/*.apk
@@ -55,6 +58,7 @@ workflows:
     name: iOS — unsigned simulator build
     max_build_duration: 30
     instance_type: mac_mini_m2
+    working_directory: mobile
     environment:
       node: 20
       xcode: latest
@@ -71,11 +75,11 @@ workflows:
       - *sync_step
       - name: Install CocoaPods dependencies
         script: |
-          cd mobile/ios/App
+          cd ios/App
           pod install
       - name: Build for iOS Simulator (no signing)
         script: |
-          cd mobile/ios/App
+          cd ios/App
           xcodebuild -workspace App.xcworkspace -scheme App \
             -sdk iphonesimulator -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
@@ -102,6 +106,7 @@ workflows:
   #   name: Release — signed builds for App Store / Play Store
   #   max_build_duration: 60
   #   instance_type: mac_mini_m2
+  #   working_directory: mobile
   #   environment:
   #     node: 20
   #     xcode: latest
@@ -121,13 +126,13 @@ workflows:
   #     - *sync_step
   #     - name: iOS — install pods, build, sign, export .ipa
   #       script: |
-  #         cd mobile/ios/App
+  #         cd ios/App
   #         pod install
   #         xcode-project use-profiles
   #         xcode-project build-ipa --workspace App.xcworkspace --scheme App
   #     - name: Android — build and sign release .aab
   #       script: |
-  #         cd mobile/android
+  #         cd android
   #         ./gradlew bundleRelease --stacktrace
   #   artifacts:
   #     - mobile/ios/App/build/ios/ipa/*.ipa

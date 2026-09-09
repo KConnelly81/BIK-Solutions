@@ -10,7 +10,7 @@
     "sync:ios": "npm run sync:shared && npx cap sync ios",
     "open:android": "npx cap open android",
     "open:ios": "npx cap open ios",
-    "test": "node --test test/",
+    "test": "node --test test/*.test.js",
     "serve": "npx serve www -l 8932"
   },
   "dependencies": {
