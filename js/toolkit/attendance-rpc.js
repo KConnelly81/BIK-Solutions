@@ -114,3 +114,52 @@ export function friendlyAttendanceError(error) {
   if (!error) return 'Something went wrong. Please try again.';
   return error.message || String(error);
 }
+
+// ── GPS-capturing variants (BIK Field mobile app) ────────────────────────
+// Call the NEW overloads added by supabase/migrations/024_mobile_attendance_
+// gps_DRAFT.sql (not yet applied — see that file). Deliberately separate
+// functions rather than adding lat/lng params to attendanceCheckIn/
+// attendanceCheckOut/attendanceCheckOutAuthenticated above: the desktop web
+// app (checkin.html, checkout.html, attendance.html) keeps calling exactly
+// the same functions it always has, completely unaffected by whether the
+// mobile app or its migration exist. Only mobile/www/attendance.html
+// imports these.
+
+export async function attendanceCheckInWithLocation({ token, name, company, trade, mobile, workerType, notes, latitude, longitude }) {
+  const { data, error } = await supabase.rpc('attendance_checkin', {
+    p_token: token,
+    p_name: name,
+    p_company: company || '',
+    p_trade: trade || '',
+    p_mobile: mobile || '',
+    p_worker_type: workerType || 'subcontractor',
+    p_notes: notes || '',
+    p_latitude: latitude ?? null,
+    p_longitude: longitude ?? null,
+  });
+  if (error) return { data: null, error };
+  return { data: data && data[0] ? data[0] : null, error: null };
+}
+
+export async function attendanceCheckOutWithLocation(recordId, notes, token, latitude, longitude) {
+  const { data, error } = await supabase.rpc('attendance_checkout', {
+    p_record_id: recordId,
+    p_notes: notes || null,
+    p_token: token || null,
+    p_latitude: latitude ?? null,
+    p_longitude: longitude ?? null,
+  });
+  if (error) return { data: null, error };
+  return { data: data && data[0] ? data[0] : null, error: null };
+}
+
+export async function attendanceCheckOutAuthenticatedWithLocation(recordId, notes, latitude, longitude) {
+  const { data, error } = await supabase.rpc('attendance_checkout_authenticated', {
+    p_record_id: recordId,
+    p_notes: notes || null,
+    p_latitude: latitude ?? null,
+    p_longitude: longitude ?? null,
+  });
+  if (error) return { data: null, error };
+  return { data: data && data[0] ? data[0] : null, error: null };
+}

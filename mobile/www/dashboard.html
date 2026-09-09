@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>BIK Field</title>
+  <link rel="stylesheet" href="css/mobile.css" />
+</head>
+<body>
+  <div class="bf-app">
+    <div id="content" class="bf-main">
+      <div class="bf-state"><div class="bf-spinner"></div></div>
+    </div>
+  </div>
+
+  <script src="js/shared/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { supabase } from './js/shared/supabase/client.js';
+    import { requireSession, getCurrentProfile, signOut, friendlyAuthError } from './js/shared/supabase/session.js';
+    import { renderHeader, renderLoadingState, renderErrorState, isSessionExpiredError, redirectToSignInPreservingReturn, initOfflineBanner, escapeHtml, ICONS } from './js/app-shell.js';
+
+    initOfflineBanner();
+    const content = document.getElementById('content');
+
+    async function loadProjects(organisationId) {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, name, status, site_address')
+        .eq('organisation_id', organisationId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+
+      const today = (() => {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      })();
+      const { data: onSiteRows } = await supabase
+        .from('attendance_records')
+        .select('project_id')
+        .eq('attendance_date', today)
+        .is('time_out', null)
+        .neq('status', 'voided');
+      const onSiteCounts = new Map();
+      (onSiteRows || []).forEach(row => onSiteCounts.set(row.project_id, (onSiteCounts.get(row.project_id) || 0) + 1));
+
+      return { projects: data || [], onSiteCounts };
+    }
+
+    function renderDashboard(profile, { projects, onSiteCounts }) {
+      renderHeader({
+        title: profile.organisations?.name || 'Your organisation',
+        sub: profile.full_name || profile.email,
+        action: { label: 'Sign out', icon: ICONS.signout, onClick: () => signOut('signin.html') },
+      });
+
+      if (!projects.length) {
+        content.innerHTML = `
+          <div class="bf-state">
+            <div class="bf-state-title">No projects yet</div>
+            <p class="bf-state-body">Create a project on the BIK Solutions web dashboard first — it'll show up here once it exists.</p>
+          </div>
+        `;
+        return;
+      }
+
+      content.innerHTML = `
+        <p class="bf-hint" style="margin-bottom:12px;">Select a project</p>
+        ${projects.map(project => {
+          const onSite = onSiteCounts.get(project.id) || 0;
+          return `
+            <a class="bf-project-card" style="display:block;text-decoration:none;color:inherit;" href="project.html?project=${encodeURIComponent(project.id)}">
+              <div class="bf-project-name">${escapeHtml(project.name)}</div>
+              ${project.site_address ? `<div class="bf-project-addr">${escapeHtml(project.site_address)}</div>` : ''}
+              <div class="bf-project-meta">
+                <span class="bf-pill">${escapeHtml((project.status || '').replace('-', ' '))}</span>
+                ${onSite > 0 ? `<span class="bf-pill bf-pill--onsite">👷 ${onSite} on site now</span>` : ''}
+              </div>
+            </a>
+          `;
+        }).join('')}
+      `;
+    }
+
+    (async () => {
+      const session = await requireSession('signin.html');
+      if (!session) return; // requireSession already redirected
+
+      renderLoadingState(content, 'Loading your organisation…');
+      try {
+        const profile = await getCurrentProfile();
+        if (!profile || !profile.organisation_id) {
+          renderErrorState(content, {
+            title: 'Organisation set-up needed',
+            body: 'Finish setting up your organisation on the BIK Solutions web dashboard, then come back here.',
+          });
+          return;
+        }
+        const data = await loadProjects(profile.organisation_id);
+        renderDashboard(profile, data);
+      } catch (err) {
+        if (isSessionExpiredError(err)) return redirectToSignInPreservingReturn();
+        renderErrorState(content, {
+          body: friendlyAuthError(err),
+          retry: () => location.reload(),
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

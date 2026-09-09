@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>Progress Claim — BIK Field</title>
+  <link rel="stylesheet" href="css/mobile.css" />
+  <style>
+    .pc-item-card { border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; }
+    .pc-item-row { display: flex; gap: 8px; }
+    .pc-item-row .bf-field { flex: 1; margin-bottom: 10px; }
+    .pc-remove-btn { font-size: 0.76rem; color: var(--danger); font-weight: 700; padding: 4px 0; }
+    .pc-claim-card { display: block; text-decoration: none; color: inherit; }
+    .pc-claim-total { font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="bf-app">
+    <div id="content" class="bf-main">
+      <div class="bf-state"><div class="bf-spinner"></div></div>
+    </div>
+  </div>
+
+  <script src="js/shared/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { supabase } from './js/shared/supabase/client.js';
+    import { requireSession, friendlyAuthError } from './js/shared/supabase/session.js';
+    import { buildCreatePayload, buildHeaderPayload, mapScheduleItemToRow, validateForSave, friendlyProgressClaimError } from './js/shared/tools/progress-claim/progress-claim-save-logic.js';
+    import { formatAUD, centsToDollars } from './js/shared/toolkit/calculator.js';
+    import {
+      renderHeader, renderTabBar, renderLoadingState, renderErrorState, isSessionExpiredError,
+      redirectToSignInPreservingReturn, getProjectIdFromUrl, escapeHtml,
+    } from './js/app-shell.js';
+
+    const content = document.getElementById('content');
+    const projectId = getProjectIdFromUrl();
+    let items = [{ description: '', contractValue: '', thisClaimPercent: '' }];
+
+    async function loadClaims() {
+      const { data, error } = await supabase
+        .from('progress_claims')
+        .select('id, claim_number, client_name, status, this_claim_cents')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    }
+
+    function renderItemsList() {
+      const wrap = content.querySelector('#pc-items-wrap');
+      wrap.innerHTML = items.map((item, i) => `
+        <div class="pc-item-card" data-index="${i}">
+          <div class="bf-field"><label>Description</label><input type="text" class="pc-desc" value="${escapeHtml(item.description)}" /></div>
+          <div class="pc-item-row">
+            <div class="bf-field"><label>Contract value ($)</label><input type="number" class="pc-value" inputmode="decimal" min="0" step="0.01" value="${escapeHtml(item.contractValue)}" /></div>
+            <div class="bf-field"><label>Claiming this time (%)</label><input type="number" class="pc-percent" inputmode="decimal" min="0" max="100" step="1" value="${escapeHtml(item.thisClaimPercent)}" /></div>
+          </div>
+          ${items.length > 1 ? `<button type="button" class="pc-remove-btn" data-remove="${i}">Remove item</button>` : ''}
+        </div>
+      `).join('');
+
+      wrap.querySelectorAll('.pc-item-card').forEach((card) => {
+        const i = Number(card.dataset.index);
+        card.querySelector('.pc-desc').addEventListener('input', (e) => items[i].description = e.target.value);
+        card.querySelector('.pc-value').addEventListener('input', (e) => items[i].contractValue = e.target.value);
+        card.querySelector('.pc-percent').addEventListener('input', (e) => items[i].thisClaimPercent = e.target.value);
+      });
+      wrap.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          items.splice(Number(btn.dataset.remove), 1);
+          renderItemsList();
+        });
+      });
+    }
+
+    function renderForm(existingClaims) {
+      content.innerHTML = `
+        <div id="save-error" class="bf-banner bf-banner--error" hidden></div>
+        <div id="save-ok" class="bf-banner bf-banner--ok" hidden></div>
+
+        <form id="pc-form">
+          <div class="bf-field"><label>Client name</label><input type="text" id="pc-client" required /></div>
+          <div class="bf-field"><label>Client email <span class="opt">(optional)</span></label><input type="email" id="pc-email" /></div>
+
+          <h2 style="font-size:0.9rem;margin:20px 0 12px;">Schedule of values</h2>
+          <div id="pc-items-wrap"></div>
+          <button type="button" class="bf-btn bf-btn--ghost bf-btn--sm" id="pc-add-item-btn" style="margin-bottom:20px;">+ Add item</button>
+
+          <button type="submit" class="bf-btn bf-btn--platform" id="pc-submit-btn">Save claim</button>
+        </form>
+
+        <h2 style="margin-top:28px;font-size:0.95rem;">Recent claims</h2>
+        <div class="bf-card" style="margin-top:10px;">
+          ${!existingClaims.length ? '<p class="bf-hint">No progress claims saved to this project yet.</p>' : existingClaims.map(c => `
+            <div class="pc-claim-card" style="padding:10px 0;border-bottom:1px solid var(--line-soft);display:flex;gap:10px;align-items:center;">
+              <strong>${escapeHtml(c.claim_number || 'Draft')}</strong>
+              <span style="flex:1;color:var(--ink-soft);">${escapeHtml(c.client_name)}</span>
+              <span class="bf-pill">${escapeHtml(c.status)}</span>
+              <span class="pc-claim-total">${formatAUD(centsToDollars(c.this_claim_cents || 0))}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      renderItemsList();
+      content.querySelector('#pc-add-item-btn').addEventListener('click', () => {
+        items.push({ description: '', contractValue: '', thisClaimPercent: '' });
+        renderItemsList();
+      });
+
+      content.querySelector('#pc-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const saveError = content.querySelector('#save-error');
+        const saveOk = content.querySelector('#save-ok');
+        saveError.hidden = true;
+        saveOk.hidden = true;
+
+        const state = {
+          clientName: content.querySelector('#pc-client').value.trim(),
+          clientEmail: content.querySelector('#pc-email').value.trim(),
+        };
+        const validationError = validateForSave(state);
+        if (validationError) {
+          saveError.textContent = validationError;
+          saveError.hidden = false;
+          return;
+        }
+
+        const validItems = items.filter(i => i.description.trim() && parseFloat(i.contractValue) > 0);
+
+        const submitBtn = content.querySelector('#pc-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving…';
+        try {
+          const { data, error } = await supabase.rpc('create_progress_claim', buildCreatePayload(state, projectId));
+          if (error) throw error;
+          const row = data && data[0] ? data[0] : null;
+          if (!row?.id) throw new Error('Something went wrong saving this progress claim. Please try again.');
+
+          const { error: headerError } = await supabase.from('progress_claims').update(buildHeaderPayload(state)).eq('id', row.id);
+          if (headerError) throw headerError;
+
+          if (validItems.length) {
+            const rows = validItems.map((item, i) => ({ ...mapScheduleItemToRow(item, i), progress_claim_id: row.id }));
+            const { error: itemsError } = await supabase.from('progress_claim_line_items').insert(rows);
+            if (itemsError) throw itemsError;
+          }
+
+          saveOk.textContent = `Progress claim ${row.claim_number || ''} saved.`;
+          saveOk.hidden = false;
+          items = [{ description: '', contractValue: '', thisClaimPercent: '' }];
+          const claims = await loadClaims();
+          renderForm(claims);
+        } catch (err) {
+          if (isSessionExpiredError(err)) return redirectToSignInPreservingReturn();
+          saveError.textContent = friendlyProgressClaimError(err);
+          saveError.hidden = false;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Save claim';
+        }
+      });
+    }
+
+    (async () => {
+      const session = await requireSession(`signin.html?redirect=${encodeURIComponent('progress-claim.html' + location.search)}`);
+      if (!session) return;
+      if (!projectId) {
+        renderHeader({ title: 'Progress Claim', back: 'dashboard.html' });
+        renderErrorState(content, { title: 'No project selected', body: 'Go back and choose a project.' });
+        return;
+      }
+
+      renderLoadingState(content, 'Loading…');
+      try {
+        const [{ data: project, error: projectError }, claims] = await Promise.all([
+          supabase.from('projects').select('id, name').eq('id', projectId).maybeSingle(),
+          loadClaims(),
+        ]);
+        if (projectError) throw projectError;
+        if (!project) {
+          renderHeader({ title: 'Progress Claim', back: 'dashboard.html' });
+          renderErrorState(content, { title: 'Project not found', body: 'This project could not be found in your organisation.' });
+          return;
+        }
+        renderHeader({ title: 'Progress Claim', sub: project.name, back: `project.html?project=${encodeURIComponent(projectId)}` });
+        renderTabBar({ projectId, active: 'claim' });
+        renderForm(claims);
+      } catch (err) {
+        if (isSessionExpiredError(err)) return redirectToSignInPreservingReturn();
+        renderHeader({ title: 'Progress Claim', back: 'dashboard.html' });
+        renderErrorState(content, { body: friendlyAuthError(err), retry: () => location.reload() });
+      }
+    })();
+  </script>
+</body>
+</html>

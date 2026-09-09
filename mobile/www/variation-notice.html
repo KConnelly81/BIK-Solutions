@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>Variation Notice — BIK Field</title>
+  <link rel="stylesheet" href="css/mobile.css" />
+  <style>
+    .vn-list-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line-soft); font-size: 0.85rem; }
+    .vn-list-item:last-child { border-bottom: none; }
+    .vn-toggle-row { display: flex; gap: 8px; }
+    .vn-toggle { flex: 1; padding: 12px; text-align: center; border-radius: var(--radius-sm); border: 1.5px solid var(--line); font-weight: 700; font-size: 0.85rem; }
+    .vn-toggle.selected { border-color: var(--trade); background: var(--cream); color: var(--trade-deep); }
+  </style>
+</head>
+<body>
+  <div class="bf-app">
+    <div id="content" class="bf-main">
+      <div class="bf-state"><div class="bf-spinner"></div></div>
+    </div>
+  </div>
+
+  <script src="js/shared/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { supabase } from './js/shared/supabase/client.js';
+    import { requireSession, getCurrentProfile, friendlyAuthError } from './js/shared/supabase/session.js';
+    import { buildRpcParams, validateForSave, friendlyVariationError } from './js/shared/tools/variation-notice/variation-save-logic.js';
+    import { uploadVariationPhoto } from './js/shared/toolkit/variation-photo-upload.js';
+    import { formatAUD, centsToDollars } from './js/shared/toolkit/calculator.js';
+    import {
+      renderHeader, renderTabBar, renderLoadingState, renderErrorState, isSessionExpiredError,
+      redirectToSignInPreservingReturn, getProjectIdFromUrl, capturePhotoSafe, escapeHtml, ICONS,
+    } from './js/app-shell.js';
+
+    const content = document.getElementById('content');
+    const projectId = getProjectIdFromUrl();
+    let project = null;
+    let organisationId = null;
+    let capturedPhoto = null; // { base64, format }
+
+    async function loadVariations() {
+      const { data, error } = await supabase
+        .from('variation_notices')
+        .select('id, variation_number, client_name, status, total_cents')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    }
+
+    function renderForm(existingVariations) {
+      content.innerHTML = `
+        <div id="save-error" class="bf-banner bf-banner--error" hidden></div>
+        <div id="save-ok" class="bf-banner bf-banner--ok" hidden>Variation saved.</div>
+
+        <form id="vn-form">
+          <div class="bf-field"><label>Client name</label><input type="text" id="vn-client" required /></div>
+          <div class="bf-field"><label>Reason for variation</label><textarea id="vn-reason" required></textarea></div>
+          <div class="bf-field"><label>Description of work</label><textarea id="vn-desc" required></textarea></div>
+          <div class="bf-field"><label>Cost (excl. GST, AUD)</label><input type="number" id="vn-cost" inputmode="decimal" min="0" step="0.01" required /></div>
+
+          <div class="bf-field">
+            <label>GST applicable</label>
+            <div class="vn-toggle-row">
+              <div class="vn-toggle selected" data-gst="yes">Yes</div>
+              <div class="vn-toggle" data-gst="no">No</div>
+            </div>
+          </div>
+
+          <div class="bf-field">
+            <label>Site photo <span class="opt">(optional)</span></label>
+            <div id="photo-preview" class="bf-photo-preview" hidden><img id="photo-img" /></div>
+            <button type="button" class="bf-btn bf-btn--ghost" id="photo-btn">${ICONS.camera} Add photo</button>
+          </div>
+
+          <button type="submit" class="bf-btn" id="vn-submit-btn" style="margin-top:8px;">Save variation</button>
+        </form>
+
+        <h2 style="margin-top:28px;font-size:0.95rem;">Recent variations</h2>
+        <div class="bf-card" style="margin-top:10px;">
+          ${!existingVariations.length ? '<p class="bf-hint">No variations saved to this project yet.</p>' : existingVariations.map(v => `
+            <div class="vn-list-item">
+              <strong>${escapeHtml(v.variation_number)}</strong>
+              <span style="flex:1;color:var(--ink-soft);">${escapeHtml(v.client_name)}</span>
+              <span class="bf-pill">${escapeHtml(v.status)}</span>
+              <span>${formatAUD(centsToDollars(v.total_cents))}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      let gstApplicable = 'yes';
+      content.querySelectorAll('.vn-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          content.querySelectorAll('.vn-toggle').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          gstApplicable = btn.dataset.gst;
+        });
+      });
+
+      content.querySelector('#photo-btn').addEventListener('click', async () => {
+        try {
+          const photo = await capturePhotoSafe();
+          if (!photo) return; // cancelled
+          capturedPhoto = photo;
+          const preview = content.querySelector('#photo-preview');
+          const img = content.querySelector('#photo-img');
+          img.src = `data:image/${photo.format};base64,${photo.base64}`;
+          preview.hidden = false;
+        } catch (err) {
+          alert('Could not access the camera. Check the app has camera permission in your device settings.');
+        }
+      });
+
+      content.querySelector('#vn-form').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const saveError = content.querySelector('#save-error');
+        const saveOk = content.querySelector('#save-ok');
+        saveError.hidden = true;
+        saveOk.hidden = true;
+
+        const state = {
+          clientName: content.querySelector('#vn-client').value.trim(),
+          reasonForVariation: content.querySelector('#vn-reason').value.trim(),
+          descriptionOfWork: content.querySelector('#vn-desc').value.trim(),
+          additionalCost: content.querySelector('#vn-cost').value,
+          gstApplicable,
+        };
+
+        const validationError = validateForSave(state);
+        if (validationError) {
+          saveError.textContent = validationError;
+          saveError.hidden = false;
+          return;
+        }
+
+        const submitBtn = content.querySelector('#vn-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving…';
+        try {
+          const { data, error } = await supabase.rpc('create_variation_notice', buildRpcParams(state, projectId));
+          if (error) throw error;
+          const row = data && data[0] ? data[0] : null;
+
+          if (capturedPhoto && row?.id) {
+            const { error: photoError } = await uploadVariationPhoto({
+              organisationId, variationNoticeId: row.id,
+              base64: capturedPhoto.base64, format: capturedPhoto.format,
+            });
+            if (photoError) {
+              saveOk.textContent = `Variation ${row.variation_number} saved, but the photo could not be attached: ${photoError}`;
+              saveOk.hidden = false;
+            }
+          }
+          if (saveOk.hidden) {
+            saveOk.textContent = `Variation ${row?.variation_number || ''} saved.`;
+            saveOk.hidden = false;
+          }
+          const variations = await loadVariations();
+          renderForm(variations);
+        } catch (err) {
+          if (isSessionExpiredError(err)) return redirectToSignInPreservingReturn();
+          saveError.textContent = friendlyVariationError(err);
+          saveError.hidden = false;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Save variation';
+        }
+      });
+    }
+
+    (async () => {
+      const session = await requireSession(`signin.html?redirect=${encodeURIComponent('variation-notice.html' + location.search)}`);
+      if (!session) return;
+      if (!projectId) {
+        renderHeader({ title: 'Variation Notice', back: 'dashboard.html' });
+        renderErrorState(content, { title: 'No project selected', body: 'Go back and choose a project.' });
+        return;
+      }
+
+      renderLoadingState(content, 'Loading…');
+      try {
+        const [{ data: projectRow, error: projectError }, profile, variations] = await Promise.all([
+          supabase.from('projects').select('id, name, organisation_id, customers ( business_name, first_name, last_name, email )').eq('id', projectId).maybeSingle(),
+          getCurrentProfile(),
+          loadVariations(),
+        ]);
+        if (projectError) throw projectError;
+        if (!projectRow) {
+          renderHeader({ title: 'Variation Notice', back: 'dashboard.html' });
+          renderErrorState(content, { title: 'Project not found', body: 'This project could not be found in your organisation.' });
+          return;
+        }
+        project = projectRow;
+        organisationId = projectRow.organisation_id;
+
+        renderHeader({ title: 'Variation Notice', sub: project.name, back: `project.html?project=${encodeURIComponent(projectId)}` });
+        renderTabBar({ projectId, active: 'variation' });
+        renderForm(variations);
+      } catch (err) {
+        if (isSessionExpiredError(err)) return redirectToSignInPreservingReturn();
+        renderHeader({ title: 'Variation Notice', back: 'dashboard.html' });
+        renderErrorState(content, { body: friendlyAuthError(err), retry: () => location.reload() });
+      }
+    })();
+  </script>
+</body>
+</html>

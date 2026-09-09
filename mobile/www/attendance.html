@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>Attendance — BIK Field</title>
+  <link rel="stylesheet" href="css/mobile.css" />
+  <style>
+    .att-record { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
+    .att-record:last-child { border-bottom: none; }
+    .att-record-body { flex: 1; min-width: 0; }
+    .att-record-name { font-weight: 700; font-size: 0.9rem; }
+    .att-record-meta { font-size: 0.76rem; color: var(--ink-soft); margin-top: 2px; }
+    .att-fab { position: fixed; right: 20px; bottom: calc(76px + var(--safe-bottom)); }
+    .att-fab .bf-btn { border-radius: 999px; padding: 0 22px; box-shadow: 0 6px 16px rgba(38,34,32,0.25); width: auto; }
+    .att-sheet-backdrop { position: fixed; inset: 0; background: rgba(38,34,32,0.4); z-index: 10; }
+    .att-sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 11; background: var(--surface); border-radius: 16px 16px 0 0; padding: 20px 20px calc(20px + var(--safe-bottom)); max-height: 85vh; overflow-y: auto; }
+    .att-type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .att-type-btn { padding: 10px 4px; border-radius: var(--radius-sm); border: 1.5px solid var(--line); background: var(--surface); font-size: 0.76rem; font-weight: 600; text-align: center; }
+    .att-type-btn.selected { border-color: var(--trade); background: var(--cream); color: var(--trade-deep); }
+  </style>
+</head>
+<body>
+  <div class="bf-app">
+    <div id="content" class="bf-main bf-main--nopad">
+      <div class="bf-state"><div class="bf-spinner"></div></div>
+    </div>
+  </div>
+  <div id="fab" class="att-fab" hidden>
+    <button type="button" class="bf-btn" id="checkin-fab-btn">+ Check in</button>
+  </div>
+
+  <script src="js/shared/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { supabase } from './js/shared/supabase/client.js';
+    import { requireSession, getCurrentProfile, friendlyAuthError } from './js/shared/supabase/session.js';
+    import {
+      getOrCreateCheckinToken, attendanceCheckInWithLocation, attendanceCheckOutAuthenticatedWithLocation,
+      friendlyAttendanceError,
+    } from './js/shared/toolkit/attendance-rpc.js';
+    import {
+      renderHeader, renderTabBar, renderLoadingState, renderErrorState, isSessionExpiredError,
+      redirectToSignInPreservingReturn, getProjectIdFromUrl, getCurrentLocationSafe, escapeHtml, ICONS,
+    } from './js/app-shell.js';
+
+    const content = document.getElementById('content');
+    const fab = document.getElementById('fab');
+    const projectId = getProjectIdFromUrl();
+    let project = null;
+    let profile = null;
+
+    const TYPE_LABELS = {
+      subcontractor: 'Subcontractor', employee: 'Employee', contractor: 'Contractor',
+      'labour-hire': 'Contractor', visitor: 'Visitor', inspector: 'Inspector',
+      supplier: 'Supplier', other: 'Other',
+    };
+
+    function fmtTime(iso) {
+      return iso ? new Date(iso).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }) : '—';
+    }
+
+    function todayStr() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    async function loadRecords() {
+      const { data, error } = await supabase
+        .from('attendance_records')
+        .select('id, name, company, trade, worker_type, time_in, time_out, status')
+        .eq('project_id', projectId)
+        .eq('attendance_date', todayStr())
+        .neq('status', 'voided')
+        .order('time_in', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+
+    function renderList(records) {
+      const open = records.filter(r => !r.time_out);
+      const done = records.filter(r => r.time_out);
+
+      content.innerHTML = `
+        <div style="padding:16px 16px 0;">
+          <p class="bf-hint" style="margin-bottom:4px;">${new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+        </div>
+        <div class="bf-card" style="margin:12px 16px;">
+          ${!records.length ? `<p class="bf-hint">No one has checked in today yet.</p>` : ''}
+          ${open.map(r => attRow(r, true)).join('')}
+          ${done.map(r => attRow(r, false)).join('')}
+        </div>
+      `;
+
+      content.querySelectorAll('[data-checkout-id]').forEach(btn => {
+        btn.addEventListener('click', () => handleCheckout(btn.dataset.checkoutId, btn));
+      });
+    }
+
+    function attRow(r, isOpen) {
+      return `
+        <div class="att-record">
+          <div class="att-record-body">
+            <div class="att-record-name">${escapeHtml(r.name)}</div>
+            <div class="att-record-meta">${escapeHtml(TYPE_LABELS[r.worker_type] || r.worker_type)}${r.company ? ' · ' + escapeHtml(r.company) : ''} · In ${fmtTime(r.time_in)}${!isOpen ? ' · Out ' + fmtTime(r.time_out) : ''}</div>
+          </div>
+          ${isOpen ? `<button type="button" class="bf-btn bf-btn--ghost bf-btn--sm" data-checkout-id="${r.id}">Check out</button>` : `<span class="bf-pill">Done</span>`}
+        </div>
+      `;
+    }
+
+    async function handleCheckout(recordId, btn) {
+      btn.disabled = true;
+      btn.textContent = 'Locating…';
+      const loc = await getCurrentLocationSafe();
+      btn.textContent = 'Checking out…';
+      const { error } = await attendanceCheckOutAuthenticatedWithLocation(recordId, null, loc.latitude, loc.longitude);
+      if (error) {
+        if (isSessionExpiredError(error)) return redirectToSignInPreservingReturn();
+        alert(friendlyAttendanceError(error));
+        btn.disabled = false;
+        btn.textContent = 'Check out';
+        return;
+      }
+      refresh();
+    }
+
+    // ── Check-in bottom sheet ──
+    function openCheckinSheet() {
+      const backdrop = document.createElement('div');
+      backdrop.className = 'att-sheet-backdrop';
+      const sheet = document.createElement('div');
+      sheet.className = 'att-sheet';
+      sheet.innerHTML = `
+        <h2 style="margin-bottom:16px;">Check in</h2>
+        <div id="checkin-error" class="bf-banner bf-banner--error" hidden></div>
+        <div class="bf-field">
+          <label>Full name</label>
+          <input type="text" id="ci-name" value="${escapeHtml(profile?.full_name || '')}" required />
+        </div>
+        <div class="bf-field">
+          <label>Type</label>
+          <div class="att-type-grid" id="ci-type-grid">
+            ${Object.entries(TYPE_LABELS).map(([key, label], i) => `<div class="att-type-btn${i === 0 ? ' selected' : ''}" data-type="${key}">${label}</div>`).join('')}
+          </div>
+        </div>
+        <div class="bf-field"><label>Company <span class="opt">(optional)</span></label><input type="text" id="ci-company" /></div>
+        <div class="bf-field"><label>Trade <span class="opt">(optional)</span></label><input type="text" id="ci-trade" /></div>
+        <div id="gps-chip-wrap" style="margin-bottom:16px;"><span class="bf-gps-chip bf-gps-chip--pending">${ICONS.pin} Getting location…</span></div>
+        <button type="button" class="bf-btn" id="ci-submit-btn">Check in</button>
+        <button type="button" class="bf-btn bf-btn--ghost" id="ci-cancel-btn" style="margin-top:8px;">Cancel</button>
+      `;
+      document.body.append(backdrop, sheet);
+
+      let selectedType = 'subcontractor';
+      sheet.querySelectorAll('.att-type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          sheet.querySelectorAll('.att-type-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          selectedType = btn.dataset.type;
+        });
+      });
+
+      let location = null;
+      getCurrentLocationSafe().then((loc) => {
+        const wrap = sheet.querySelector('#gps-chip-wrap');
+        if (loc.error === 'denied') {
+          wrap.innerHTML = `<span class="bf-gps-chip bf-gps-chip--denied">${ICONS.pin} Location permission denied — check-in will save without a location</span>`;
+        } else if (loc.error) {
+          wrap.innerHTML = `<span class="bf-gps-chip bf-gps-chip--denied">${ICONS.pin} Location unavailable — check-in will save without a location</span>`;
+        } else {
+          location = loc;
+          wrap.innerHTML = `<span class="bf-gps-chip">${ICONS.pin} Location captured</span>`;
+        }
+      });
+
+      function close() { backdrop.remove(); sheet.remove(); }
+      backdrop.addEventListener('click', close);
+      sheet.querySelector('#ci-cancel-btn').addEventListener('click', close);
+
+      sheet.querySelector('#ci-submit-btn').addEventListener('click', async () => {
+        const name = sheet.querySelector('#ci-name').value.trim();
+        const errorEl = sheet.querySelector('#checkin-error');
+        errorEl.hidden = true;
+        if (name.length < 2) {
+          errorEl.textContent = 'Please enter your full name.';
+          errorEl.hidden = false;
+          return;
+        }
+        const submitBtn = sheet.querySelector('#ci-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Checking in…';
+        try {
+          const { data: token, error: tokenError } = await getOrCreateCheckinToken(projectId);
+          if (tokenError) throw tokenError;
+          const { error } = await attendanceCheckInWithLocation({
+            token,
+            name,
+            company: sheet.querySelector('#ci-company').value.trim(),
+            trade: sheet.querySelector('#ci-trade').value.trim(),
+            workerType: selectedType,
+            latitude: location?.latitude,
+            longitude: location?.longitude,
+          });
+          if (error) throw error;
+          close();
+          refresh();
+        } catch (err) {
+          if (isSessionExpiredError(err)) return redirectToSignInPreservingReturn();
+          errorEl.textContent = friendlyAttendanceError(err);
+          errorEl.hidden = false;
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Check in';
+        }
+      });
+    }
+
+    async function refresh() {
+      try {
+        const records = await loadRecords();
+        renderList(records);
+        fab.hidden = false;
+      } catch (err) {
+        if (isSessionExpiredError(err)) return redirectToSignInPreservingReturn();
+        renderErrorState(content, { body: friendlyAuthError(err), retry: refresh });
+      }
+    }
+
+    (async () => {
+      const session = await requireSession(`signin.html?redirect=${encodeURIComponent('attendance.html' + location.search)}`);
+      if (!session) return;
+      if (!projectId) {
+        renderHeader({ title: 'Attendance', back: 'dashboard.html' });
+        renderErrorState(content, { title: 'No project selected', body: 'Go back and choose a project.' });
+        return;
+      }
+
+      renderLoadingState(content, 'Loading attendance…');
+      try {
+        [project, profile] = await Promise.all([
+          supabase.from('projects').select('id, name').eq('id', projectId).maybeSingle().then(r => { if (r.error) throw r.error; return r.data; }),
+          getCurrentProfile(),
+        ]);
+        if (!project) {
+          renderHeader({ title: 'Attendance', back: 'dashboard.html' });
+          renderErrorState(content, { title: 'Project not found', body: 'This project could not be found in your organisation.' });
+          return;
+        }
+        renderHeader({ title: 'Attendance', sub: project.name, back: `project.html?project=${encodeURIComponent(projectId)}` });
+        renderTabBar({ projectId, active: 'attendance' });
+        document.getElementById('checkin-fab-btn').addEventListener('click', openCheckinSheet);
+        await refresh();
+      } catch (err) {
+        if (isSessionExpiredError(err)) return redirectToSignInPreservingReturn();
+        renderHeader({ title: 'Attendance', back: 'dashboard.html' });
+        renderErrorState(content, { body: friendlyAuthError(err), retry: () => location.reload() });
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>BIK Field</title>
+  <link rel="stylesheet" href="css/mobile.css" />
+</head>
+<body>
+  <div class="bf-state" style="min-height:100vh;">
+    <div class="bf-spinner"></div>
+  </div>
+
+  <script src="js/shared/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { getSession } from './js/shared/supabase/session.js';
+
+    // Launch routing only — no UI of its own. Whichever screen this sends
+    // the user to owns its own loading/error states from here.
+    (async () => {
+      const session = await getSession();
+      location.replace(session ? 'dashboard.html' : 'signin.html');
+    })();
+  </script>
+</body>
+</html>

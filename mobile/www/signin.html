@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>Sign In — BIK Field</title>
+  <link rel="stylesheet" href="css/mobile.css" />
+  <style>
+    .bf-signin-wrap { max-width: 420px; margin: 0 auto; padding-top: 12vh; }
+    .bf-signin-logo { width: 56px; height: 56px; background: #33291F; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #EBE5D6; font-weight: 800; font-size: 1.6rem; margin: 0 auto 20px; }
+    .bf-signin-title { text-align: center; font-size: 1.3rem; margin-bottom: 4px; }
+    .bf-signin-sub { text-align: center; color: var(--ink-soft); font-size: 0.85rem; margin-bottom: 28px; }
+  </style>
+</head>
+<body>
+  <div class="bf-main" style="background: var(--cream); min-height: 100vh;">
+    <div class="bf-signin-wrap">
+      <div class="bf-signin-logo">B</div>
+      <h1 class="bf-signin-title">BIK Field</h1>
+      <p class="bf-signin-sub">Sign in with your BIK Solutions account</p>
+
+      <div id="error-banner" class="bf-banner bf-banner--error" hidden></div>
+
+      <form id="signin-form">
+        <div class="bf-field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required />
+        </div>
+        <div class="bf-field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="bf-btn" id="submit-btn">Sign in</button>
+      </form>
+      <p class="bf-hint" style="text-align:center;margit-top:16px;">
+        Need an account? Sign up at <strong>biksolutions.com.au</strong> on the web first — this app signs you in to your existing organisation.
+      </p>
+    </div>
+  </div>
+
+  <script src="js/shared/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { supabase } from './js/shared/supabase/client.js';
+    import { redirectIfSignedIn, friendlyAuthError } from './js/shared/supabase/session.js';
+    import { initOfflineBanner, isOnline, $ } from './js/app-shell.js';
+
+    initOfflineBanner();
+    redirectIfSignedIn('dashboard.html');
+
+    const form = $('signin-form');
+    const errorBanner = $('error-banner');
+    const submitBtn = $('submit-btn');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      errorBanner.hidden = true;
+
+      if (!(await isOnline())) {
+        errorBanner.textContent = "You're offline. Connect to the internet and try again.";
+        errorBanner.hidden = false;
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in…';
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: form.email.value.trim(),
+          password: form.password.value,
+        });
+        if (error) {
+          errorBanner.textContent = friendlyAuthError(error);
+          errorBanner.hidden = false;
+          return;
+        }
+        const redirect = new URLSearchParams(location.search).get('redirect');
+        location.replace(redirect ? decodeURIComponent(redirect) : 'dashboard.html');
+      } catch (err) {
+        errorBanner.textContent = 'Something went wrong signing in. Please try again.';
+        errorBanner.hidden = false;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign in';
+      }
+    });
+  </script>
+</body>
+</html>

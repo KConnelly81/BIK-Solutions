@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <title>Project — BIK Field</title>
+  <link rel="stylesheet" href="css/mobile.css" />
+</head>
+<body>
+  <div class="bf-app">
+    <div id="content" class="bf-main">
+      <div class="bf-state"><div class="bf-spinner"></div></div>
+    </div>
+  </div>
+
+  <script src="js/shared/vendor/supabase-js.min.js"></script>
+  <script type="module">
+    import { supabase } from './js/shared/supabase/client.js';
+    import { requireSession, friendlyAuthError } from './js/shared/supabase/session.js';
+    import { renderHeader, renderTabBar, renderLoadingState, renderErrorState, isSessionExpiredError, redirectToSignInPreservingReturn, getProjectIdFromUrl, escapeHtml, ICONS } from './js/app-shell.js';
+
+    const content = document.getElementById('content');
+    const projectId = getProjectIdFromUrl();
+
+    function renderTiles(project) {
+      renderHeader({ title: project.name, sub: project.site_address || 'BIK Field', back: 'dashboard.html' });
+
+      content.innerHTML = `
+        <a class="bf-card bf-card-link" style="text-decoration:none;color:inherit;" href="attendance.html?project=${encodeURIComponent(project.id)}">
+          <span class="bf-card-link-icon">${ICONS.attendance}</span>
+          <span class="bf-card-link-body">
+            <div class="bf-card-link-title">Attendance</div>
+            <div class="bf-card-link-sub">Check in or out, see who's on site</div>
+          </span>
+          <span class="bf-card-link-chevron">${ICONS.chevron}</span>
+        </a>
+        <a class="bf-card bf-card-link" style="text-decoration:none;color:inherit;" href="variation-notice.html?project=${encodeURIComponent(project.id)}">
+          <span class="bf-card-link-icon">${ICONS.variation}</span>
+          <span class="bf-card-link-body">
+            <div class="bf-card-link-title">Variation Notice</div>
+            <div class="bf-card-link-sub">Document a scope change on site</div>
+          </span>
+          <span class="bf-card-link-chevron">${ICONS.chevron}</span>
+        </a>
+        <a class="bf-card bf-card-link bf-card-link--platform" style="text-decoration:none;color:inherit;" href="progress-claim.html?project=${encodeURIComponent(project.id)}">
+          <span class="bf-card-link-icon">${ICONS.claim}</span>
+          <span class="bf-card-link-body">
+            <div class="bf-card-link-title">Progress Claim</div>
+            <div class="bf-card-link-sub">Start or continue a claim</div>
+          </span>
+          <span class="bf-card-link-chevron">${ICONS.chevron}</span>
+        </a>
+      `;
+      renderTabBar({ projectId: project.id, active: null });
+    }
+
+    (async () => {
+      const session = await requireSession(`signin.html?redirect=${encodeURIComponent('project.html' + location.search)}`);
+      if (!session) return;
+
+      if (!projectId) {
+        renderHeader({ title: 'BIK Field', back: 'dashboard.html' });
+        renderErrorState(content, { title: 'No project selected', body: 'Go back and choose a project from your dashboard.' });
+        return;
+      }
+
+      renderLoadingState(content, 'Loading project…');
+      try {
+        const { data: project, error } = await supabase
+          .from('projects')
+          .select('id, name, status, site_address')
+          .eq('id', projectId)
+          .maybeSingle();
+        if (error) throw error;
+        if (!project) {
+          renderHeader({ title: 'BIK Field', back: 'dashboard.html' });
+          renderErrorState(content, { title: 'Project not found', body: 'This project could not be found in your organisation.' });
+          return;
+        }
+        renderTiles(project);
+      } catch (err) {
+        if (isSessionExpiredError(err)) return redirectToSignInPreservingReturn();
+        renderHeader({ title: 'BIK Field', back: 'dashboard.html' });
+        renderErrorState(content, { body: friendlyAuthError(err), retry: () => location.reload() });
+      }
+    })();
+  </script>
+</body>
+</html>

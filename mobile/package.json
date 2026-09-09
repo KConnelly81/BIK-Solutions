@@ -1,0 +1,31 @@
+{
+  "name": "bik-field",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BIK Field — mobile app (Attendance, Variation Notices, Progress Claims) wrapping the existing BIK Solutions Supabase backend via Capacitor.",
+  "scripts": {
+    "sync:shared": "node scripts/sync-shared.js",
+    "sync": "npm run sync:shared && npx cap sync",
+    "sync:android": "npm run sync:shared && npx cap sync android",
+    "sync:ios": "npm run sync:shared && npx cap sync ios",
+    "open:android": "npx cap open android",
+    "open:ios": "npx cap open ios",
+    "test": "node --test test/",
+    "serve": "npx serve www -l 8932"
+  },
+  "dependencies": {
+    "@capacitor/android": "6.2.0",
+    "@capacitor/app": "6.0.2",
+    "@capacitor/camera": "6.1.2",
+    "@capacitor/core": "6.2.0",
+    "@capacitor/geolocation": "6.1.0",
+    "@capacitor/ios": "6.2.0",
+    "@capacitor/network": "6.0.3",
+    "@capacitor/splash-screen": "6.0.3",
+    "@capacitor/status-bar": "6.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "6.2.0",
+    "typescript": "^5.6.3"
+  }
+}
