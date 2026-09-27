@@ -1,0 +1,70 @@
+-- 024_harden_rls_auto_enable_grants.sql
+-- Status: DRAFT — reviewed, NOT yet applied to any Supabase project.
+-- Do not run this against production until explicitly approved.
+--
+-- Context
+-- -------
+-- Supabase Security Advisor flags 12 SECURITY DEFINER functions in
+-- `public` as executable by anon and/or authenticated (6 of the 12 are
+-- executable by anon too). A full audit (live pg_proc/pg_get_functiondef
+-- inspection of all 12 function bodies, plus an empirical live test) found:
+--
+--   * 11 of the 12 functions have deliberate, adequate internal
+--     authorisation and are NOT vulnerabilities:
+--       - attendance_checkin / attendance_checkout / attendance_get_by_id /
+--         attendance_lookup_active / resolve_checkin_token: anonymous QR
+--         check-in/out flow. Each independently validates the caller's
+--         opaque capability token against project_checkin_tokens (revoked
+--         tokens rejected) and scopes every subsequent row lookup to that
+--         token's own project_id. A valid token from Project A combined
+--         with a record id from Project B returns no rows — confirmed by
+--         reading attendance_checkout's and attendance_get_by_id's WHERE
+--         clauses, which both AND on `project_id = v_project_id` derived
+--         from the token, never from a client-supplied project id.
+--       - attendance_checkout_authenticated / attendance_edit /
+--         attendance_void / issue_progress_claim / issue_quote: all derive
+--         the caller's organisation strictly server-side via
+--         internal.current_organisation_id() (SECURITY DEFINER, reads
+--         auth.uid() -> profiles -> organisations, requires both
+--         status = 'active'), then filter every SELECT/UPDATE by
+--         `organisation_id = v_org_id`. A caller from Organisation A
+--         supplying an id belonging to Organisation B gets "not found",
+--         never Organisation B's row.
+--       - bootstrap_organisation: requires auth.uid(), refuses to run if a
+--         profile already exists for that user (advisory-locked to close
+--         the race), only ever creates a brand-new organisation owned by
+--         the caller — never touches an existing one.
+--   * 1 of the 12, rls_auto_enable(), is a false positive, not a
+--     hygiene-adjacent risk of any real severity: it is declared
+--     `RETURNS event_trigger`, a function type Postgres will only invoke
+--     through the DDL event-trigger mechanism. Direct SQL invocation is
+--     rejected by Postgres itself before the function body runs:
+--         select public.rls_auto_enable();
+--         ERROR: 0A000: trigger functions can only be called as triggers
+--     This holds regardless of GRANT/REVOKE state, so nothing was ever
+--     actually callable by anon/authenticated. It was, however, the one
+--     function in this codebase that never received the explicit
+--     REVOKE-then-GRANT treatment every other SECURITY DEFINER function
+--     here has — so it still carries Postgres's default PUBLIC EXECUTE
+--     grant, which is what the Advisor is (correctly, but not urgently)
+--     flagging.
+--
+-- What this migration does
+-- -------------------------
+-- Revokes the unused default PUBLIC EXECUTE grant on rls_auto_enable(),
+-- for hygiene/consistency with the rest of the schema and to silence the
+-- Advisor finding correctly rather than by suppressing it. This changes
+-- no behaviour: event-trigger firing does not go through the ordinary
+-- EXECUTE-privilege check (the same is true of standard row-level
+-- triggers), which is independently confirmed by the fact that direct
+-- invocation already fails today, before any privilege check would even
+-- be relevant.
+--
+-- No other function in this list is changed. Idempotent: REVOKE on a
+-- privilege that isn't held is a no-op; COMMENT ON replaces any existing
+-- comment.
+
+revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+
+comment on function public.rls_auto_enable() is
+  'DDL event-trigger callback (fires on CREATE TABLE/CREATE TABLE AS/SELECT INTO in public) that auto-enables RLS on new tables. RETURNS event_trigger, so it cannot be invoked directly via SQL/RPC by any role regardless of GRANT state (Postgres rejects it with error 0A000). EXECUTE is revoked from PUBLIC/anon/authenticated purely for hygiene and consistency with this schema''s explicit-grant convention; it has no effect on the trigger''s own firing, which does not go through EXECUTE-privilege checks.';
