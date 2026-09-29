@@ -1,0 +1,10 @@
+.git/
+.github/
+.claude/
+.agents/
+docs/
+supabase/
+cloudflare-worker/
+assets/store-build/
+.mcp.json
+skills-lock.json
