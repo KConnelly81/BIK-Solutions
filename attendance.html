@@ -834,7 +834,7 @@
   async function checkinUrl() {
     const { data: token, error } = await getOrCreateCheckinToken(project.id);
     if (error) throw error;
-    return `${location.origin}${location.pathname.replace('attendance.html','checkin.html')}?t=${token}`;
+    return `${location.origin}/checkin.html?t=${token}`;
   }
 
   $('btn-show-qr').addEventListener('click', async () => {
