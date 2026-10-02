@@ -91,6 +91,9 @@
   margin-top: -10px;
 }
 
+.field-hint a { color: var(--coral); font-weight: 600; }
+.field-hint a:hover { text-decoration: underline; }
+
 .field-error {
   font-size: 0.8rem;
   color: #c0392b;
