@@ -10,117 +10,198 @@
    grid. Intentionally not shared with css/project.css, which styles the
    separate legacy localStorage project-detail page (project.html) — see
    "Two project systems" in docs/technical-architecture.md.
+
+   Oct 2026 visual refresh — teal as this page's primary accent, orange
+   reserved for warnings/attention. The shared design system only defines
+   navy/orange, so teal is introduced here, scoped to this page only, so
+   every other tool page keeps its existing orange accent unchanged.
    ============================================ */
+
+:root {
+  --hub-teal:       #0F6E6B;
+  --hub-teal-dark:  #0B5250;
+  --hub-teal-light: rgba(15, 110, 107, 0.09);
+}
 
 .hub-shell {
   min-height: 100vh;
-  background: var(--cream, #f7f4ee);
+  background: var(--bik-background, #f2f0ec);
 }
 
 .hub-main {
   max-width: var(--max-width, 1080px);
   margin: 0 auto;
-  padding: 32px 24px 64px;
+  padding: 20px 24px 64px;
 }
 
 /* ── Project header ───────────────────────────────────────────── */
 
 .hub-header {
-  margin-bottom: 28px;
+  margin-bottom: 20px;
+}
+.hub-header-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 .hub-project-name {
-  font-size: 1.6rem;
+  font-size: 1.75rem;
   font-weight: 800;
   color: var(--charcoal, #1a1a1a);
-  margin: 8px 0 6px;
+  margin: 0;
   letter-spacing: -0.02em;
   line-height: 1.15;
 }
 .hub-project-meta {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   color: var(--stone, #666);
+  margin-top: 6px;
 }
 
-/* ── Tool launch row ──────────────────────────────────────────── */
+/* ── Overview tiles ──────────────────────────────────────────────
+   Compact summary row, not dashboard cards — one line of real counts
+   for this project (see renderOverviewTiles() in project-hub.html). */
 
-.hub-tools-row {
-  background: #fff;
-  border: 1px solid #e0ddd9;
+.hub-overview-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  background: var(--bik-surface, #fff);
+  border: 1px solid var(--bik-border, #e0ddd9);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.hub-overview-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border-left: 1px solid var(--bik-border, #e0ddd9);
+}
+.hub-overview-tile:first-child {
+  border-left: none;
+}
+.hub-overview-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--charcoal, #1a1a1a);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.hub-overview-label {
+  font-size: 0.76rem;
+  color: var(--stone, #888);
+}
+
+@media (max-width: 640px) {
+  .hub-overview-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .hub-overview-tile:nth-child(3) {
+    border-left: none;
+    border-top: 1px solid var(--bik-border, #e0ddd9);
+  }
+  .hub-overview-tile:nth-child(4) {
+    border-top: 1px solid var(--bik-border, #e0ddd9);
+  }
+}
+
+/* ── Section labels ────────────────────────────────────────────
+   The page's one consistent heading style, replacing the previous tiny
+   uppercase labels — normal case, bolder weight, a short teal rule
+   doing the job letter-spaced caps used to. */
+
+.hub-section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--charcoal, #1a1a1a);
+  margin-bottom: 12px;
+}
+.hub-section-label::before {
+  content: '';
+  width: 3px;
+  height: 16px;
+  background: var(--hub-teal);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Quick actions ─────────────────────────────────────────────── */
+
+.hub-quick-actions {
+  margin-bottom: 24px;
+}
+.hub-quick-actions-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.hub-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bik-surface, #fff);
+  border: 1px solid var(--bik-border, #e0ddd9);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--charcoal, #1a1a1a);
+  font-size: 0.86rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.hub-action-btn svg {
+  width: 17px;
+  height: 17px;
+  stroke: var(--hub-teal);
+  flex-shrink: 0;
+}
+.hub-action-btn:hover {
+  background: var(--hub-teal-light);
+  border-color: var(--hub-teal);
+  color: var(--hub-teal-dark);
+}
+.hub-action-btn--more {
+  background: var(--bik-surface-sunken, #eeece8);
+  border-color: var(--bik-surface-sunken, #eeece8);
+}
+.hub-action-btn--more svg {
+  stroke: var(--charcoal, #1a1a1a);
+}
+.hub-action-btn--more:hover {
+  background: #e3e0da;
+  border-color: #e3e0da;
+  color: var(--charcoal, #1a1a1a);
+}
+
+@media (max-width: 560px) {
+  .hub-quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .hub-action-btn {
+    justify-content: center;
+  }
+}
+
+/* ── Generic panel (project information) ──────────────────────── */
+
+.hub-panel {
+  background: var(--bik-surface, #fff);
+  border: 1px solid var(--bik-border, #e0ddd9);
   border-radius: 10px;
   padding: 16px 20px;
   margin-bottom: 24px;
 }
-.hub-tools-label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #999;
-  margin-bottom: 10px;
-}
-.hub-tools-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.hub-tool-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 14px;
-  background: #f5f3f0;
-  border: 1px solid #e0ddd9;
-  border-radius: 7px;
-  text-decoration: none;
-  color: #333;
-  font-size: 0.82rem;
-  font-weight: 500;
-  transition: background 0.15s, border-color 0.15s;
-}
-.hub-tool-btn:hover {
-  background: #eeece9;
-  border-color: #ccc;
-  color: var(--coral, #c05a0f);
-}
-.hub-tool-btn[aria-disabled="true"] {
-  color: #aaa;
-  cursor: default;
-  pointer-events: none;
-}
-.hub-tool-btn-soon {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: #b3ab9f;
-}
-
-/* ── Trailing note about tools not yet connected ─────────────── */
-
-.hub-more-note {
-  font-size: 0.8rem;
-  color: var(--stone, #888);
-  margin-top: 8px;
-}
-
-/* ── Section group headings ───────────────────────────────────
-   Groups the per-category record panels below (Attendance,
-   Commercial = Quotes + Progress Claims, Site = Variation Notices) so
-   the Hub reads as organised sections, not an undifferentiated stack of
-   list panels. Same visual language as .hub-tools-label. */
-.hub-group-heading {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--coral, #c05a0f);
-  margin: 28px 0 10px;
-}
-.hub-group-heading:first-of-type {
-  margin-top: 0;
-}
 
 /* ── Project information panel ────────────────────────────────── */
+
 .hub-info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -138,4 +219,99 @@
   font-size: 0.86rem;
   color: var(--charcoal, #1a1a1a);
   line-height: 1.4;
+}
+
+/* ── Project activity ──────────────────────────────────────────── */
+
+.hub-activity-group {
+  margin-bottom: 4px;
+}
+.hub-group-heading {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--hub-teal-dark);
+  margin: 22px 0 10px;
+}
+.hub-activity-group:first-child .hub-group-heading {
+  margin-top: 0;
+}
+
+/* Small always-visible action link next to a panel's title — e.g.
+   "Create quote" or "Open Site Attendance". Deliberately separate from
+   .project-context-change (white-on-navy, used by the top context bar)
+   so this page's teal accent doesn't fight that bar's own styling. */
+.hub-panel-action-link {
+  margin-left: auto;
+  color: var(--hub-teal-dark);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+.hub-panel-action-link:hover {
+  text-decoration: underline;
+}
+
+.hub-shell .sb-list-panel {
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+.hub-shell .sb-list-panel-header {
+  gap: 10px;
+}
+.hub-shell .sb-list-total {
+  color: var(--hub-teal-dark);
+}
+
+/* ── More Tools modal ─────────────────────────────────────────────
+   Reuses css/bik-design-system.css's .bik-modal-overlay/.bik-modal
+   shell as-is; only the grouped tool-link layout inside it is new. */
+
+.bik-modal-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.hub-tools-modal-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.hub-tools-modal-group-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--stone, #888);
+  margin-bottom: 8px;
+}
+.hub-tools-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+@media (max-width: 480px) {
+  .hub-tools-modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.hub-tools-modal-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 10px;
+  border-radius: 7px;
+  text-decoration: none;
+  color: var(--charcoal, #1a1a1a);
+  font-size: 0.84rem;
+  font-weight: 500;
+  transition: background 0.12s;
+}
+.hub-tools-modal-link svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--hub-teal);
+  flex-shrink: 0;
+}
+.hub-tools-modal-link:hover {
+  background: var(--hub-teal-light);
 }

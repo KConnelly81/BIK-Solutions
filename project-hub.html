@@ -51,120 +51,181 @@
   <main class="hub-main">
 
     <div class="hub-header">
-      <span class="status-pill" id="hub-status-pill"></span>
-      <h1 class="hub-project-name" id="hub-project-name"></h1>
+      <div class="hub-header-top">
+        <span class="status-pill" id="hub-status-pill"></span>
+        <h1 class="hub-project-name" id="hub-project-name"></h1>
+      </div>
       <div class="hub-project-meta" id="hub-project-meta"></div>
     </div>
 
+    <!-- ====== OVERVIEW ======
+         Compact summary tiles, not dashboard cards. Every value is a real
+         count from this project's own records (see renderOverviewTiles in
+         the module script below) — nothing here is estimated or faked. -->
+    <section class="hub-overview-row" aria-label="Project overview">
+      <div class="hub-overview-tile">
+        <span class="hub-overview-value" id="hub-overview-onsite">—</span>
+        <span class="hub-overview-label">On site now</span>
+      </div>
+      <div class="hub-overview-tile">
+        <span class="hub-overview-value" id="hub-overview-quotes">—</span>
+        <span class="hub-overview-label">Quotes</span>
+      </div>
+      <div class="hub-overview-tile">
+        <span class="hub-overview-value" id="hub-overview-claims">—</span>
+        <span class="hub-overview-label">Progress claims</span>
+      </div>
+      <div class="hub-overview-tile">
+        <span class="hub-overview-value" id="hub-overview-notices">—</span>
+        <span class="hub-overview-label">Open notices</span>
+      </div>
+    </section>
+
+    <!-- ====== QUICK ACTIONS ======
+         The tools used on almost every project, surfaced directly.
+         Everything else lives in "More tools" below — same hrefs as
+         before, just regrouped. -->
+    <section class="hub-quick-actions" aria-label="Quick actions">
+      <div class="hub-section-label">Quick actions</div>
+      <div class="hub-quick-actions-grid" id="hub-quick-actions-grid"><!-- rendered by JS --></div>
+    </section>
+
     <!-- ====== PROJECT INFORMATION ====== -->
-    <section class="hub-tools-row" id="hub-info-panel" hidden>
-      <div class="hub-tools-label">Project information</div>
+    <section class="hub-panel" id="hub-info-panel" hidden>
+      <div class="hub-section-label">Project information</div>
       <div class="hub-info-grid" id="hub-info-grid"><!-- rendered by JS --></div>
     </section>
 
-    <!-- ====== TOOL LAUNCH ROW ======
-         The single source of navigation for this project's tools
-         (Sprint 5a). New tools get added here as they're connected to
-         the Supabase project model — see docs/PHASE_5A_DESIGN_PROPOSAL.md. -->
-    <section class="hub-tools-row">
-      <div class="hub-tools-label">Open in tool</div>
-      <div class="hub-tools-grid" id="hub-tools-grid"><!-- rendered by JS --></div>
-    </section>
+    <!-- ====== PROJECT ACTIVITY ======
+         Grouped by record type (Attendance / Commercial / Site / Safety)
+         rather than a single merged timeline — there's no unified events
+         table behind these record types yet. Kept as one labelled section
+         so a chronological feed can replace the sub-groups later without
+         changing this section's place on the page. -->
+    <section class="hub-activity" aria-label="Project activity">
+      <div class="hub-section-label">Project activity</div>
 
-    <!-- ====== ATTENDANCE ====== -->
-    <div class="hub-group-heading">Attendance</div>
-    <section class="sb-list-panel" id="sb-attendance-panel">
-      <div class="sb-list-panel-header">
-        <span>Site attendance today</span>
-        <a class="project-context-change" href="#" id="sb-attendance-open-link">Open Site Attendance →</a>
+      <div class="hub-activity-group">
+        <div class="hub-group-heading">Attendance</div>
+        <section class="sb-list-panel" id="sb-attendance-panel">
+          <div class="sb-list-panel-header">
+            <span>Site attendance today</span>
+            <a class="hub-panel-action-link" href="#" id="sb-attendance-open-link">Open Site Attendance</a>
+          </div>
+          <p class="text-muted" id="sb-attendance-summary">Loading…</p>
+        </section>
       </div>
-      <p class="text-muted" id="sb-attendance-summary">Loading…</p>
-    </section>
 
-    <!-- ====== COMMERCIAL ======
-         Three list panels now share this page (Sprint 5a) —
-         supabase-record-panel.js's refreshRecordList() takes an idPrefix
-         so each list's #sb-list-* ids don't collide; omitted entirely on
-         every single-list tool page (variation-generator.html,
-         quote-builder.html, progress-claim.html), which keep the original
-         unprefixed ids unchanged. -->
-    <div class="hub-group-heading">Commercial</div>
-    <section class="sb-list-panel" id="sb-list-quotes-panel">
-      <div class="sb-list-panel-header">
-        <span>Quotes for this project</span>
-        <span class="sb-list-total" id="sb-list-quotes-total"></span>
-      </div>
-      <p class="text-muted" id="sb-list-quotes-loading">Loading…</p>
-      <p class="text-muted" id="sb-list-quotes-empty" hidden>No quotes saved to this project yet.</p>
-      <ul class="sb-list" id="sb-list-quotes" hidden></ul>
-    </section>
+      <!-- Three list panels share this page (Sprint 5a) —
+           supabase-record-panel.js's refreshRecordList() takes an idPrefix
+           so each list's #sb-list-* ids don't collide; omitted entirely on
+           every single-list tool page (variation-generator.html,
+           quote-builder.html, progress-claim.html), which keep the original
+           unprefixed ids unchanged. -->
+      <div class="hub-activity-group">
+        <div class="hub-group-heading">Commercial</div>
+        <section class="sb-list-panel" id="sb-list-quotes-panel">
+          <div class="sb-list-panel-header">
+            <span>Quotes for this project</span>
+            <span class="sb-list-total" id="sb-list-quotes-total"></span>
+            <a class="hub-panel-action-link" id="sb-list-quotes-create-link">Create quote</a>
+          </div>
+          <p class="text-muted" id="sb-list-quotes-loading">Loading…</p>
+          <p class="text-muted" id="sb-list-quotes-empty" hidden>No quotes yet.</p>
+          <ul class="sb-list" id="sb-list-quotes" hidden></ul>
+        </section>
 
-    <section class="sb-list-panel" id="sb-list-claims-panel">
-      <div class="sb-list-panel-header">
-        <span>Progress claims for this project</span>
-        <span class="sb-list-total" id="sb-list-claims-total"></span>
-      </div>
-      <p class="text-muted" id="sb-list-claims-loading">Loading…</p>
-      <p class="text-muted" id="sb-list-claims-empty" hidden>No progress claims saved to this project yet.</p>
-      <ul class="sb-list" id="sb-list-claims" hidden></ul>
-    </section>
+        <section class="sb-list-panel" id="sb-list-claims-panel">
+          <div class="sb-list-panel-header">
+            <span>Progress claims for this project</span>
+            <span class="sb-list-total" id="sb-list-claims-total"></span>
+            <a class="hub-panel-action-link" id="sb-list-claims-create-link">Create claim</a>
+          </div>
+          <p class="text-muted" id="sb-list-claims-loading">Loading…</p>
+          <p class="text-muted" id="sb-list-claims-empty" hidden>No progress claims yet.</p>
+          <ul class="sb-list" id="sb-list-claims" hidden></ul>
+        </section>
 
-    <!-- Contract Termination, Payment Reminder, Subcontractor Agreement —
-         share public.project_documents (019), grouped here rather than
-         one panel each. See js/toolkit/document-type-labels.js. -->
-    <section class="sb-list-panel" id="sb-list-commdocs-panel">
-      <div class="sb-list-panel-header">
-        <span>Other commercial documents</span>
-        <span class="sb-list-total" id="sb-list-commdocs-total"></span>
+        <!-- Contract Termination, Payment Reminder, Subcontractor Agreement —
+             share public.project_documents (019), grouped here rather than
+             one panel each. See js/toolkit/document-type-labels.js. -->
+        <section class="sb-list-panel" id="sb-list-commdocs-panel">
+          <div class="sb-list-panel-header">
+            <span>Other commercial documents</span>
+            <span class="sb-list-total" id="sb-list-commdocs-total"></span>
+          </div>
+          <p class="text-muted" id="sb-list-commdocs-loading">Loading…</p>
+          <p class="text-muted" id="sb-list-commdocs-empty" hidden>No other commercial documents yet.</p>
+          <ul class="sb-list" id="sb-list-commdocs" hidden></ul>
+        </section>
       </div>
-      <p class="text-muted" id="sb-list-commdocs-loading">Loading…</p>
-      <p class="text-muted" id="sb-list-commdocs-empty" hidden>No other commercial documents saved to this project yet.</p>
-      <ul class="sb-list" id="sb-list-commdocs" hidden></ul>
-    </section>
 
-    <!-- ====== SITE ====== -->
-    <div class="hub-group-heading">Site</div>
-    <section class="sb-list-panel" id="sb-list-variations-panel">
-      <div class="sb-list-panel-header">
-        <span>Variation notices for this project</span>
-        <span class="sb-list-total" id="sb-list-variations-total"></span>
-      </div>
-      <p class="text-muted" id="sb-list-variations-loading">Loading…</p>
-      <p class="text-muted" id="sb-list-variations-empty" hidden>No variation notices saved to this project yet.</p>
-      <ul class="sb-list" id="sb-list-variations" hidden></ul>
-    </section>
+      <div class="hub-activity-group">
+        <div class="hub-group-heading">Site</div>
+        <section class="sb-list-panel" id="sb-list-variations-panel">
+          <div class="sb-list-panel-header">
+            <span>Variation notices for this project</span>
+            <span class="sb-list-total" id="sb-list-variations-total"></span>
+            <a class="hub-panel-action-link" id="sb-list-variations-create-link">Create variation</a>
+          </div>
+          <p class="text-muted" id="sb-list-variations-loading">Loading…</p>
+          <p class="text-muted" id="sb-list-variations-empty" hidden>No variation notices yet.</p>
+          <ul class="sb-list" id="sb-list-variations" hidden></ul>
+        </section>
 
-    <!-- Defect Report, Delay Notice, EOT Claim, Handover Checklist,
-         Practical Completion, Scope of Works, Instruction to Proceed,
-         Notice to Show Cause, Site Diary — see document-type-labels.js. -->
-    <section class="sb-list-panel" id="sb-list-sitedocs-panel">
-      <div class="sb-list-panel-header">
-        <span>Other site documents</span>
-        <span class="sb-list-total" id="sb-list-sitedocs-total"></span>
+        <!-- Defect Report, Delay Notice, EOT Claim, Handover Checklist,
+             Practical Completion, Scope of Works, Instruction to Proceed,
+             Notice to Show Cause, Site Diary — see document-type-labels.js. -->
+        <section class="sb-list-panel" id="sb-list-sitedocs-panel">
+          <div class="sb-list-panel-header">
+            <span>Other site documents</span>
+            <span class="sb-list-total" id="sb-list-sitedocs-total"></span>
+          </div>
+          <p class="text-muted" id="sb-list-sitedocs-loading">Loading…</p>
+          <p class="text-muted" id="sb-list-sitedocs-empty" hidden>No other site documents yet.</p>
+          <ul class="sb-list" id="sb-list-sitedocs" hidden></ul>
+        </section>
       </div>
-      <p class="text-muted" id="sb-list-sitedocs-loading">Loading…</p>
-      <p class="text-muted" id="sb-list-sitedocs-empty" hidden>No other site documents saved to this project yet.</p>
-      <ul class="sb-list" id="sb-list-sitedocs" hidden></ul>
-    </section>
 
-    <!-- ====== SAFETY ======
-         Incident Report, Inspection Checklist, Non-Conformance Report,
-         SWMS, Toolbox Talk — see document-type-labels.js. -->
-    <div class="hub-group-heading">Safety</div>
-    <section class="sb-list-panel" id="sb-list-safetydocs-panel">
-      <div class="sb-list-panel-header">
-        <span>Safety documents for this project</span>
-        <span class="sb-list-total" id="sb-list-safetydocs-total"></span>
+      <!-- Incident Report, Inspection Checklist, Non-Conformance Report,
+           SWMS, Toolbox Talk — see document-type-labels.js. -->
+      <div class="hub-activity-group">
+        <div class="hub-group-heading">Safety</div>
+        <section class="sb-list-panel" id="sb-list-safetydocs-panel">
+          <div class="sb-list-panel-header">
+            <span>Safety documents for this project</span>
+            <span class="sb-list-total" id="sb-list-safetydocs-total"></span>
+          </div>
+          <p class="text-muted" id="sb-list-safetydocs-loading">Loading…</p>
+          <p class="text-muted" id="sb-list-safetydocs-empty" hidden>No safety documents yet.</p>
+          <ul class="sb-list" id="sb-list-safetydocs" hidden></ul>
+        </section>
       </div>
-      <p class="text-muted" id="sb-list-safetydocs-loading">Loading…</p>
-      <p class="text-muted" id="sb-list-safetydocs-empty" hidden>No safety documents saved to this project yet.</p>
-      <ul class="sb-list" id="sb-list-safetydocs" hidden></ul>
     </section>
 
   </main>
 
 </div>
 
+<!-- ====== MORE TOOLS ======
+     Every tool not surfaced in Quick Actions, grouped for browsing.
+     Hrefs are identical to the previous single tool grid — nothing here
+     is a new route. -->
+<div class="bik-modal-overlay" id="hub-more-tools-overlay" hidden>
+  <div class="bik-modal bik-modal--wide" role="dialog" aria-modal="true" aria-labelledby="hub-more-tools-title">
+    <div class="bik-modal-header">
+      <h2 class="bik-modal-title" id="hub-more-tools-title">More tools</h2>
+      <button type="button" class="bik-modal-close" id="hub-more-tools-close" aria-label="Close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="bik-modal-body">
+      <div class="hub-tools-modal-groups" id="hub-more-tools-groups"><!-- rendered by JS --></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js" defer></script>
 <script src="js/vendor/supabase-js.min.js"></script>
 <script type="module">
   // ?v= cache-busts these shared files — see js/toolkit/asset-version.js's
@@ -192,7 +253,11 @@
     statusPill.className = `status-pill status-pill--${project.status}`;
 
     document.getElementById('hub-project-name').textContent = project.name;
-    document.getElementById('hub-project-meta').textContent = project.site_address || '';
+
+    // "Addition to patio · Site address" when both exist, falling back
+    // gracefully — never an empty, unexplained gap where a value is missing.
+    const metaParts = [project.description, project.site_address || 'Address not added'].filter(Boolean);
+    document.getElementById('hub-project-meta').textContent = metaParts.join(' · ');
   }
 
   function fmtDate(iso) {
@@ -220,95 +285,135 @@
     document.getElementById('hub-info-panel').hidden = false;
   }
 
-  function renderToolLaunchRow(project) {
-    const grid = document.getElementById('hub-tools-grid');
+  // Every tool this page can open, with the exact href each one has always
+  // used. QUICK_ACTIONS surfaces the five used on nearly every project;
+  // MORE_TOOLS_GROUPS holds everything else, grouped for browsing — no
+  // link here is new, and nothing is duplicated between the two.
+  const QUICK_ACTIONS = [
+    { href: 'attendance.html', icon: 'hard-hat', label: 'Site Attendance' },
+    { href: 'variation-generator.html', icon: 'file-diff', label: 'New Variation' },
+    { href: 'quote-builder.html', icon: 'file-text', label: 'New Quote' },
+    { href: 'progress-claim.html', icon: 'trending-up', label: 'New Progress Claim' },
+    { href: 'site-diary.html', icon: 'notebook-pen', label: 'Site Diary' },
+  ];
+
+  const MORE_TOOLS_GROUPS = [
+    {
+      title: 'Commercial',
+      tools: [
+        { href: 'payment-reminder.html', icon: 'banknote', label: 'Payment Reminder' },
+      ],
+    },
+    {
+      title: 'Contract & Notices',
+      tools: [
+        { href: 'delay-notice.html', icon: 'alarm-clock', label: 'Delay Notice' },
+        { href: 'eot-claim.html', icon: 'calendar-clock', label: 'EOT Claim' },
+        { href: 'contract-termination.html', icon: 'ban', label: 'Contract Termination' },
+        { href: 'notice-to-show-cause.html', icon: 'megaphone', label: 'Notice to Show Cause' },
+        { href: 'instruction-to-proceed.html', icon: 'play', label: 'Instruction to Proceed' },
+      ],
+    },
+    {
+      title: 'Site & Safety',
+      tools: [
+        { href: 'incident-report.html', icon: 'siren', label: 'Incident Report' },
+        { href: 'inspection-checklist.html', icon: 'clipboard-check', label: 'Inspection Checklist' },
+        { href: 'non-conformance-report.html', icon: 'shield-alert', label: 'Non-Conformance Report' },
+        { href: 'swms.html', icon: 'shield', label: 'SWMS' },
+        { href: 'toolbox-talk.html', icon: 'mic', label: 'Toolbox Talk' },
+      ],
+    },
+    {
+      title: 'Subcontractors & Scope',
+      tools: [
+        { href: 'subcontractor-agreement.html', icon: 'handshake', label: 'Subcontractor Agreement' },
+        { href: 'scope-of-works.html', icon: 'clipboard-list', label: 'Scope of Works' },
+      ],
+    },
+    {
+      title: 'Handover & Completion',
+      tools: [
+        { href: 'defect-report.html', icon: 'wrench', label: 'Defect Report' },
+        { href: 'practical-completion.html', icon: 'check-circle-2', label: 'Practical Completion' },
+        { href: 'handover-checklist.html', icon: 'key-round', label: 'Handover Checklist' },
+      ],
+    },
+  ];
+
+  function renderQuickActions(project) {
+    const grid = document.getElementById('hub-quick-actions-grid');
     const projectParam = encodeURIComponent(project.id);
-    grid.innerHTML = `
-      <a class="hub-tool-btn" href="attendance.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">👷</span>
-        <span>Site Attendance</span>
+
+    const actionLinks = QUICK_ACTIONS.map(({ href, icon, label }) => `
+      <a class="hub-action-btn" href="${href}?project=${projectParam}">
+        <i data-lucide="${icon}" aria-hidden="true"></i>
+        <span>${label}</span>
       </a>
-      <a class="hub-tool-btn" href="variation-generator.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">📝</span>
-        <span>New Variation Notice</span>
-      </a>
-      <a class="hub-tool-btn" href="quote-builder.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">💷</span>
-        <span>New Quote</span>
-      </a>
-      <a class="hub-tool-btn" href="progress-claim.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">📈</span>
-        <span>New Progress Claim</span>
-      </a>
-      <a class="hub-tool-btn" href="payment-reminder.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">💰</span>
-        <span>Payment Reminder</span>
-      </a>
-      <a class="hub-tool-btn" href="contract-termination.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">⚠️</span>
-        <span>Contract Termination</span>
-      </a>
-      <a class="hub-tool-btn" href="subcontractor-agreement.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">🤝</span>
-        <span>Subcontractor Agreement</span>
-      </a>
-      <a class="hub-tool-btn" href="defect-report.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">🔧</span>
-        <span>Defect Report</span>
-      </a>
-      <a class="hub-tool-btn" href="delay-notice.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">⏱️</span>
-        <span>Delay Notice</span>
-      </a>
-      <a class="hub-tool-btn" href="eot-claim.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">📅</span>
-        <span>EOT Claim</span>
-      </a>
-      <a class="hub-tool-btn" href="handover-checklist.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">🔑</span>
-        <span>Handover Checklist</span>
-      </a>
-      <a class="hub-tool-btn" href="practical-completion.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">✅</span>
-        <span>Practical Completion</span>
-      </a>
-      <a class="hub-tool-btn" href="scope-of-works.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">📋</span>
-        <span>Scope of Works</span>
-      </a>
-      <a class="hub-tool-btn" href="instruction-to-proceed.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">▶️</span>
-        <span>Instruction to Proceed</span>
-      </a>
-      <a class="hub-tool-btn" href="notice-to-show-cause.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">📢</span>
-        <span>Notice to Show Cause</span>
-      </a>
-      <a class="hub-tool-btn" href="site-diary.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">📓</span>
-        <span>Site Diary</span>
-      </a>
-      <a class="hub-tool-btn" href="incident-report.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">🚨</span>
-        <span>Incident Report</span>
-      </a>
-      <a class="hub-tool-btn" href="inspection-checklist.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">🔍</span>
-        <span>Inspection Checklist</span>
-      </a>
-      <a class="hub-tool-btn" href="non-conformance-report.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">❌</span>
-        <span>Non-Conformance Report</span>
-      </a>
-      <a class="hub-tool-btn" href="swms.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">🦺</span>
-        <span>SWMS</span>
-      </a>
-      <a class="hub-tool-btn" href="toolbox-talk.html?project=${projectParam}">
-        <span class="hub-tool-icon" aria-hidden="true">🗣️</span>
-        <span>Toolbox Talk</span>
-      </a>
+    `).join('');
+
+    grid.innerHTML = actionLinks + `
+      <button type="button" class="hub-action-btn hub-action-btn--more" id="hub-more-tools-btn">
+        <i data-lucide="layout-grid" aria-hidden="true"></i>
+        <span>More Tools</span>
+      </button>
     `;
+
+    document.getElementById('hub-more-tools-btn').addEventListener('click', openMoreToolsModal);
+  }
+
+  function renderMoreToolsModal(project) {
+    const projectParam = encodeURIComponent(project.id);
+    const groupsEl = document.getElementById('hub-more-tools-groups');
+
+    groupsEl.innerHTML = MORE_TOOLS_GROUPS.map(({ title, tools }) => `
+      <div class="hub-tools-modal-group">
+        <div class="hub-tools-modal-group-title">${title}</div>
+        <div class="hub-tools-modal-grid">
+          ${tools.map(({ href, icon, label }) => `
+            <a class="hub-tools-modal-link" href="${href}?project=${projectParam}">
+              <i data-lucide="${icon}" aria-hidden="true"></i>
+              <span>${label}</span>
+            </a>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function openMoreToolsModal() {
+    document.getElementById('hub-more-tools-overlay').hidden = false;
+  }
+  function closeMoreToolsModal() {
+    document.getElementById('hub-more-tools-overlay').hidden = true;
+  }
+
+  function wireMoreToolsModal() {
+    const overlay = document.getElementById('hub-more-tools-overlay');
+    document.getElementById('hub-more-tools-close').addEventListener('click', closeMoreToolsModal);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeMoreToolsModal(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !overlay.hidden) closeMoreToolsModal();
+    });
+  }
+
+  /** Real counts only — each value comes from this project's own rows, never estimated. */
+  async function renderOverviewTiles(project) {
+    const setTile = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+
+    const [quotesResult, claimsResult, noticesResult] = await Promise.all([
+      supabase.from('quotes').select('id', { count: 'exact', head: true }).eq('project_id', project.id),
+      supabase.from('progress_claims').select('id', { count: 'exact', head: true }).eq('project_id', project.id),
+      supabase.from('variation_notices').select('id', { count: 'exact', head: true })
+        .eq('project_id', project.id).not('status', 'in', '(approved,rejected)'),
+    ]);
+
+    setTile('hub-overview-quotes', quotesResult.error ? '—' : (quotesResult.count ?? 0));
+    setTile('hub-overview-claims', claimsResult.error ? '—' : (claimsResult.count ?? 0));
+    setTile('hub-overview-notices', noticesResult.error ? '—' : (noticesResult.count ?? 0));
   }
 
   async function renderAttendanceSummary(project) {
@@ -328,16 +433,21 @@
       .eq('attendance_date', today)
       .neq('status', 'voided');
 
+    const onsiteTile = document.getElementById('hub-overview-onsite');
+
     if (error) {
       summaryEl.textContent = 'Attendance could not be loaded.';
+      if (onsiteTile) onsiteTile.textContent = '—';
       return;
     }
     if (!data.length) {
       summaryEl.textContent = 'No sign-ins recorded yet today.';
+      if (onsiteTile) onsiteTile.textContent = '0';
       return;
     }
     const onSite = data.filter(r => !r.time_out).length;
     summaryEl.textContent = `${onSite} on site now · ${data.length} sign-in${data.length !== 1 ? 's' : ''} today`;
+    if (onsiteTile) onsiteTile.textContent = String(onSite);
   }
 
   function renderVariationRow(row) {
@@ -376,10 +486,23 @@
   gateOnSupabaseProject({
     mountTool: () => {}, // the hub isn't a FormEngine tool — nothing to mount
     onGated(project) {
+      const projectParam = encodeURIComponent(project.id);
+
       renderProjectHeader(project);
       renderProjectInfo(project);
-      renderToolLaunchRow(project);
+      renderQuickActions(project);
+      renderMoreToolsModal(project);
+      wireMoreToolsModal();
       renderAttendanceSummary(project);
+      renderOverviewTiles(project);
+
+      document.getElementById('sb-list-variations-create-link').href = `variation-generator.html?project=${projectParam}`;
+      document.getElementById('sb-list-quotes-create-link').href = `quote-builder.html?project=${projectParam}`;
+      document.getElementById('sb-list-claims-create-link').href = `progress-claim.html?project=${projectParam}`;
+
+      // Icons for everything rendered synchronously above — the record
+      // lists below carry none, so no second pass is needed once they load.
+      window.lucide?.createIcons();
 
       refreshRecordList({
         idPrefix: 'variations',
@@ -388,7 +511,7 @@
         selectColumns: 'id, variation_number, client_name, status, total_cents',
         renderRow: renderVariationRow,
         renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.total_cents || 0), 0)))}`,
-        emptyMessage: 'No variation notices saved to this project yet.'
+        emptyMessage: 'No variation notices yet.'
       });
 
       refreshRecordList({
@@ -398,7 +521,7 @@
         selectColumns: 'id, quote_number, client_name, status, total_cents',
         renderRow: renderQuoteRow,
         renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.total_cents || 0), 0)))}`,
-        emptyMessage: 'No quotes saved to this project yet.'
+        emptyMessage: 'No quotes yet.'
       });
 
       refreshRecordList({
@@ -408,28 +531,28 @@
         selectColumns: 'id, claim_number, client_name, status, net_payable_cents',
         renderRow: renderClaimRow,
         renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.net_payable_cents || 0), 0)))}`,
-        emptyMessage: 'No progress claims saved to this project yet.'
+        emptyMessage: 'No progress claims yet.'
       });
 
       refreshGroupedDocumentList({
         idPrefix: 'commdocs',
         projectId: project.id,
         documentTypes: DOCUMENT_TYPE_GROUPS.commercial,
-        emptyMessage: 'No other commercial documents saved to this project yet.'
+        emptyMessage: 'No other commercial documents yet.'
       });
 
       refreshGroupedDocumentList({
         idPrefix: 'sitedocs',
         projectId: project.id,
         documentTypes: DOCUMENT_TYPE_GROUPS.site,
-        emptyMessage: 'No other site documents saved to this project yet.'
+        emptyMessage: 'No other site documents yet.'
       });
 
       refreshGroupedDocumentList({
         idPrefix: 'safetydocs',
         projectId: project.id,
         documentTypes: DOCUMENT_TYPE_GROUPS.safety,
-        emptyMessage: 'No safety documents saved to this project yet.'
+        emptyMessage: 'No safety documents yet.'
       });
     }
   });
