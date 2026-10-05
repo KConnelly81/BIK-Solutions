@@ -15,12 +15,30 @@
    reserved for warnings/attention. The shared design system only defines
    navy/orange, so teal is introduced here, scoped to this page only, so
    every other tool page keeps its existing orange accent unchanged.
+
+   Nov 2026 polish pass — same layout/structure, refined type scale,
+   spacing rhythm and interaction states; see the local hub-text and
+   hub-space tokens below, used throughout instead of ad hoc values.
    ============================================ */
 
 :root {
   --hub-teal:       #0F6E6B;
   --hub-teal-dark:  #0B5250;
   --hub-teal-light: rgba(15, 110, 107, 0.09);
+
+  /* One small type scale for every secondary/metadata role on this page,
+     replacing what had drifted into nine slightly different ad hoc sizes
+     (0.68rem–0.88rem). Body copy and section labels still come from the
+     shared design system's own scale. */
+  --hub-text-2xs: 0.72rem;  /* micro labels: info labels, tab badges, modal group titles */
+  --hub-text-xs:  0.8rem;   /* secondary metadata: panel action links, meta line */
+  --hub-text-sm:  0.86rem;  /* body/button/tab label text */
+  --hub-text-lg:  1.5rem;   /* metric values — one clear step above their label */
+  --hub-text-xl:  1.8rem;   /* project title */
+
+  /* One vertical rhythm unit between major sections on this page. */
+  --hub-space: 24px;
+  --hub-radius: 10px;
 }
 
 .hub-shell {
@@ -37,7 +55,7 @@
 /* ── Project header ───────────────────────────────────────────── */
 
 .hub-header {
-  margin-bottom: 20px;
+  margin-bottom: var(--hub-space);
 }
 .hub-header-top {
   display: flex;
@@ -46,7 +64,7 @@
   flex-wrap: wrap;
 }
 .hub-project-name {
-  font-size: 1.75rem;
+  font-size: var(--hub-text-xl);
   font-weight: 800;
   color: var(--charcoal, #1a1a1a);
   margin: 0;
@@ -54,9 +72,10 @@
   line-height: 1.15;
 }
 .hub-project-meta {
-  font-size: 0.88rem;
-  color: var(--stone, #666);
+  font-size: var(--hub-text-xs);
+  color: var(--dark-stone, #3A3835);
   margin-top: 6px;
+  line-height: 1.4;
 }
 
 /* ── Overview tiles ──────────────────────────────────────────────
@@ -68,76 +87,100 @@
   grid-template-columns: repeat(4, 1fr);
   background: var(--bik-surface, #fff);
   border: 1px solid var(--bik-border, #e0ddd9);
-  border-radius: 10px;
+  border-radius: var(--hub-radius);
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: var(--hub-space);
   box-shadow: var(--bik-shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
 }
 /* Each tile is a <button> — it jumps to its tab below, so a metric is
-   never a dead end (see data-jump-tab wiring in project-hub.html). */
+   never a dead end (see data-jump-tab wiring in project-hub.html). The
+   divider between tiles is a short inset rule, not a full-height border —
+   quieter than a hard column line. */
 .hub-overview-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 14px 16px;
-  border-left: 1px solid var(--bik-border, #e0ddd9);
-  border-top: none;
-  border-right: none;
-  border-bottom: none;
+  gap: 3px;
+  padding: 16px 18px;
+  border: none;
   background: none;
   font-family: inherit;
   text-align: left;
   cursor: pointer;
   transition: background 0.15s;
 }
-.hub-overview-tile:first-child {
-  border-left: none;
+.hub-overview-tile:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 22%;
+  bottom: 22%;
+  width: 1px;
+  background: var(--bik-border, #e0ddd9);
 }
 .hub-overview-tile:hover {
   background: var(--hub-teal-light);
 }
+.hub-overview-tile:active {
+  background: var(--bik-surface-sunken, #eeece8);
+}
 .hub-overview-value {
-  font-size: 1.4rem;
+  font-size: var(--hub-text-lg);
   font-weight: 800;
   color: var(--charcoal, #1a1a1a);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 .hub-overview-label {
-  font-size: 0.76rem;
-  color: var(--stone, #888);
+  font-size: var(--hub-text-2xs);
+  color: var(--dark-stone, #3A3835);
+  opacity: 0.8;
 }
 
 /* Orange is reserved for warnings/attention — the only tile that can
-   wear it is "Open notices," and only once there's something open. */
+   wear it is "Open notices," and only once there's something open. Kept
+   to a light tint, never a saturated fill, so it reads as a flag rather
+   than an alarm. */
 .hub-overview-tile--attention {
   background: var(--bik-warning-bg, #FEF3E8);
 }
 .hub-overview-tile--attention:hover {
   background: #fbe6cd;
 }
+.hub-overview-tile--attention:active {
+  background: #f8dcb8;
+}
 .hub-overview-tile--attention .hub-overview-value,
 .hub-overview-tile--attention .hub-overview-label {
   color: var(--bik-warning, #A85A00);
+  opacity: 1;
 }
 
 @media (max-width: 640px) {
+  /* 2-column grid: [1][2] / [3][4] — tile 3 starts a new row, so its
+     vertical (column) divider is dropped; 3 and 4 both gain a horizontal
+     (row) divider instead. Tile 2 and 4 keep their column divider as-is. */
   .hub-overview-row {
     grid-template-columns: repeat(2, 1fr);
   }
-  .hub-overview-tile:nth-child(3) {
-    border-left: none;
-    border-top: 1px solid var(--bik-border, #e0ddd9);
+  .hub-overview-tile:nth-child(3)::before {
+    display: none;
   }
-  .hub-overview-tile:nth-child(4) {
-    border-top: 1px solid var(--bik-border, #e0ddd9);
+  .hub-overview-tile:nth-child(3)::after,
+  .hub-overview-tile:nth-child(4)::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 14%;
+    right: 14%;
+    height: 1px;
+    background: var(--bik-border, #e0ddd9);
   }
 }
 
 /* ── Section labels ────────────────────────────────────────────
-   The page's one consistent heading style, replacing the previous tiny
-   uppercase labels — normal case, bolder weight, a short teal rule
-   doing the job letter-spaced caps used to. */
+   The page's one consistent heading style — normal case, bolder weight,
+   a short teal rule doing the job letter-spaced caps used to. */
 
 .hub-section-label {
   display: flex;
@@ -160,7 +203,7 @@
 /* ── Quick actions ─────────────────────────────────────────────── */
 
 .hub-quick-actions {
-  margin-bottom: 24px;
+  margin-bottom: var(--hub-space);
 }
 .hub-quick-actions-grid {
   display: flex;
@@ -171,13 +214,14 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  height: 40px;
+  padding: 0 16px;
   background: var(--bik-surface, #fff);
   border: 1px solid var(--bik-border, #e0ddd9);
   border-radius: 8px;
   text-decoration: none;
   color: var(--charcoal, #1a1a1a);
-  font-size: 0.86rem;
+  font-size: var(--hub-text-sm);
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
@@ -194,6 +238,9 @@
   border-color: var(--hub-teal);
   color: var(--hub-teal-dark);
 }
+.hub-action-btn:active {
+  background: #e3f0ef;
+}
 .hub-action-btn--more {
   background: var(--bik-surface-sunken, #eeece8);
   border-color: var(--bik-surface-sunken, #eeece8);
@@ -205,6 +252,9 @@
   background: #e3e0da;
   border-color: #e3e0da;
   color: var(--charcoal, #1a1a1a);
+}
+.hub-action-btn--more:active {
+  background: #d8d4cc;
 }
 
 /* The one primary action on the page (Site Attendance — opened daily) —
@@ -222,6 +272,15 @@
   border-color: var(--hub-teal-dark);
   color: #fff;
 }
+.hub-action-btn--primary:active {
+  background: #083e3c;
+  border-color: #083e3c;
+}
+.hub-action-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
 
 @media (max-width: 560px) {
   .hub-quick-actions-grid {
@@ -233,39 +292,58 @@
   }
 }
 
-/* ── Project information (collapsed, de-prioritised) ──────────── */
+/* ── Project details (collapsed, de-prioritised) ──────────────── */
 
 .hub-details {
   background: var(--bik-surface, #fff);
   border: 1px solid var(--bik-border, #e0ddd9);
-  border-radius: 10px;
-  padding: 4px 20px;
-  margin-top: 8px;
+  border-radius: var(--hub-radius);
+  padding: 0 20px;
+  margin-top: var(--hub-space);
 }
 .hub-details[open] {
-  padding-bottom: 16px;
+  padding-bottom: 18px;
 }
 .hub-details-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 14px 0;
+  padding: 16px 0;
+  margin: 0 -20px;
+  padding-left: 20px;
+  padding-right: 20px;
   cursor: pointer;
   list-style: none;
+  border-radius: var(--hub-radius);
+  transition: background 0.15s;
 }
 .hub-details-summary::-webkit-details-marker {
   display: none;
 }
+.hub-details:not([open]) .hub-details-summary:hover {
+  background: var(--hub-teal-light);
+}
+.hub-details-summary:hover .hub-section-label {
+  color: var(--hub-teal-dark);
+}
 .hub-details-summary .hub-section-label {
   margin-bottom: 0;
+  transition: color 0.15s;
 }
 .hub-details-summary svg {
   width: 18px;
   height: 18px;
   stroke: var(--stone, #888);
   flex-shrink: 0;
-  transition: transform 0.15s;
+  transition: transform 0.15s, stroke 0.15s;
+}
+.hub-details-summary:hover svg {
+  stroke: var(--hub-teal-dark);
+}
+.hub-details[open] .hub-details-summary {
+  border-bottom: 1px solid var(--bik-border, #e0ddd9);
+  margin-bottom: 14px;
 }
 .hub-details[open] .hub-details-summary svg {
   transform: rotate(180deg);
@@ -274,18 +352,18 @@
 .hub-info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 .hub-info-item-label {
-  font-size: 0.68rem;
+  font-size: var(--hub-text-2xs);
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #999;
-  margin-bottom: 3px;
+  color: var(--stone, #888);
+  margin-bottom: 4px;
 }
 .hub-info-item-value {
-  font-size: 0.86rem;
+  font-size: var(--hub-text-sm);
   color: var(--charcoal, #1a1a1a);
   line-height: 1.4;
 }
@@ -296,7 +374,7 @@
 
 .hub-tabs {
   display: flex;
-  gap: 4px;
+  gap: 22px;
   border-bottom: 1px solid var(--bik-border, #e0ddd9);
   margin-bottom: 16px;
   overflow-x: auto;
@@ -308,12 +386,11 @@
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 10px 4px;
-  margin-right: 20px;
+  padding: 10px 2px 11px;
   font-family: inherit;
-  font-size: 0.86rem;
+  font-size: var(--hub-text-sm);
   font-weight: 600;
-  color: var(--stone, #888);
+  color: var(--dark-stone, #3A3835);
   cursor: pointer;
   white-space: nowrap;
   transition: color 0.15s, border-color 0.15s;
@@ -335,7 +412,7 @@
   border-radius: 9px;
   background: var(--bik-surface-sunken, #eeece8);
   color: var(--dark-stone, #3A3835);
-  font-size: 0.7rem;
+  font-size: var(--hub-text-2xs);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -348,7 +425,7 @@
 }
 
 .hub-tabpanel {
-  margin-bottom: 24px;
+  margin-bottom: var(--hub-space);
 }
 
 /* Small always-visible action link next to a panel's title — e.g.
@@ -360,10 +437,13 @@
   align-items: center;
   gap: 4px;
   margin-left: auto;
+  padding: 2px 4px;
+  border-radius: 4px;
   color: var(--hub-teal-dark);
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: var(--hub-text-xs);
   text-decoration: none;
+  transition: background 0.12s;
 }
 .hub-panel-action-link svg {
   width: 14px;
@@ -372,19 +452,32 @@
   flex-shrink: 0;
 }
 .hub-panel-action-link:hover {
+  background: var(--hub-teal-light);
   text-decoration: underline;
 }
 
 .hub-shell .sb-list-panel {
-  border-radius: 10px;
-  padding: 14px 18px;
+  border-radius: var(--hub-radius);
+  padding: 16px 18px;
   box-shadow: var(--bik-shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
+}
+.hub-shell .sb-list-panel + .sb-list-panel {
+  margin-top: 12px;
 }
 .hub-shell .sb-list-panel-header {
   gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
 }
 .hub-shell .sb-list-total {
   color: var(--hub-teal-dark);
+  font-size: var(--hub-text-xs);
+}
+.hub-shell .sb-list-panel p.text-muted {
+  margin: 0;
+}
+.hub-shell .sb-list-item {
+  font-size: var(--hub-text-sm);
 }
 
 /* ── More Tools modal ─────────────────────────────────────────────
@@ -402,7 +495,7 @@
   gap: 20px;
 }
 .hub-tools-modal-group-title {
-  font-size: 0.74rem;
+  font-size: var(--hub-text-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -427,7 +520,7 @@
   border-radius: 7px;
   text-decoration: none;
   color: var(--charcoal, #1a1a1a);
-  font-size: 0.84rem;
+  font-size: var(--hub-text-sm);
   font-weight: 500;
   transition: background 0.12s;
 }
@@ -439,4 +532,17 @@
 }
 .hub-tools-modal-link:hover {
   background: var(--hub-teal-light);
+}
+.hub-tools-modal-link:active {
+  background: var(--bik-surface-sunken, #eeece8);
+}
+
+/* ── Focus-visible — page-wide teal to match this page's accent,
+   overriding the shared design system's default orange outline so
+   keyboard focus stays consistent with the rest of the Hub. ──────── */
+.hub-shell :focus-visible,
+.hub-details :focus-visible,
+.bik-modal-overlay :focus-visible {
+  outline: 2px solid var(--hub-teal);
+  outline-offset: 2px;
 }
