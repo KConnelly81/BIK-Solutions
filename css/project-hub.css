@@ -71,16 +71,30 @@
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 24px;
+  box-shadow: var(--bik-shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
 }
+/* Each tile is a <button> — it jumps to its tab below, so a metric is
+   never a dead end (see data-jump-tab wiring in project-hub.html). */
 .hub-overview-tile {
   display: flex;
   flex-direction: column;
   gap: 2px;
   padding: 14px 16px;
   border-left: 1px solid var(--bik-border, #e0ddd9);
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
 }
 .hub-overview-tile:first-child {
   border-left: none;
+}
+.hub-overview-tile:hover {
+  background: var(--hub-teal-light);
 }
 .hub-overview-value {
   font-size: 1.4rem;
@@ -92,6 +106,19 @@
 .hub-overview-label {
   font-size: 0.76rem;
   color: var(--stone, #888);
+}
+
+/* Orange is reserved for warnings/attention — the only tile that can
+   wear it is "Open notices," and only once there's something open. */
+.hub-overview-tile--attention {
+  background: var(--bik-warning-bg, #FEF3E8);
+}
+.hub-overview-tile--attention:hover {
+  background: #fbe6cd;
+}
+.hub-overview-tile--attention .hub-overview-value,
+.hub-overview-tile--attention .hub-overview-label {
+  color: var(--bik-warning, #A85A00);
 }
 
 @media (max-width: 640px) {
@@ -180,6 +207,22 @@
   color: var(--charcoal, #1a1a1a);
 }
 
+/* The one primary action on the page (Site Attendance — opened daily) —
+   solid fill, everything else here is a secondary, equal-weight action. */
+.hub-action-btn--primary {
+  background: var(--hub-teal);
+  border-color: var(--hub-teal);
+  color: #fff;
+}
+.hub-action-btn--primary svg {
+  stroke: #fff;
+}
+.hub-action-btn--primary:hover {
+  background: var(--hub-teal-dark);
+  border-color: var(--hub-teal-dark);
+  color: #fff;
+}
+
 @media (max-width: 560px) {
   .hub-quick-actions-grid {
     display: grid;
@@ -190,17 +233,43 @@
   }
 }
 
-/* ── Generic panel (project information) ──────────────────────── */
+/* ── Project information (collapsed, de-prioritised) ──────────── */
 
-.hub-panel {
+.hub-details {
   background: var(--bik-surface, #fff);
   border: 1px solid var(--bik-border, #e0ddd9);
   border-radius: 10px;
-  padding: 16px 20px;
-  margin-bottom: 24px;
+  padding: 4px 20px;
+  margin-top: 8px;
 }
-
-/* ── Project information panel ────────────────────────────────── */
+.hub-details[open] {
+  padding-bottom: 16px;
+}
+.hub-details-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 0;
+  cursor: pointer;
+  list-style: none;
+}
+.hub-details-summary::-webkit-details-marker {
+  display: none;
+}
+.hub-details-summary .hub-section-label {
+  margin-bottom: 0;
+}
+.hub-details-summary svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--stone, #888);
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+.hub-details[open] .hub-details-summary svg {
+  transform: rotate(180deg);
+}
 
 .hub-info-grid {
   display: grid;
@@ -221,19 +290,65 @@
   line-height: 1.4;
 }
 
-/* ── Project activity ──────────────────────────────────────────── */
+/* ── Project activity: tabs ───────────────────────────────────────
+   One category visible at a time instead of four always-expanded
+   stacked sections — see activateTab()/wireTabs() in project-hub.html. */
 
-.hub-activity-group {
-  margin-bottom: 4px;
+.hub-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--bik-border, #e0ddd9);
+  margin-bottom: 16px;
+  overflow-x: auto;
 }
-.hub-group-heading {
-  font-size: 0.82rem;
-  font-weight: 700;
+.hub-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 10px 4px;
+  margin-right: 20px;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--stone, #888);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.hub-tab:hover {
+  color: var(--charcoal, #1a1a1a);
+}
+.hub-tab[aria-selected="true"] {
   color: var(--hub-teal-dark);
-  margin: 22px 0 10px;
+  border-bottom-color: var(--hub-teal);
 }
-.hub-activity-group:first-child .hub-group-heading {
-  margin-top: 0;
+.hub-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--bik-surface-sunken, #eeece8);
+  color: var(--dark-stone, #3A3835);
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.hub-tab[aria-selected="true"] .hub-tab-badge {
+  background: var(--hub-teal-light);
+  color: var(--hub-teal-dark);
+}
+.hub-tab-badge[hidden] {
+  display: none;
+}
+
+.hub-tabpanel {
+  margin-bottom: 24px;
 }
 
 /* Small always-visible action link next to a panel's title — e.g.
@@ -241,11 +356,20 @@
    .project-context-change (white-on-navy, used by the top context bar)
    so this page's teal accent doesn't fight that bar's own styling. */
 .hub-panel-action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   margin-left: auto;
   color: var(--hub-teal-dark);
   font-weight: 600;
   font-size: 0.8rem;
   text-decoration: none;
+}
+.hub-panel-action-link svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  flex-shrink: 0;
 }
 .hub-panel-action-link:hover {
   text-decoration: underline;
@@ -254,6 +378,7 @@
 .hub-shell .sb-list-panel {
   border-radius: 10px;
   padding: 14px 18px;
+  box-shadow: var(--bik-shadow-sm, 0 1px 3px rgba(0,0,0,0.08));
 }
 .hub-shell .sb-list-panel-header {
   gap: 10px;

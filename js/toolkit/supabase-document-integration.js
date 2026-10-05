@@ -103,7 +103,7 @@ function refreshDocumentList(projectId, documentType, recordLabel) {
  * document_type values, each row labelled with its own type since the
  * list itself doesn't imply one. Used by project-hub.html only.
  */
-export function refreshGroupedDocumentList({ idPrefix, projectId, documentTypes, emptyMessage }) {
+export function refreshGroupedDocumentList({ idPrefix, projectId, documentTypes, emptyMessage, renderTotal }) {
   return refreshRecordList({
     idPrefix,
     table: TABLE,
@@ -111,6 +111,7 @@ export function refreshGroupedDocumentList({ idPrefix, projectId, documentTypes,
     match: { document_type: documentTypes },
     selectColumns: 'id, document_type, title, status, created_at',
     emptyMessage,
+    renderTotal,
     renderRow: (row) => `
       <li class="sb-list-item">
         <span class="sb-list-item-number">${escapeHtml(row.title || DOCUMENT_TYPE_LABELS[row.document_type] || row.document_type)}</span>

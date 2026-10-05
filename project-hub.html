@@ -61,56 +61,73 @@
     <!-- ====== OVERVIEW ======
          Compact summary tiles, not dashboard cards. Every value is a real
          count from this project's own records (see renderOverviewTiles in
-         the module script below) — nothing here is estimated or faked. -->
+         the module script below) — nothing here is estimated or faked.
+         Each tile is a button that jumps to its tab below, so a number is
+         never a dead end. -->
     <section class="hub-overview-row" aria-label="Project overview">
-      <div class="hub-overview-tile">
+      <button type="button" class="hub-overview-tile" data-jump-tab="attendance">
         <span class="hub-overview-value" id="hub-overview-onsite">—</span>
         <span class="hub-overview-label">On site now</span>
-      </div>
-      <div class="hub-overview-tile">
+      </button>
+      <button type="button" class="hub-overview-tile" data-jump-tab="commercial">
         <span class="hub-overview-value" id="hub-overview-quotes">—</span>
         <span class="hub-overview-label">Quotes</span>
-      </div>
-      <div class="hub-overview-tile">
+      </button>
+      <button type="button" class="hub-overview-tile" data-jump-tab="commercial">
         <span class="hub-overview-value" id="hub-overview-claims">—</span>
         <span class="hub-overview-label">Progress claims</span>
-      </div>
-      <div class="hub-overview-tile">
+      </button>
+      <button type="button" class="hub-overview-tile" id="hub-overview-tile-notices" data-jump-tab="site">
         <span class="hub-overview-value" id="hub-overview-notices">—</span>
         <span class="hub-overview-label">Open notices</span>
-      </div>
+      </button>
     </section>
 
     <!-- ====== QUICK ACTIONS ======
          The tools used on almost every project, surfaced directly.
-         Everything else lives in "More tools" below — same hrefs as
-         before, just regrouped. -->
+         Site Attendance is the one most teams open daily, so it's the
+         page's one primary (filled) action — everything else is a
+         secondary, equal-weight action. Everything not here lives in
+         "More tools" — same hrefs as before, just regrouped. -->
     <section class="hub-quick-actions" aria-label="Quick actions">
       <div class="hub-section-label">Quick actions</div>
       <div class="hub-quick-actions-grid" id="hub-quick-actions-grid"><!-- rendered by JS --></div>
     </section>
 
-    <!-- ====== PROJECT INFORMATION ====== -->
-    <section class="hub-panel" id="hub-info-panel" hidden>
-      <div class="hub-section-label">Project information</div>
-      <div class="hub-info-grid" id="hub-info-grid"><!-- rendered by JS --></div>
-    </section>
-
     <!-- ====== PROJECT ACTIVITY ======
-         Grouped by record type (Attendance / Commercial / Site / Safety)
-         rather than a single merged timeline — there's no unified events
-         table behind these record types yet. Kept as one labelled section
-         so a chronological feed can replace the sub-groups later without
-         changing this section's place on the page. -->
+         A tab per record category (Attendance / Commercial / Site /
+         Safety) rather than four always-expanded stacked sections — one
+         panel visible at a time, with a count badge per tab so the choice
+         of where to look is informed before clicking. There's no unified
+         events table behind these record types yet, so this stays
+         grouped by type rather than faking a merged timeline; a
+         chronological feed can replace these tabs later without changing
+         this section's place on the page. -->
     <section class="hub-activity" aria-label="Project activity">
       <div class="hub-section-label">Project activity</div>
 
-      <div class="hub-activity-group">
-        <div class="hub-group-heading">Attendance</div>
+      <div class="hub-tabs" role="tablist" aria-label="Activity category" id="hub-tabs">
+        <button type="button" class="hub-tab" role="tab" aria-selected="true" aria-controls="hub-tabpanel-attendance" id="hub-tabbtn-attendance" data-tab="attendance">
+          Attendance<span class="hub-tab-badge" id="hub-tab-badge-attendance" hidden></span>
+        </button>
+        <button type="button" class="hub-tab" role="tab" aria-selected="false" aria-controls="hub-tabpanel-commercial" id="hub-tabbtn-commercial" data-tab="commercial">
+          Commercial<span class="hub-tab-badge" id="hub-tab-badge-commercial" hidden></span>
+        </button>
+        <button type="button" class="hub-tab" role="tab" aria-selected="false" aria-controls="hub-tabpanel-site" id="hub-tabbtn-site" data-tab="site">
+          Site<span class="hub-tab-badge" id="hub-tab-badge-site" hidden></span>
+        </button>
+        <button type="button" class="hub-tab" role="tab" aria-selected="false" aria-controls="hub-tabpanel-safety" id="hub-tabbtn-safety" data-tab="safety">
+          Safety<span class="hub-tab-badge" id="hub-tab-badge-safety" hidden></span>
+        </button>
+      </div>
+
+      <div class="hub-tabpanel" id="hub-tabpanel-attendance" role="tabpanel" aria-labelledby="hub-tabbtn-attendance">
         <section class="sb-list-panel" id="sb-attendance-panel">
           <div class="sb-list-panel-header">
             <span>Site attendance today</span>
-            <a class="hub-panel-action-link" href="#" id="sb-attendance-open-link">Open Site Attendance</a>
+            <a class="hub-panel-action-link" href="#" id="sb-attendance-open-link">
+              <i data-lucide="arrow-up-right" aria-hidden="true"></i>Open Site Attendance
+            </a>
           </div>
           <p class="text-muted" id="sb-attendance-summary">Loading…</p>
         </section>
@@ -122,13 +139,12 @@
            every single-list tool page (variation-generator.html,
            quote-builder.html, progress-claim.html), which keep the original
            unprefixed ids unchanged. -->
-      <div class="hub-activity-group">
-        <div class="hub-group-heading">Commercial</div>
+      <div class="hub-tabpanel" id="hub-tabpanel-commercial" role="tabpanel" aria-labelledby="hub-tabbtn-commercial" hidden>
         <section class="sb-list-panel" id="sb-list-quotes-panel">
           <div class="sb-list-panel-header">
             <span>Quotes for this project</span>
             <span class="sb-list-total" id="sb-list-quotes-total"></span>
-            <a class="hub-panel-action-link" id="sb-list-quotes-create-link">Create quote</a>
+            <a class="hub-panel-action-link" id="sb-list-quotes-create-link"><i data-lucide="plus" aria-hidden="true"></i>Create quote</a>
           </div>
           <p class="text-muted" id="sb-list-quotes-loading">Loading…</p>
           <p class="text-muted" id="sb-list-quotes-empty" hidden>No quotes yet.</p>
@@ -139,7 +155,7 @@
           <div class="sb-list-panel-header">
             <span>Progress claims for this project</span>
             <span class="sb-list-total" id="sb-list-claims-total"></span>
-            <a class="hub-panel-action-link" id="sb-list-claims-create-link">Create claim</a>
+            <a class="hub-panel-action-link" id="sb-list-claims-create-link"><i data-lucide="plus" aria-hidden="true"></i>Create claim</a>
           </div>
           <p class="text-muted" id="sb-list-claims-loading">Loading…</p>
           <p class="text-muted" id="sb-list-claims-empty" hidden>No progress claims yet.</p>
@@ -160,13 +176,12 @@
         </section>
       </div>
 
-      <div class="hub-activity-group">
-        <div class="hub-group-heading">Site</div>
+      <div class="hub-tabpanel" id="hub-tabpanel-site" role="tabpanel" aria-labelledby="hub-tabbtn-site" hidden>
         <section class="sb-list-panel" id="sb-list-variations-panel">
           <div class="sb-list-panel-header">
             <span>Variation notices for this project</span>
             <span class="sb-list-total" id="sb-list-variations-total"></span>
-            <a class="hub-panel-action-link" id="sb-list-variations-create-link">Create variation</a>
+            <a class="hub-panel-action-link" id="sb-list-variations-create-link"><i data-lucide="plus" aria-hidden="true"></i>Create variation</a>
           </div>
           <p class="text-muted" id="sb-list-variations-loading">Loading…</p>
           <p class="text-muted" id="sb-list-variations-empty" hidden>No variation notices yet.</p>
@@ -189,8 +204,7 @@
 
       <!-- Incident Report, Inspection Checklist, Non-Conformance Report,
            SWMS, Toolbox Talk — see document-type-labels.js. -->
-      <div class="hub-activity-group">
-        <div class="hub-group-heading">Safety</div>
+      <div class="hub-tabpanel" id="hub-tabpanel-safety" role="tabpanel" aria-labelledby="hub-tabbtn-safety" hidden>
         <section class="sb-list-panel" id="sb-list-safetydocs-panel">
           <div class="sb-list-panel-header">
             <span>Safety documents for this project</span>
@@ -202,6 +216,17 @@
         </section>
       </div>
     </section>
+
+    <!-- ====== PROJECT INFORMATION ======
+         Reference data, not a task — collapsed by default so it doesn't
+         compete with the activity above for attention; one click away. -->
+    <details class="hub-details" id="hub-info-panel" hidden>
+      <summary class="hub-details-summary">
+        <span class="hub-section-label">Project information</span>
+        <i data-lucide="chevron-down" aria-hidden="true"></i>
+      </summary>
+      <div class="hub-info-grid" id="hub-info-grid"><!-- rendered by JS --></div>
+    </details>
 
   </main>
 
@@ -289,8 +314,11 @@
   // used. QUICK_ACTIONS surfaces the five used on nearly every project;
   // MORE_TOOLS_GROUPS holds everything else, grouped for browsing — no
   // link here is new, and nothing is duplicated between the two.
+  // Site Attendance is the one tool most teams open every single day, so
+  // it's the page's one primary (filled) action — everything else here
+  // is an equal-weight secondary action.
   const QUICK_ACTIONS = [
-    { href: 'attendance.html', icon: 'hard-hat', label: 'Site Attendance' },
+    { href: 'attendance.html', icon: 'hard-hat', label: 'Site Attendance', primary: true },
     { href: 'variation-generator.html', icon: 'file-diff', label: 'New Variation' },
     { href: 'quote-builder.html', icon: 'file-text', label: 'New Quote' },
     { href: 'progress-claim.html', icon: 'trending-up', label: 'New Progress Claim' },
@@ -345,8 +373,8 @@
     const grid = document.getElementById('hub-quick-actions-grid');
     const projectParam = encodeURIComponent(project.id);
 
-    const actionLinks = QUICK_ACTIONS.map(({ href, icon, label }) => `
-      <a class="hub-action-btn" href="${href}?project=${projectParam}">
+    const actionLinks = QUICK_ACTIONS.map(({ href, icon, label, primary }) => `
+      <a class="hub-action-btn${primary ? ' hub-action-btn--primary' : ''}" href="${href}?project=${projectParam}">
         <i data-lucide="${icon}" aria-hidden="true"></i>
         <span>${label}</span>
       </a>
@@ -381,6 +409,40 @@
     `).join('');
   }
 
+  // ── Project activity tabs ──────────────────────────────────────
+  function activateTab(name) {
+    document.querySelectorAll('.hub-tab').forEach((tab) => {
+      tab.setAttribute('aria-selected', String(tab.dataset.tab === name));
+    });
+    document.querySelectorAll('.hub-tabpanel').forEach((panel) => {
+      panel.hidden = panel.id !== `hub-tabpanel-${name}`;
+    });
+  }
+
+  function wireTabs() {
+    document.querySelectorAll('.hub-tab').forEach((tab) => {
+      tab.addEventListener('click', () => activateTab(tab.dataset.tab));
+    });
+    document.querySelectorAll('[data-jump-tab]').forEach((el) => {
+      el.addEventListener('click', () => {
+        activateTab(el.dataset.jumpTab);
+        document.getElementById('hub-tabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+  }
+
+  // Tab badges show how many records are in each category without opening
+  // it — summed from the same rows each list panel already loads below,
+  // not a separate count query.
+  const tabCounts = { commercial: 0, site: 0, safety: 0 };
+  function bumpTabBadge(tab, n) {
+    tabCounts[tab] += n;
+    const badge = document.getElementById(`hub-tab-badge-${tab}`);
+    if (!badge) return;
+    badge.textContent = String(tabCounts[tab]);
+    badge.hidden = tabCounts[tab] === 0;
+  }
+
   function openMoreToolsModal() {
     document.getElementById('hub-more-tools-overlay').hidden = false;
   }
@@ -413,7 +475,14 @@
 
     setTile('hub-overview-quotes', quotesResult.error ? '—' : (quotesResult.count ?? 0));
     setTile('hub-overview-claims', claimsResult.error ? '—' : (claimsResult.count ?? 0));
-    setTile('hub-overview-notices', noticesResult.error ? '—' : (noticesResult.count ?? 0));
+
+    const noticesCount = noticesResult.error ? null : (noticesResult.count ?? 0);
+    setTile('hub-overview-notices', noticesCount ?? '—');
+
+    // Orange is reserved for warnings/attention states — an open notice is
+    // exactly that, so this is the one tile that can carry it.
+    const noticesTile = document.getElementById('hub-overview-tile-notices');
+    if (noticesTile) noticesTile.classList.toggle('hub-overview-tile--attention', Boolean(noticesCount));
   }
 
   async function renderAttendanceSummary(project) {
@@ -434,6 +503,8 @@
       .neq('status', 'voided');
 
     const onsiteTile = document.getElementById('hub-overview-onsite');
+    const badge = document.getElementById('hub-tab-badge-attendance');
+    const setBadge = (n) => { if (badge) { badge.textContent = String(n); badge.hidden = n === 0; } };
 
     if (error) {
       summaryEl.textContent = 'Attendance could not be loaded.';
@@ -443,11 +514,13 @@
     if (!data.length) {
       summaryEl.textContent = 'No sign-ins recorded yet today.';
       if (onsiteTile) onsiteTile.textContent = '0';
+      setBadge(0);
       return;
     }
     const onSite = data.filter(r => !r.time_out).length;
     summaryEl.textContent = `${onSite} on site now · ${data.length} sign-in${data.length !== 1 ? 's' : ''} today`;
     if (onsiteTile) onsiteTile.textContent = String(onSite);
+    setBadge(data.length);
   }
 
   function renderVariationRow(row) {
@@ -493,6 +566,7 @@
       renderQuickActions(project);
       renderMoreToolsModal(project);
       wireMoreToolsModal();
+      wireTabs();
       renderAttendanceSummary(project);
       renderOverviewTiles(project);
 
@@ -510,7 +584,10 @@
         projectId: project.id,
         selectColumns: 'id, variation_number, client_name, status, total_cents',
         renderRow: renderVariationRow,
-        renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.total_cents || 0), 0)))}`,
+        renderTotal: (rows) => {
+          bumpTabBadge('site', rows.length);
+          return `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.total_cents || 0), 0)))}`;
+        },
         emptyMessage: 'No variation notices yet.'
       });
 
@@ -520,7 +597,10 @@
         projectId: project.id,
         selectColumns: 'id, quote_number, client_name, status, total_cents',
         renderRow: renderQuoteRow,
-        renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.total_cents || 0), 0)))}`,
+        renderTotal: (rows) => {
+          bumpTabBadge('commercial', rows.length);
+          return `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.total_cents || 0), 0)))}`;
+        },
         emptyMessage: 'No quotes yet.'
       });
 
@@ -530,7 +610,10 @@
         projectId: project.id,
         selectColumns: 'id, claim_number, client_name, status, net_payable_cents',
         renderRow: renderClaimRow,
-        renderTotal: (rows) => `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.net_payable_cents || 0), 0)))}`,
+        renderTotal: (rows) => {
+          bumpTabBadge('commercial', rows.length);
+          return `Total ${formatAUD(centsToDollars(rows.reduce((sum, row) => sum + (row.net_payable_cents || 0), 0)))}`;
+        },
         emptyMessage: 'No progress claims yet.'
       });
 
@@ -538,21 +621,24 @@
         idPrefix: 'commdocs',
         projectId: project.id,
         documentTypes: DOCUMENT_TYPE_GROUPS.commercial,
-        emptyMessage: 'No other commercial documents yet.'
+        emptyMessage: 'No other commercial documents yet.',
+        renderTotal: (rows) => { bumpTabBadge('commercial', rows.length); return ''; }
       });
 
       refreshGroupedDocumentList({
         idPrefix: 'sitedocs',
         projectId: project.id,
         documentTypes: DOCUMENT_TYPE_GROUPS.site,
-        emptyMessage: 'No other site documents yet.'
+        emptyMessage: 'No other site documents yet.',
+        renderTotal: (rows) => { bumpTabBadge('site', rows.length); return ''; }
       });
 
       refreshGroupedDocumentList({
         idPrefix: 'safetydocs',
         projectId: project.id,
         documentTypes: DOCUMENT_TYPE_GROUPS.safety,
-        emptyMessage: 'No safety documents yet.'
+        emptyMessage: 'No safety documents yet.',
+        renderTotal: (rows) => { bumpTabBadge('safety', rows.length); return ''; }
       });
     }
   });
