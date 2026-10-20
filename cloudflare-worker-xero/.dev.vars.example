@@ -1,0 +1,15 @@
+# Template for local `wrangler dev` testing only.
+# Copy to `.dev.vars` (git-ignored — see .gitignore) and fill in real
+# values there. Never commit `.dev.vars` or paste real secrets into this
+# example file.
+#
+# Production secrets are set separately with:
+#   wrangler secret put XERO_CLIENT_ID
+#   wrangler secret put XERO_CLIENT_SECRET
+#   wrangler secret put XERO_STATE_SECRET
+#   wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+
+XERO_CLIENT_ID=
+XERO_CLIENT_SECRET=
+XERO_STATE_SECRET=
+SUPABASE_SERVICE_ROLE_KEY=

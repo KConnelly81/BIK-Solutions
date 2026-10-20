@@ -1,0 +1,29 @@
+name       = "bik-xero-proxy"
+main       = "worker.js"
+compatibility_date = "2024-01-01"
+
+# ── Secrets (never set here — wrangler secret put <name>) ───────────────────
+#   XERO_CLIENT_ID
+#   XERO_CLIENT_SECRET
+#   XERO_STATE_SECRET          (any long random string, e.g. `openssl rand -hex 32`)
+#   SUPABASE_SERVICE_ROLE_KEY
+
+# ── Environment variables (not secrets) ──────────────────────────────────────
+[vars]
+ALLOWED_ORIGIN           = "https://biksolutions.com.au"
+SUPABASE_URL             = "https://hpcqncghvdrlvufxfdnd.supabase.co"
+# Same publishable/anon key as js/supabase/client.js — not secret, safe here.
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ZdikW-1DVorkeJgFeZ5Dhw_KNkxBTkk"
+# Where /callback sends the browser after success or failure — reads
+# ?xero=connected / ?xero=error&reason=... (see app-dashboard.html's own
+# handling of these params).
+APP_REDIRECT_URL         = "https://biksolutions.com.au/app-dashboard.html"
+# This Worker's own deployed URL, used to build the Xero redirect_uri
+# (<WORKER_BASE_URL>/callback). Update after the first `wrangler deploy`
+# prints the real workers.dev URL, or after setting a custom route — and
+# register the exact same value as the redirect URI in the Xero app.
+WORKER_BASE_URL          = "https://bik-xero-proxy.biksolutions.workers.dev"
+
+# ── Local development ─────────────────────────────────────────────────────────
+# For local testing, create a .dev.vars file (git-ignored) — see
+# .dev.vars.example in this folder.
